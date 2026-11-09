@@ -10,7 +10,7 @@ import { useBudget } from '@/src/data/BudgetStore';
 import { bucketPace, byAttention, daysInMonth, formatCents, paceTag, weeklyAllowance } from '@/src/domain';
 
 export default function BudgetScreen() {
-  const { statuses, impact, trend, forecast, month, today, insights, recap, bills } = useBudget();
+  const { statuses, impact, trend, forecast, month, today, insights, recap, bills, tuneUps, trends } = useBudget();
   const t = useTheme();
   const days = daysInMonth(month);
   const $ = (c: number) => formatCents(c, { showCents: false });
@@ -66,6 +66,12 @@ export default function BudgetScreen() {
         })}
       </Section>
 
+
+      <Section>
+        <ListRow title="Patterns & tune-ups" last onPress={() => router.push('/patterns')}
+          note={[tuneUps.length ? `${tuneUps.length} budget suggestion${tuneUps.length === 1 ? '' : 's'}` : 'Limits match your spending',
+            trends.length ? `${trends.length} change${trends.length === 1 ? '' : 's'} from usual` : null].filter(Boolean).join(' · ')} />
+      </Section>
 
       <Link href="/new-bucket" asChild>
         <Pressable accessibilityRole="button"><Label style={{ color: t.tint, fontSize: 17, textAlign: 'center' }}>Add custom bucket</Label></Pressable>

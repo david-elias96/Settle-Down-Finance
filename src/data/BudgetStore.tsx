@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { bucketStatuses, compareToLastMonth, forecastMonth, projectionInsight, previousMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type Transaction, applySplits, vendorKey, type BillSplit, type MerchantRule, type SplitSettings, weeklyRecap, findBills, billsByBucket, billsOutlook, withBills } from '@/src/domain';
+import { bucketStatuses, compareToLastMonth, forecastMonth, projectionInsight, previousMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type Transaction, applySplits, vendorKey, type BillSplit, type MerchantRule, type SplitSettings, weeklyRecap, findBills, billsByBucket, billsOutlook, withBills, budgetTuneUps, bucketTrends, smallPurchases } from '@/src/domain';
 import { demoAccounts, demoAllocations, demoBuckets, demoGoals, demoMembers, demoRules, demoSplits, demoTransactions } from './demo';
 
 /**
@@ -107,10 +107,20 @@ function useBudgetState() {
     return `${owner} ${a.institution}${a.mask ? ` ··${a.mask}` : ''}`;
   };
 
+  // Patterns from whole past months, and limits that match how the family really spends.
+  const tuneUps = useMemo(
+    () => budgetTuneUps(buckets, transactions, allocations, month, { spentThisMonth: new Map(statuses.map((s) => [s.bucket.id, s.spent])) }),
+    [buckets, transactions, allocations, month, statuses],
+  );
+  const trends = useMemo(() => bucketTrends(buckets, transactions, allocations, month), [buckets, transactions, allocations, month]);
+  const small = useMemo(() => smallPurchases(transactions, month), [transactions, month]);
+  const setBucketLimit = (bucketId: string, monthlyLimit: number) =>
+    setBuckets((bs) => bs.map((b) => (b.id === bucketId ? { ...b, monthlyLimit } : b)));
+
   const addBucket = (name: string, monthlyLimit: number) =>
     setBuckets((bs) => [...bs, { id: `custom-${Date.now()}`, name, icon: 'star.fill', monthlyLimit, isCustom: true }]);
 
-  return { month, today, buckets, transactions, allocations, setBillSplit, rules, moveToBucket, goals, statuses, impact, trend, forecast, insights, recap, bills, cutIdeas, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack, members, accounts, meId, accountLabel };
+  return { month, today, buckets, transactions, allocations, setBillSplit, rules, moveToBucket, goals, statuses, impact, trend, forecast, insights, recap, bills, cutIdeas, tuneUps, trends, small, setBucketLimit, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack, members, accounts, meId, accountLabel };
 }
 
 type BudgetState = ReturnType<typeof useBudgetState>;

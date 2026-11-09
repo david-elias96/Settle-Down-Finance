@@ -9,7 +9,7 @@ import { useBudget } from '@/src/data/BudgetStore';
 
 export default function AskScreen() {
   const t = useTheme();
-  const { statuses, cutIdeas, transactions, buckets, month, today, recap, creditBalance, credits, useCredits, syncCredits, addCreditPack } = useBudget();
+  const { statuses, cutIdeas, transactions, buckets, month, today, recap, tuneUps, trends, creditBalance, credits, useCredits, syncCredits, addCreditPack } = useBudget();
   const outOfCredits = creditBalance.total === 0;
   const { q } = useLocalSearchParams<{ q?: string }>();
   const [turns, setTurns] = useState<ChatTurn[]>([]);
@@ -28,7 +28,7 @@ export default function AskScreen() {
     setDraft('');
     setBusy(true);
     try {
-      const answer = await ask(text, history, { statuses, cutIdeas, transactions, month, today, recap });
+      const answer = await ask(text, history, { statuses, cutIdeas, transactions, month, today, recap, tuneUps, trends });
       if (answer.credits) syncCredits(answer.credits);
       setTurns((ts) => [...ts, answer]);
     } catch (e) {

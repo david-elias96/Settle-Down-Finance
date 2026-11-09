@@ -608,3 +608,53 @@ describe('bill forecasting', () => {
     expect(billsByBucket([{ ...findBills(txs, '2026-11', 12)[0], bucketId: 'housing' }]).get('housing')).toEqual({ paid: 200000, toCome: 0 });
   });
 });
+
+import { budgetTuneUps, bucketTrends, fullMonths, typicalMonth } from './index';
+
+describe('patterns and tune-ups', () => {
+  const bk = (id: string, limit: number) => ({ id, name: id, icon: '', monthlyLimit: limit * 100, isCustom: false });
+  const buckets = [bk('dining', 250), bk('transport', 400), bk('kids', 200), bk('health', 200), bk('shopping', 250)];
+  // Six whole months (May–Oct) plus this month. Gas runs over every month; dining is light;
+  // kids is never used; shopping has a one-off couch month.
+  const plan: Record<string, number[]> = {
+    transport: [650, 700, 640, 690, 660, 680], dining: [90, 110, 100, 95, 105, 240], shopping: [200, 210, 3900, 190, 220, 205], health: [0, 0, 120, 0, 0, 0],
+  };
+  const months = ['2026-05', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10'];
+  const txs = [{ id: 'start', date: '2026-05-01', amount: 1 }];
+  const allocs: { transactionId: string; bucketId: string; amount: number; source: 'auto' }[] = [];
+  for (const [bucketId, amounts] of Object.entries(plan)) amounts.forEach((a, i) => {
+    const id = `${bucketId}${i}`; txs.push({ id, date: `${months[i]}-12`, amount: a * 100 });
+    allocs.push({ transactionId: id, bucketId, amount: a * 100, source: 'auto' });
+  });
+
+  it('counts whole months only', () => {
+    expect(fullMonths(txs, '2026-11')).toEqual(['2026-10', '2026-09', '2026-08', '2026-07', '2026-06', '2026-05']);
+    expect(fullMonths([{ date: '2026-09-20' }], '2026-11')).toEqual(['2026-10']);
+  });
+
+  it('leaves a one-off month out of the typical month', () => {
+    const r = typicalMonth(plan.shopping.map((v, i) => ({ month: months[i], total: v * 100 })));
+    expect(r.oneOffs.map((o) => o.month)).toEqual(['2026-07']);
+    expect(r.typical).toBe(20500);
+  });
+
+  it('raises a limit that is blown most months and lowers one that is barely used', () => {
+    const ups = budgetTuneUps(buckets, txs, allocs, '2026-11');
+    const by = Object.fromEntries(ups.map((u) => [u.bucketId, u]));
+    expect(by.transport).toMatchObject({ kind: 'raise', typical: 67000, suggested: 71000 });
+    expect(by.kids).toMatchObject({ kind: 'lower', suggested: 0, reason: 'Not used in the last 6 months' });
+    expect(by.dining).toMatchObject({ kind: 'lower', suggested: 12000 });
+    // Health is never cut, and shopping is fine once the couch month is left out.
+    expect(by.health).toBeUndefined();
+    expect(by.shopping).toBeUndefined();
+  });
+
+  it("doesn't lower a bucket below what's already spent this month", () => {
+    const ups = budgetTuneUps(buckets, txs, allocs, '2026-11', { spentThisMonth: new Map([['dining', 20000]]) });
+    expect(ups.find((u) => u.bucketId === 'dining')).toBeUndefined();
+  });
+
+  it('flags last month when it is well off the usual', () => {
+    expect(bucketTrends(buckets, txs, allocs, '2026-11').map((t) => [t.bucketId, t.change])).toEqual([['dining', 14000]]);
+  });
+});

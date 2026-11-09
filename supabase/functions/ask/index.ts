@@ -6,7 +6,7 @@ import { handle, HttpError, json, requireMember } from '../_shared/supabase.ts';
 import { loadHousehold, type HouseholdData } from '../_shared/household.ts';
 import { chargeCredits } from '../_shared/credits.ts';
 import {
-  ASK_ANSWER_SCHEMA, billNote, findBills, topStores, bucketPace, filterTransactions, type AskAnswer, findInsights, findSubscriptions, formatCents, monthLabel, recapFacts, vendorKey, waysToCut, weeklyRecap,
+  ASK_ANSWER_SCHEMA, billNote, budgetTuneUps, bucketTrends, findBills, smallNote, smallPurchases, topStores, trendNote, bucketPace, filterTransactions, type AskAnswer, findInsights, findSubscriptions, formatCents, monthLabel, recapFacts, vendorKey, waysToCut, weeklyRecap,
 } from '../_shared/domain/index.ts';
 
 const client = new Anthropic();
@@ -82,6 +82,11 @@ const tools: Anthropic.Beta.BetaTool[] = [
     input_schema: { type: 'object', properties: {}, additionalProperties: false },
   },
   {
+    name: 'get_patterns',
+    description: 'Patterns from whole past months: suggested budget limit changes (with the typical month and one-off months left out), buckets where last month was well off the usual, and small purchases that add up.',
+    input_schema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
     name: 'get_subscriptions',
     description: 'Recurring monthly charges detected from the transactions, with current and previous amounts.',
     input_schema: { type: 'object', properties: {}, additionalProperties: false },
@@ -108,6 +113,16 @@ function runTool(name: string, input: Record<string, unknown>, h: HouseholdData)
         bill: b.vendor, expected: $(b.amount), recent_range: b.varies ? `${$(b.low)} to ${$(b.high)}` : null,
         status: b.status, note: billNote(b), paid: b.paid ? $(b.paid.amount) : null, bucket: b.bucketId ? h.bucketName(b.bucketId) : null,
       }));
+    case 'get_patterns': {
+      const small = smallPurchases(h.transactions, h.month);
+      return {
+        tune_ups: budgetTuneUps(h.buckets, h.transactions, h.allocations, h.month, { spentThisMonth: new Map(h.statuses.map((s) => [s.bucket.id, s.spent])) })
+          .map((u) => ({ bucket: u.name, change: u.kind, current_limit: $(u.limit), suggested_limit: $(u.suggested), why: u.reason })),
+        last_month_vs_usual: bucketTrends(h.buckets, h.transactions, h.allocations, h.month)
+          .map((t) => ({ bucket: t.name, direction: t.change > 0 ? 'up' : 'down', by: $(Math.abs(t.change)), detail: trendNote(t) })),
+        small_purchases: small ? { total_last_month: $(small.total), detail: smallNote(small) } : null,
+      };
+    }
     case 'get_subscriptions':
       return findSubscriptions(h.transactions).map((s) => ({ store: s.vendor, amount: $(s.amount), previous: $(s.previousAmount), last_charged: s.lastDate }));
     case 'get_top_stores':
