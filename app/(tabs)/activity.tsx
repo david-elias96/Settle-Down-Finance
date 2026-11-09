@@ -1,8 +1,8 @@
 import { router } from 'expo-router';
 import { ActivitySummary, type SummaryData } from '@/components/ActivitySummary';
 import { SymbolView } from 'expo-symbols';
-import { useMemo, useRef, useState, type ComponentRef } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
+import { AccessibilityInfo, Animated, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { Label, ListRow, Row, Screen, Section, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import {
@@ -50,16 +50,23 @@ export default function ActivityScreen() {
     return { scope, count: items.length, total };
   }, [items, total, filter, vendors, buckets]);
 
+  // The "All …" row's numbers: everything matching the other two filters. Summing the options
+  // would count a purchase split across two buckets twice.
+  const allFor = (dim: 'month' | 'bucketId' | 'vendor') => {
+    const r = filterTransactions(transactions, allocations, { ...filter, [dim]: null });
+    return { count: r.items.length, total: r.total };
+  };
+
   const set = (patch: Partial<TransactionFilter>) => { setFilter((f) => ({ ...f, ...patch })); setOpen(null); setSearch(''); };
   const vendorLabel = vendors.find((v) => v.value === filter.vendor)?.label ?? filter.vendor;
   const active = filter.month !== null || filter.bucketId !== null || filter.vendor !== null;
 
-  const options: { list: Option[]; selected: string | null; allLabel: string; pick: (v: string | null) => void } | null =
-    open === 'month' ? { list: months, selected: filter.month, allLabel: 'All months', pick: (v) => set({ month: v }) }
-    : open === 'bucket' ? { list: bucketOpts, selected: filter.bucketId, allLabel: 'All buckets', pick: (v) => set({ bucketId: v }) }
+  const options: { list: Option[]; selected: string | null; allLabel: string; all: { count: number; total: number }; pick: (v: string | null) => void } | null =
+    open === 'month' ? { list: months, selected: filter.month, allLabel: 'All months', all: allFor('month'), pick: (v) => set({ month: v }) }
+    : open === 'bucket' ? { list: bucketOpts, selected: filter.bucketId, allLabel: 'All buckets', all: allFor('bucketId'), pick: (v) => set({ bucketId: v }) }
     : open === 'vendor' ? {
         list: vendors.filter((v) => v.label.toLowerCase().includes(search.trim().toLowerCase())),
-        selected: filter.vendor, allLabel: 'All vendors', pick: (v) => set({ vendor: v }),
+        selected: filter.vendor, allLabel: 'All vendors', all: allFor('vendor'), pick: (v) => set({ vendor: v }),
       }
     : null;
 
@@ -90,7 +97,7 @@ export default function ActivityScreen() {
               </View>
             )}
             <ScrollView keyboardShouldPersistTaps="handled">
-              <OptionRow label={options.allLabel} count={options.list.reduce((n, o) => n + o.count, 0)} total={options.list.reduce((n, o) => n + o.total, 0)}
+              <OptionRow label={options.allLabel} count={options.all.count} total={options.all.total}
                 selected={options.selected === null} onPress={() => options.pick(null)} last={options.list.length === 0} />
               {options.list.map((o, i) => (
                 <OptionRow key={o.value} label={o.label} count={o.count} total={o.total}
@@ -141,13 +148,40 @@ const shortMonth = (m: string) => new Date(`${m}-15T12:00:00Z`).toLocaleString('
 
 function Chip({ label, active, open, onPress }: { label: string; active: boolean; open: boolean; onPress: () => void }) {
   const t = useTheme();
+  // Press feedback: the chip grows a little and a soft halo fades in around it.
+  // It stays lifted while its menu is open, and settles back when the menu closes.
+  const [pressed, setPressed] = useState(false);
+  const lifted = pressed || open;
+  const anim = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
+  useEffect(() => {
+    const to = lifted ? 1 : 0;
+    if (reduceMotion) { anim.setValue(to); return; }
+    Animated.spring(anim, { toValue: to, useNativeDriver: true, speed: 22, bounciness: lifted ? 8 : 0 }).start();
+  }, [lifted, reduceMotion, anim]);
+  const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [1, reduceMotion ? 1 : 1.06] });
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ expanded: open }}
-      style={[styles.chip, { backgroundColor: active ? t.tint : t.card, borderColor: active ? t.tint : t.separator }]}>
-      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ flexShrink: 1, fontSize: 15, color: active ? '#FFFFFF' : t.text }}>{label}</Text>
-      <Text style={{ fontSize: 12, color: active ? '#FFFFFF' : t.secondaryText }}>{open ? '▴' : '▾'}</Text>
-    </Pressable>
+    <Animated.View style={{ flex: 1, minWidth: 0, transform: [{ scale }] }}>
+      <Animated.View pointerEvents="none" style={[styles.halo, { backgroundColor: t.tint, opacity: anim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.22] }) }]} />
+      <Pressable onPress={onPress} onPressIn={() => setPressed(true)} onPressOut={() => setPressed(false)}
+        accessibilityRole="button" accessibilityState={{ expanded: open }}
+        style={[styles.chip, { backgroundColor: active ? t.tint : t.card, borderColor: lifted ? t.tint : active ? t.tint : t.separator }]}>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ flexShrink: 1, fontSize: 15, color: active ? '#FFFFFF' : t.text }}>{label}</Text>
+        <Text style={{ fontSize: 12, color: active ? '#FFFFFF' : t.secondaryText }}>{open ? '▴' : '▾'}</Text>
+      </Pressable>
+    </Animated.View>
   );
+}
+
+/** True when the phone's "Reduce Motion" setting is on. */
+function useReduceMotion() {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setOn).catch(() => {});
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setOn);
+    return () => sub.remove();
+  }, []);
+  return on;
 }
 
 function OptionRow({ label, count, total, selected, onPress, last }: { label: string; count: number; total: number; selected: boolean; onPress: () => void; last?: boolean }) {
@@ -168,7 +202,8 @@ function OptionRow({ label, count, total, selected, onPress, last }: { label: st
 }
 
 const styles = StyleSheet.create({
-  chip: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
+  chip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
+  halo: { position: 'absolute', top: -5, bottom: -5, left: -5, right: -5, borderRadius: 999 },
   icon: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   search: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   menu: { position: 'absolute', borderWidth: 1, overflow: 'hidden', paddingVertical: 4, shadowOpacity: 0.18, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 12 },
