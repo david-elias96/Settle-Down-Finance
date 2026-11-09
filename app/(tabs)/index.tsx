@@ -3,12 +3,13 @@ import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { InsightsCard } from '@/components/Insights';
 import { SpendingTrend } from '@/components/SpendingTrend';
+import { WeeklyRecapCard } from '@/components/WeeklyRecap';
 import { Label, ListRow, PaceBar, Screen, Section, Tag, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { bucketPace, byAttention, daysInMonth, formatCents, paceTag, weeklyAllowance } from '@/src/domain';
 
 export default function BudgetScreen() {
-  const { statuses, impact, trend, forecast, month, today, insights, transactions } = useBudget();
+  const { statuses, impact, trend, forecast, month, today, insights, recap } = useBudget();
   const t = useTheme();
   const days = daysInMonth(month);
   const $ = (c: number) => formatCents(c, { showCents: false });
@@ -28,6 +29,8 @@ export default function BudgetScreen() {
       </Section>
 
       <InsightsCard insights={insights} />
+
+      <WeeklyRecapCard recap={recap} />
 
       <Section title="This month">
         <View style={{ padding: 16, gap: 4 }}>

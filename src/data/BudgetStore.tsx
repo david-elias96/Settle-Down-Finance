@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { bucketStatuses, compareToLastMonth, forecastMonth, projectionInsight, previousMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type Transaction, applySplits, vendorKey, type BillSplit, type SplitSettings } from '@/src/domain';
+import { bucketStatuses, compareToLastMonth, forecastMonth, projectionInsight, previousMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type Transaction, applySplits, vendorKey, type BillSplit, type SplitSettings, weeklyRecap } from '@/src/domain';
 import { demoAccounts, demoAllocations, demoBuckets, demoGoals, demoMembers, demoSplits, demoTransactions } from './demo';
 
 /**
@@ -43,6 +43,8 @@ function useBudgetState() {
   );
   const forecast = useMemo(() => forecastMonth(transactions, allocations, month, today), [transactions, allocations, month, today]);
   const trend = useMemo(() => compareToLastMonth(transactions, allocations, month, today), [transactions, allocations, month, today]);
+  const todayIso = `${month}-${String(today).padStart(2, '0')}`;
+  const recap = useMemo(() => weeklyRecap({ transactions, allocations, buckets, end: todayIso }), [transactions, allocations, buckets, todayIso]);
   // The month-end outlook always leads the Insights card.
   const insights = useMemo(() => {
     const outlook = projectionInsight(forecast, {
@@ -83,7 +85,7 @@ function useBudgetState() {
   const addBucket = (name: string, monthlyLimit: number) =>
     setBuckets((bs) => [...bs, { id: `custom-${Date.now()}`, name, icon: 'star.fill', monthlyLimit, isCustom: true }]);
 
-  return { month, today, buckets, transactions, allocations, setBillSplit, goals, statuses, impact, trend, forecast, insights, cutIdeas, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack, members, accounts, meId, accountLabel };
+  return { month, today, buckets, transactions, allocations, setBillSplit, goals, statuses, impact, trend, forecast, insights, recap, cutIdeas, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack, members, accounts, meId, accountLabel };
 }
 
 type BudgetState = ReturnType<typeof useBudgetState>;
