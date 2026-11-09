@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { bucketStatuses, compareToLastMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Allocation, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type Transaction } from '@/src/domain';
+import { bucketStatuses, compareToLastMonth, forecastMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Allocation, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type Transaction } from '@/src/domain';
 import { demoAllocations, demoBuckets, demoGoals, demoTransactions } from './demo';
 
 /**
@@ -25,6 +25,7 @@ function useBudgetState() {
     () => waysToCut(insightInput, (id) => buckets.find((b) => b.id === id)?.name ?? 'Unassigned'),
     [insightInput, buckets],
   );
+  const forecast = useMemo(() => forecastMonth(transactions, allocations, month, today), [transactions, allocations, month, today]);
   const trend = useMemo(() => compareToLastMonth(transactions, allocations, month, today), [transactions, allocations, month, today]);
 
   // AI credits. Kept on the phone for the preview; the backend is the source of truth once connected.
@@ -44,7 +45,7 @@ function useBudgetState() {
   const addBucket = (name: string, monthlyLimit: number) =>
     setBuckets((bs) => [...bs, { id: `custom-${Date.now()}`, name, icon: 'star.fill', monthlyLimit, isCustom: true }]);
 
-  return { month, today, buckets, transactions, allocations, goals, statuses, impact, trend, insights, cutIdeas, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack };
+  return { month, today, buckets, transactions, allocations, goals, statuses, impact, trend, forecast, insights, cutIdeas, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack };
 }
 
 type BudgetState = ReturnType<typeof useBudgetState>;

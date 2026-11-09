@@ -7,7 +7,7 @@ import { useBudget } from '@/src/data/BudgetStore';
 import { formatCents } from '@/src/domain';
 
 export default function BudgetScreen() {
-  const { statuses, impact, trend, month, insights } = useBudget();
+  const { statuses, impact, trend, forecast, month, insights } = useBudget();
   const t = useTheme();
   const totalLimit = statuses.reduce((s, b) => s + b.bucket.monthlyLimit, 0);
   const totalSpent = statuses.reduce((s, b) => s + b.spent, 0);
@@ -16,7 +16,7 @@ export default function BudgetScreen() {
     <Screen>
       <Section title="Spending trend">
         <View style={{ padding: 16 }}>
-          <SpendingTrend trend={trend} month={month} />
+          <SpendingTrend trend={trend} forecast={forecast} month={month} />
         </View>
       </Section>
 

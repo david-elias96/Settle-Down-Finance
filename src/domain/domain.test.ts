@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  bucketStatuses, categorize, creditsLeft, creditsResetLabel, spendCredits, type CreditState, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
+  bucketStatuses, categorize, forecastMonth, creditsLeft, creditsResetLabel, spendCredits, type CreditState, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
   transactionNotification, type Allocation, type Bucket, type SavingsGoal, type Transaction,
 } from './index';
 
@@ -273,5 +273,45 @@ describe('credits', () => {
   it('labels the reset date', () => {
     expect(creditsResetLabel('2026-11')).toBe('Dec 1');
     expect(creditsResetLabel('2026-12')).toBe('Jan 1');
+  });
+});
+
+describe('forecastMonth', () => {
+  const tx = (id: string, date: string, merchant: string, amount: number) => ({ id, date, merchant, amount });
+  const alloc = (t: { id: string; amount: number }): Allocation => ({ transactionId: t.id, bucketId: 'other', amount: t.amount, source: 'auto' });
+
+  // $10 every day since Sep 20, plus a $15 Netflix on the 20th each month.
+  const txs = [
+    ...Array.from({ length: 11 }, (_, i) => tx(`s${i}`, `2026-09-${i + 20}`, 'Cafe', 1000)),
+    ...Array.from({ length: 31 }, (_, i) => tx(`o${i}`, `2026-10-${String(i + 1).padStart(2, '0')}`, 'Cafe', 1000)),
+    ...Array.from({ length: 10 }, (_, i) => tx(`n${i}`, `2026-11-${String(i + 1).padStart(2, '0')}`, 'Cafe', 1000)),
+    tx('nf1', '2026-09-20', 'Netflix', 1500), tx('nf2', '2026-10-20', 'Netflix', 1500),
+  ];
+  const allocs = txs.map(alloc);
+
+  it('projects steady spending exactly and places upcoming bills on their day', () => {
+    const f = forecastMonth(txs, allocs, '2026-11', 10);
+    expect(f.method).toBe('monte_carlo');
+    expect(f.points[0]).toEqual({ day: 10, low: 10000, mid: 10000, high: 10000 });
+    expect(f.upcomingBills).toEqual([{ vendor: 'Netflix', amount: 1500, day: 20 }]);
+    expect(f.points.find((p) => p.day === 19)!.mid).toBe(19000);
+    expect(f.points.find((p) => p.day === 20)!.mid).toBe(21500);
+    expect(f.end).toEqual({ day: 30, low: 31500, mid: 31500, high: 31500 });
+  });
+
+  it('gives a range that widens when spending varies, and is repeatable', () => {
+    const lumpy = txs.map((t, i) => (t.merchant === 'Cafe' ? { ...t, amount: i % 3 === 0 ? 2500 : 250 } : t));
+    const a = forecastMonth(lumpy, lumpy.map(alloc), '2026-11', 10);
+    const b = forecastMonth(lumpy, lumpy.map(alloc), '2026-11', 10);
+    expect(a).toEqual(b);
+    expect(a.end.low).toBeLessThan(a.end.mid);
+    expect(a.end.mid).toBeLessThan(a.end.high);
+  });
+
+  it('falls back to a straight-line pace with little history', () => {
+    const few = txs.filter((t) => t.date >= '2026-11-01').slice(0, 5);
+    const f = forecastMonth(few, few.map(alloc), '2026-11', 5);
+    expect(f.method).toBe('pace');
+    expect(f.end.mid).toBe(30000);
   });
 });
