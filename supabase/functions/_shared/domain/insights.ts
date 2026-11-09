@@ -165,6 +165,11 @@ function subscriptionInsights({ month, transactions }: InsightInput): Insight[] 
 }
 
 export interface CutIdea {
+  /** Short name for a list row: a bucket, a store, or "Subscriptions". */
+  label: string;
+  /** One short line for a list row. */
+  note: string;
+  bucketId?: string;
   title: string;
   detail: string;
   /** Rough monthly saving if acted on. */
@@ -186,6 +191,11 @@ export function waysToCut(input: InsightInput, bucketName: (id: string) => strin
     if (over <= 0 || s.bucket.monthlyLimit <= 0) continue;
     const perDay = Math.max(0, s.remaining) / Math.max(1, daysInMonth - today);
     ideas.push({
+      label: s.bucket.name,
+      bucketId: s.bucket.id,
+      note: s.overBy > 0
+        ? `${short(s.overBy)} over already, pause for the month`
+        : `On pace for ${short(pace.projectedTotal)} of ${short(s.bucket.monthlyLimit)}, keep to ${short(perDay)}/day`,
       title: `Slow down on ${s.bucket.name}`,
       detail: s.overBy > 0
         ? `Already ${formatCents(s.overBy)} over. Pausing it for the rest of the month keeps the overage from growing.`
@@ -208,6 +218,9 @@ export function waysToCut(input: InsightInput, bucketName: (id: string) => strin
   for (const e of [...vendorSpend.values()].sort((a, b) => b.total - a.total).slice(0, 3)) {
     if (e.total < 3000) continue;
     ideas.push({
+      label: e.label,
+      bucketId: e.bucket,
+      note: `${short(e.total)} over ${e.count} order${e.count > 1 ? 's' : ''}, halve it`,
       title: `${e.label}: ${short(e.total)} so far`,
       detail: `${e.count} purchase${e.count > 1 ? 's' : ''} this month in ${bucketName(e.bucket)}. Halving it would save about ${short(e.total / 2)}.`,
       saving: Math.round(e.total / 2),
@@ -219,6 +232,8 @@ export function waysToCut(input: InsightInput, bucketName: (id: string) => strin
   const subTotal = subs.reduce((s, x) => s + x.amount, 0);
   if (subs.length >= 2) {
     ideas.push({
+      label: 'Subscriptions',
+      note: `${subs.length} for ${short(subTotal)}/mo, cancel one you rarely use`,
       title: `Review ${subs.length} subscriptions (${short(subTotal)}/mo)`,
       detail: `${subs.slice(0, 4).map((s) => `${s.vendor} ${formatCents(s.amount)}`).join(', ')}. Cancelling one you rarely use is the easiest saving.`,
       saving: subs[subs.length - 1].amount,

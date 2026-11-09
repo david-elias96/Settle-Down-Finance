@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { AnswerCard } from '@/components/AnswerCard';
 import { Label, useTheme } from '@/components/ui';
 import { ask, OutOfCreditsError, SUGGESTED_QUESTIONS, type ChatTurn } from '@/src/ask';
 import { CREDIT_PACK, creditsResetLabel } from '@/src/domain';
@@ -8,7 +9,7 @@ import { useBudget } from '@/src/data/BudgetStore';
 
 export default function AskScreen() {
   const t = useTheme();
-  const { statuses, cutIdeas, month, today, creditBalance, credits, useCredits, syncCredits, addCreditPack } = useBudget();
+  const { statuses, cutIdeas, transactions, buckets, month, today, creditBalance, credits, useCredits, syncCredits, addCreditPack } = useBudget();
   const outOfCredits = creditBalance.total === 0;
   const { q } = useLocalSearchParams<{ q?: string }>();
   const [turns, setTurns] = useState<ChatTurn[]>([]);
@@ -27,7 +28,7 @@ export default function AskScreen() {
     setDraft('');
     setBusy(true);
     try {
-      const answer = await ask(text, history, { statuses, cutIdeas, month, today });
+      const answer = await ask(text, history, { statuses, cutIdeas, transactions, month, today });
       if (answer.credits) syncCredits(answer.credits);
       setTurns((ts) => [...ts, answer]);
     } catch (e) {
@@ -73,14 +74,11 @@ export default function AskScreen() {
           <View key={i} style={[styles.bubble, styles.user, { backgroundColor: t.tint }]}>
             <Label style={{ color: '#FFFFFF', fontSize: 16 }}>{m.text}</Label>
           </View>
+        ) : m.answer ? (
+          <AnswerCard key={i} answer={m.answer} buckets={buckets} preview={m.preview} />
         ) : (
           <View key={i} style={[styles.bubble, { backgroundColor: t.card }]}>
             <Label style={{ fontSize: 16, lineHeight: 22 }}>{m.text}</Label>
-            {m.preview && (
-              <Label secondary style={{ fontSize: 12, marginTop: 8 }}>
-                Preview answer from sample data. AI answers to any question turn on once your accounts are connected.
-              </Label>
-            )}
           </View>
         ))}
         {busy && <ActivityIndicator style={{ alignSelf: 'flex-start', marginLeft: 8 }} />}
