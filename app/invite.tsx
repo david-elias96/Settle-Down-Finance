@@ -9,7 +9,7 @@ const previewCode = () => Array.from({ length: 8 }, () => ALPHABET[Math.floor(Ma
 export default function InviteScreen() {
   const t = useTheme();
   const [code] = useState(previewCode);
-  const link = `https://settledown-finance.com/join/${code}`;
+  const link = `https://settledownfinance.com/join/${code}`;
   const pretty = `${code.slice(0, 4)}-${code.slice(4)}`;
 
   const share = () => Share.share({

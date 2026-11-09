@@ -4,7 +4,7 @@ import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Label, Screen, Section, useTheme } from '@/components/ui';
 
 /**
- * Opened from an invite link (settledown://join/CODE or settledown-finance.com/join/CODE).
+ * Opened from an invite link (settledown://join/CODE or settledownfinance.com/join/CODE).
  * With the backend this signs the person in, then calls `accept_invite(code, name)`.
  */
 export default function JoinScreen() {
