@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { ActivitySummary, type SummaryData } from '@/components/ActivitySummary';
 import { SymbolView } from 'expo-symbols';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Label, ListRow, Row, Screen, Section, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import {
@@ -57,10 +57,10 @@ export default function ActivityScreen() {
     <Screen>
       <ActivitySummary data={summary} />
       <View style={{ gap: 10 }}>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          <Chip label={filter.month ? shortMonth(filter.month) : 'All months'} active={filter.month !== null} open={open === 'month'} onPress={() => setOpen(open === 'month' ? null : 'month')} />
-          <Chip label={filter.bucketId ? bucketName(filter.bucketId) : 'All buckets'} active={filter.bucketId !== null} open={open === 'bucket'} onPress={() => setOpen(open === 'bucket' ? null : 'bucket')} />
-          <Chip label={filter.vendor ? vendorLabel ?? 'Vendor' : 'All vendors'} active={filter.vendor !== null} open={open === 'vendor'} onPress={() => setOpen(open === 'vendor' ? null : 'vendor')} />
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Chip label={filter.month ? shortMonth(filter.month) : 'Months'} active={filter.month !== null} open={open === 'month'} onPress={() => setOpen(open === 'month' ? null : 'month')} />
+          <Chip label={filter.bucketId ? bucketName(filter.bucketId) : 'Buckets'} active={filter.bucketId !== null} open={open === 'bucket'} onPress={() => setOpen(open === 'bucket' ? null : 'bucket')} />
+          <Chip label={filter.vendor ? vendorLabel ?? 'Vendor' : 'Vendors'} active={filter.vendor !== null} open={open === 'vendor'} onPress={() => setOpen(open === 'vendor' ? null : 'vendor')} />
         </View>
         {active && !open && (
           <Pressable onPress={() => setFilter(NO_FILTER)} hitSlop={8} accessibilityRole="button">
@@ -120,14 +120,16 @@ function groupByDay<T extends { tx: { date: string } }>(items: T[]): [string, T[
   return [...m].sort((a, b) => b[0].localeCompare(a[0]));
 }
 
-const shortMonth = (m: string) => new Date(`${m}-15T12:00:00Z`).toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+// "Nov" this year, "Nov 2025" otherwise, so the three filters fit on one line.
+const shortMonth = (m: string) => new Date(`${m}-15T12:00:00Z`).toLocaleString('en-US', { month: 'short', ...(m.startsWith(todayIso.slice(0, 4)) ? {} : { year: 'numeric' }), timeZone: 'UTC' });
 
 function Chip({ label, active, open, onPress }: { label: string; active: boolean; open: boolean; onPress: () => void }) {
   const t = useTheme();
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ expanded: open }}
       style={[styles.chip, { backgroundColor: active ? t.tint : t.card, borderColor: active ? t.tint : t.separator }]}>
-      <Label style={{ fontSize: 15, color: active ? '#FFFFFF' : t.text }}>{label} {open ? '▴' : '▾'}</Label>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ flexShrink: 1, fontSize: 15, color: active ? '#FFFFFF' : t.text }}>{label}</Text>
+      <Text style={{ fontSize: 12, color: active ? '#FFFFFF' : t.secondaryText }}>{open ? '▴' : '▾'}</Text>
     </Pressable>
   );
 }
@@ -146,7 +148,7 @@ function OptionRow({ label, detail, selected, onPress, last }: { label: string; 
 }
 
 const styles = StyleSheet.create({
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
+  chip: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
   icon: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   search: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
 });
