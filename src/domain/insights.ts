@@ -2,7 +2,7 @@ import type { BucketStatus } from './budget';
 import { cancelRoute } from './cancelAgent';
 import { vendorKey } from './filters';
 import { formatCents } from './money';
-import { bucketPace } from './pace';
+import { bucketPace, weeklyAllowance } from './pace';
 import type { Allocation, Cents, Month, Transaction } from './types';
 
 /**
@@ -210,12 +210,10 @@ export function waysToCut(input: InsightInput, bucketName: (id: string) => strin
     const pace = bucketPace(s, today, daysInMonth);
     const over = Math.max(s.overBy, pace.projectedTotal - s.bucket.monthlyLimit);
     if (over <= 0 || s.bucket.monthlyLimit <= 0) continue;
-    // Weekly is easier to plan around than a daily number. In the last week, give the total left instead.
-    const daysLeft = Math.max(1, daysInMonth - today);
-    const left = Math.max(0, s.remaining);
-    const allowance = daysLeft >= 7
-      ? { short: `keep to ${short((left / daysLeft) * 7)}/week`, long: `Keeping to about ${short((left / daysLeft) * 7)} a week stays within it.` }
-      : { short: `${short(left)} left for ${daysLeft} days`, long: `Keeping to ${short(left)} for the last ${daysLeft} days stays within it.` };
+    const w = weeklyAllowance(s, today, daysInMonth);
+    const allowance = w.kind === 'week'
+      ? { short: `keep to ${short(w.amount)}/week`, long: `Keeping to about ${short(w.amount)} a week stays within it.` }
+      : { short: w.text, long: `Keeping to ${w.text.replace(' left for', ' for the last')} stays within it.` };
     ideas.push({
       label: s.bucket.name,
       bucketId: s.bucket.id,

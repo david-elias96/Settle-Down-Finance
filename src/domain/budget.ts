@@ -1,6 +1,6 @@
 import type { Allocation, Bucket, Cents, Month, Transaction } from './types';
 import { formatCents, monthOf } from './money';
-import { bucketPace, textBar } from './pace';
+import { bucketPace, paceTag, weeklyAllowance } from './pace';
 
 export interface BucketStatus {
   bucket: Bucket;
@@ -46,12 +46,17 @@ export function transactionNotification(
   daysInMonth: number,
 ): { title: string; body: string; bucketId?: string } {
   const title = `${formatCents(tx.amount)} at ${tx.merchant}${tx.pending ? ' (pending)' : ''}`;
+  // Per bucket: "Groceries · Heading over" then "$130 left · $43/week" (or how far over).
   const lines = parts.flatMap(({ status, amount }) => {
     const pace = bucketPace(status, day, daysInMonth);
+    const { tag } = paceTag(status, pace);
+    const w = weeklyAllowance(status, day, daysInMonth);
     const prefix = parts.length > 1 ? `${formatCents(amount)} → ` : '';
+    const left = formatCents(Math.max(0, status.remaining), { showCents: false });
     return [
-      `${prefix}${status.bucket.name} · ${pace.label}`,
-      `${textBar(status.ratio)} ${pace.percentUsed}% · ${formatCents(status.spent, { showCents: false })} of ${formatCents(status.bucket.monthlyLimit, { showCents: false })}`,
+      `${prefix}${status.bucket.name} · ${tag}`,
+      w.kind === 'none' ? `${w.text} of ${formatCents(status.bucket.monthlyLimit, { showCents: false })}`
+        : w.kind === 'week' ? `${left} left · ${formatCents(w.amount, { showCents: false })}/week` : w.text,
     ];
   });
   // Tapping opens the bucket the charge landed in (the biggest share for split purchases).

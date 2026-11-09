@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
 import { Label, useTheme } from '@/components/ui';
-import { formatCents, type BucketPace, type BucketStatus } from '@/src/domain';
+import { formatCents, paceTag, type BucketPace, type BucketStatus } from '@/src/domain';
 
 const SIZE = 220;
 const STROKE = 16;
@@ -14,7 +14,8 @@ const C = 2 * Math.PI * R;
  */
 export function BucketGauge({ status, pace }: { status: BucketStatus; pace: BucketPace }) {
   const t = useTheme();
-  const color = statusColor(pace, t);
+  const tone = paceTag(status, pace).tone;
+  const color = tone === 'bad' ? t.red : tone === 'warn' ? t.orange : t.green;
   const used = Math.min(1, status.ratio);
   const overflow = Math.min(1, Math.max(0, status.ratio - 1)); // second lap for over-budget
   const tickAngle = pace.monthElapsed * 2 * Math.PI - Math.PI / 2;
@@ -42,25 +43,6 @@ export function BucketGauge({ status, pace }: { status: BucketStatus; pace: Buck
           {formatCents(status.spent, { showCents: false })} of {formatCents(status.bucket.monthlyLimit, { showCents: false })}
         </Label>
       </View>
-    </View>
-  );
-}
-
-export function statusColor(pace: BucketPace, t: ReturnType<typeof useTheme>) {
-  if (pace.status === 'over') return pace.label === 'Over budget' ? t.red : t.orange;
-  return t.green;
-}
-
-/** Status pill: icon + words, never color alone. */
-export function PaceBadge({ pace }: { pace: BucketPace }) {
-  const t = useTheme();
-  const color = statusColor(pace, t);
-  const icon = pace.status === 'over' ? '▲' : pace.status === 'under' ? '▼' : '●';
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center',
-      paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: t.card, borderWidth: 1.5, borderColor: color }}>
-      <Label style={{ color, fontSize: 13 }}>{icon}</Label>
-      <Label style={{ fontSize: 15, fontWeight: '600' }}>{pace.label}</Label>
     </View>
   );
 }

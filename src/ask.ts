@@ -1,4 +1,4 @@
-import { answerToText, bucketPace, previousMonth, topStores, daysInMonth, findSubscriptions, formatCents, type AskAnswer, type BucketStatus, type CutIdea, type Transaction } from '@/src/domain';
+import { answerToText, bucketPace, previousMonth, topStores, shortDate, daysInMonth, findSubscriptions, formatCents, type AskAnswer, type BucketStatus, type CutIdea, type Transaction } from '@/src/domain';
 
 export interface ChatTurn {
   role: 'user' | 'assistant';
@@ -99,7 +99,7 @@ function previewAnswer(q: string, ctx: PreviewContext): AskAnswer {
           : `You spend the most at ${top.store}: ${short(top.total)} in the last two months.`,
       rowsTitle: byVisits ? 'Most visited, last two months' : 'Top stores by spending, last two months',
       rows: stores.map((x) => ({ label: x.store, value: byVisits ? `${x.visits} visit${x.visits > 1 ? 's' : ''}` : short(x.total),
-        detail: byVisits ? `${short(x.total)} total · last ${x.lastDate.slice(5)}` : `${x.visits} visit${x.visits > 1 ? 's' : ''} · last ${x.lastDate.slice(5)}`, tone: 'neutral' })),
+        detail: byVisits ? `${short(x.total)} total · last ${shortDate(x.lastDate)}` : `${x.visits} visit${x.visits > 1 ? 's' : ''} · last ${shortDate(x.lastDate)}`, tone: 'neutral' })),
       tip: 'Activity → All vendors shows every purchase at a store.',
     };
   }

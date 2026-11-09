@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  bucketStatuses, topStores, cancelRoute, categorize, forecastMonth, isAllowedUrl, isSensitiveField, redactText, projectionInsight, creditsLeft, creditsResetLabel, spendCredits, type CreditState, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
+  bucketStatuses, topStores, shortDate, dayHeading, cancelRoute, categorize, forecastMonth, isAllowedUrl, isSensitiveField, redactText, projectionInsight, creditsLeft, creditsResetLabel, spendCredits, type CreditState, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
   transactionNotification, type Allocation, type Bucket, type SavingsGoal, type Transaction,
 } from './index';
 
@@ -61,7 +61,7 @@ describe('bucketStatuses + notification', () => {
     expect(s.spent).toBe(dollars(684.12));
     const n = transactionNotification({ merchant: 'Kroger', amount: dollars(84.12), pending: true }, [{ status: s, amount: dollars(84.12) }], 9, 30);
     expect(n.title).toBe('$84.12 at Kroger (pending)');
-    expect(n.body).toBe('Groceries · Over pace\n▰▰▰▰▰▰▰▰▰▱ 98% · $684 of $700');
+    expect(n.body).toBe('Groceries · Heading over\n$15 left · $5/week');
     expect(n.bucketId).toBe('groceries');
   });
 });
@@ -402,5 +402,14 @@ describe('topStores', () => {
     expect(topStores(txs, { months: ['2026-11'] })[0]).toEqual({ store: 'Chipotle', visits: 3, total: dollars(37), lastDate: '2026-11-08' });
     expect(topStores(txs, { months: ['2026-11'], by: 'spend' })[0].store).toBe('Costco');
     expect(topStores(txs)[0].visits).toBe(4);
+  });
+});
+
+describe('shared status helpers', () => {
+  it('formats dates and day headings', () => {
+    expect(shortDate('2026-11-08')).toBe('Nov 8');
+    expect(dayHeading('2026-11-09', '2026-11-09')).toBe('Today');
+    expect(dayHeading('2026-11-08', '2026-11-09')).toBe('Yesterday');
+    expect(dayHeading('2026-11-06', '2026-11-09')).toBe('Fri, Nov 6');
   });
 });

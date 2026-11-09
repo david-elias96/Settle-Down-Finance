@@ -59,3 +59,19 @@ export function overspendImpact(
     uncovered: need,
   };
 }
+
+/** When a goal will be reached at its monthly contribution, and whether that beats its target date. */
+export function goalForecast(goal: SavingsGoal, balance: Cents, fromMonth: string): { finish: string | null; finishLabel: string; onTime: boolean | null } {
+  const short = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  if (balance >= goal.target) return { finish: fromMonth, finishLabel: 'Reached', onTime: true };
+  if (goal.monthlyContribution <= 0) return { finish: null, finishLabel: 'No monthly amount set', onTime: goal.targetDate ? false : null };
+  const months = Math.ceil((goal.target - balance) / goal.monthlyContribution);
+  const [y, m] = fromMonth.split('-').map(Number);
+  const idx = y * 12 + (m - 1) + months;
+  const finish = `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2, '0')}`;
+  return {
+    finish,
+    finishLabel: `${short[idx % 12]} ${Math.floor(idx / 12)}`,
+    onTime: goal.targetDate ? finish <= goal.targetDate.slice(0, 7) : null,
+  };
+}

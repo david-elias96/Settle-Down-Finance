@@ -3,7 +3,7 @@ import { Link } from 'expo-router';
 import { Alert, Pressable } from 'react-native';
 import { Label, Row, Screen, Section, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
-import { CREDIT_PACK, creditsResetLabel, daysInMonth, PLANS, transactionNotification } from '@/src/domain';
+import { creditsResetLabel, daysInMonth, PLANS, transactionNotification } from '@/src/domain';
 import { TRANSACTION_CATEGORY } from '@/src/notifications';
 
 export default function SettingsScreen() {
@@ -28,7 +28,7 @@ export default function SettingsScreen() {
 
   return (
     <Screen>
-      <Section title="Household" footer="Everyone in the household shares the same buckets and goals, and everyone gets the transaction alerts.">
+      <Section title="Household" footer="Everyone shares buckets, goals and alerts.">
         {members.map((m) => (
           <Row key={m.id} icon={{ ios: 'person.crop.circle.fill', android: 'account_circle', web: 'account_circle' }}
             title={m.id !== meId ? m.name : m.name === 'You' ? 'You' : `${m.name} (you)`}
@@ -41,7 +41,7 @@ export default function SettingsScreen() {
           </Pressable>
         </Link>
       </Section>
-      <Section title="Linked accounts" footer="Each person links their own banks from their own phone, so nobody shares a bank password. Bank linking through Plaid turns on with the first TestFlight build; the app shows sample data for now.">
+      <Section title="Linked accounts" footer="Each person links their own banks from their own phone.">
         {accounts.map((a) => {
           const owner = members.find((m) => m.id === a.ownerId);
           return (
@@ -51,19 +51,12 @@ export default function SettingsScreen() {
         })}
         <Row icon={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }} title="Link a bank account" subtitle="Coming with the TestFlight build" last />
       </Section>
-      <Section title="Subscriptions" footer="Claude can cancel subscriptions for you. You sign in yourself; it never sees your password.">
-        <Link href="/subscriptions" asChild>
-          <Pressable accessibilityRole="button">
-            <Row icon={{ ios: 'arrow.triangle.2.circlepath', android: 'autorenew', web: 'autorenew' }} title="Subscriptions" subtitle="See recurring charges and cancel" last />
-          </Pressable>
-        </Link>
-      </Section>
-      <Section title="Plan" footer={`Each Ask question or receipt scan uses 1 credit. Daily insights and the weekly summary are free. Monthly credits reset ${creditsResetLabel(month)}; extra packs (${CREDIT_PACK.credits} for ${CREDIT_PACK.price}) never expire.`}>
+      <Section title="Plan" footer={`Ask and receipt scans use 1 credit each. Resets ${creditsResetLabel(month)}.`}>
         <Row icon={{ ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' }} title="Settle Down" subtitle={`${PLANS.monthly.price} or ${PLANS.yearly.price}`} />
         <Row icon={{ ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' }} title="AI credits"
           right={<Label secondary>{creditBalance.monthly} of {credits.allowance}{creditBalance.extra ? ` + ${creditBalance.extra}` : ''}</Label>} last />
       </Section>
-      <Section title="Notifications" footer="Lock your phone after tapping Send. In 3 seconds the alert appears: press and hold it to see the bucket, or tap it to open the bucket in the app.">
+      <Section title="Notifications" footer="Lock your phone after tapping Send. The alert arrives in 3 seconds.">
         <Pressable onPress={sendPreview}>
           <Row icon={{ ios: 'bell.badge.fill', android: 'notifications', web: 'notifications' }} title="Send a sample transaction alert" right={<Label style={{ color: t.tint }}>Send</Label>} last />
         </Pressable>
