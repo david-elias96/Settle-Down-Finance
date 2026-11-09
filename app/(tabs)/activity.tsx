@@ -18,7 +18,7 @@ export default function ActivityScreen() {
   const [filter, setFilter] = useState<TransactionFilter>({ ...NO_FILTER, month: currentMonth });
   const [open, setOpen] = useState<Picker>(null);
   const [search, setSearch] = useState('');
-  // "Clear filters" starts where the first chip's rounded end meets its straight edge.
+  // "Clear filters" sits a little in from the first chip's left edge, under its curve.
   const [chipHeight, setChipHeight] = useState(36);
 
   const bucketName = (id: string) => buckets.find((b) => b.id === id)?.name ?? 'Unassigned';
@@ -65,7 +65,7 @@ export default function ActivityScreen() {
           <Chip label={filter.vendor ? vendorLabel ?? 'Vendor' : 'Vendors'} active={filter.vendor !== null} open={open === 'vendor'} onPress={() => setOpen(open === 'vendor' ? null : 'vendor')} />
         </View>
         {active && !open && (
-          <Pressable onPress={() => setFilter(NO_FILTER)} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', marginLeft: chipHeight / 2 }}>
+          <Pressable onPress={() => setFilter(NO_FILTER)} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', marginLeft: chipHeight / 4 }}>
             <Label style={{ color: t.tint, fontSize: 15 }}>Clear filters</Label>
           </Pressable>
         )}
