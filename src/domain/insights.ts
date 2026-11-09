@@ -8,7 +8,7 @@ import type { Allocation, Cents, Month, Transaction } from './types';
  * Spending insights are found by plain code so the numbers are always exact.
  * The backend asks Claude only to choose which ones matter and to word them.
  */
-export type InsightKind = 'over_budget' | 'overspend_risk' | 'unusual_vendor' | 'subscription_change' | 'under_budget';
+export type InsightKind = 'month_projection' | 'over_budget' | 'overspend_risk' | 'unusual_vendor' | 'subscription_change' | 'under_budget';
 
 export interface Insight {
   /** Stable id so the same insight isn't sent twice in a month. */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  bucketStatuses, categorize, forecastMonth, creditsLeft, creditsResetLabel, spendCredits, type CreditState, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
+  bucketStatuses, categorize, forecastMonth, projectionInsight, creditsLeft, creditsResetLabel, spendCredits, type CreditState, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
   transactionNotification, type Allocation, type Bucket, type SavingsGoal, type Transaction,
 } from './index';
 
@@ -313,5 +313,26 @@ describe('forecastMonth', () => {
     const f = forecastMonth(few, few.map(alloc), '2026-11', 5);
     expect(f.method).toBe('pace');
     expect(f.end.mid).toBe(30000);
+  });
+});
+
+describe('projectionInsight', () => {
+  const f = (low: number, mid: number, high: number) => ({
+    points: [{ day: 9, low: 0, mid: 0, high: 0 }, { day: 30, low, mid, high }],
+    end: { day: 30, low, mid, high }, upcomingBills: [], method: 'monte_carlo' as const,
+  });
+  const ctx = { month: '2026-11', budgetTotal: dollars(2000), previousTotal: dollars(1600), previousMonthName: 'October' };
+
+  it('flags a month heading over budget', () => {
+    const i = projectionInsight(f(dollars(1900), dollars(2300), dollars(2800)), ctx)!;
+    expect(i.priority).toBe(3);
+    expect(i.title).toBe('Heading for about $2,300 this month');
+    expect(i.body).toBe('Likely $1,900–$2,800. About $300 over your $2,000 budget.');
+  });
+
+  it('compares with last month when within budget', () => {
+    const i = projectionInsight(f(dollars(1700), dollars(1800), dollars(1950)), ctx)!;
+    expect(i.priority).toBe(2);
+    expect(i.body).toBe('Likely $1,700–$1,950. $200 more than October, and within budget.');
   });
 });

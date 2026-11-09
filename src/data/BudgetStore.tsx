@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { bucketStatuses, compareToLastMonth, forecastMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type Transaction } from '@/src/domain';
+import { bucketStatuses, compareToLastMonth, forecastMonth, projectionInsight, previousMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type Transaction } from '@/src/domain';
 import { demoAccounts, demoAllocations, demoBuckets, demoGoals, demoMembers, demoTransactions } from './demo';
 
 /**
@@ -20,13 +20,22 @@ function useBudgetState() {
     () => ({ month, today, daysInMonth: daysInMonth(month), statuses, transactions, allocations }),
     [month, today, statuses, transactions, allocations],
   );
-  const insights = useMemo(() => findInsights(insightInput), [insightInput]);
   const cutIdeas = useMemo(
     () => waysToCut(insightInput, (id) => buckets.find((b) => b.id === id)?.name ?? 'Unassigned'),
     [insightInput, buckets],
   );
   const forecast = useMemo(() => forecastMonth(transactions, allocations, month, today), [transactions, allocations, month, today]);
   const trend = useMemo(() => compareToLastMonth(transactions, allocations, month, today), [transactions, allocations, month, today]);
+  // The month-end outlook always leads the Insights card.
+  const insights = useMemo(() => {
+    const outlook = projectionInsight(forecast, {
+      month,
+      budgetTotal: buckets.filter((b) => !b.archived).reduce((s, b) => s + b.monthlyLimit, 0),
+      previousTotal: trend.previousTotal,
+      previousMonthName: new Date(`${previousMonth(month)}-15T12:00:00Z`).toLocaleString('en-US', { month: 'long', timeZone: 'UTC' }),
+    });
+    return [...(outlook ? [outlook] : []), ...findInsights(insightInput)];
+  }, [forecast, trend, buckets, month, insightInput]);
 
   // AI credits. Kept on the phone for the preview; the backend is the source of truth once connected.
   const [credits, setCredits] = useState<CreditState>({ period: month, allowance: PLANS.monthly.monthlyCredits, usedThisMonth: 6, extra: 0 });

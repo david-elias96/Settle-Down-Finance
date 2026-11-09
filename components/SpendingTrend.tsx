@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { StyleSheet, Text, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
+import { Pressable, StyleSheet, Text, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 import { Label, useTheme } from '@/components/ui';
 import { daysInMonth, formatCents, previousMonth, type MonthComparison, type MonthForecast, type TrendPoint } from '@/src/domain';
@@ -27,10 +27,13 @@ export function SpendingTrend({ trend, forecast, month }: { trend: MonthComparis
   const t = useTheme();
   const [width, setWidth] = useState(0);
   const [activeDay, setActiveDay] = useState<number | null>(null);
+  // "So far" shows actual spending only; "Projected" adds the month-end forecast.
+  const [mode, setMode] = useState<'actual' | 'projected'>('actual');
+  const projection = mode === 'projected' && forecast && forecast.points.length > 1 ? forecast : null;
 
   const days = daysInMonth(month);
   const prevMonth = previousMonth(month);
-  const yMax = niceMax(Math.max(trend.previousTotal, trend.spentSoFar, forecast?.end.high ?? 0));
+  const yMax = niceMax(Math.max(trend.previousTotal, trend.spentSoFar, projection?.end.high ?? 0));
   const plotW = Math.max(0, width - PAD.left - PAD.right);
   const plotH = HEIGHT - PAD.top - PAD.bottom;
   const x = (day: number) => PAD.left + ((day - 1) / (days - 1)) * plotW;
@@ -38,11 +41,10 @@ export function SpendingTrend({ trend, forecast, month }: { trend: MonthComparis
 
   const path = (pts: TrendPoint[]) =>
     pts.map((p, i) => `${i ? 'L' : 'M'}${x(Math.min(p.day, days)).toFixed(1)},${y(p.cumulative).toFixed(1)}`).join(' ');
-  const currentPath = useMemo(() => path(trend.current), [trend, width]);
+  const currentPath = useMemo(() => path(trend.current), [trend, width, yMax]);
   const prevEnd = trend.previous.at(Math.min(days, trend.previous.length) - 1);
-  const previousPath = useMemo(() => path(trend.previous.slice(0, days)), [trend, width]);
+  const previousPath = useMemo(() => path(trend.previous.slice(0, days)), [trend, width, yMax]);
 
-  const projection = forecast && forecast.points.length > 1 ? forecast : null;
   const projectedPath = useMemo(
     () => (projection ? path(projection.points.map((p) => ({ day: p.day, cumulative: p.mid }))) : ''),
     [projection, width, yMax],
@@ -72,22 +74,38 @@ export function SpendingTrend({ trend, forecast, month }: { trend: MonthComparis
 
   return (
     <View style={{ gap: 10 }}>
-      <View>
-        <Label secondary style={{ fontSize: 13 }}>Spent so far in {monthName(month, 'long')}</Label>
-        <Label style={{ fontSize: 34, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatCents(trend.spentSoFar, { showCents: false })}</Label>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          <Label style={{ color: up ? t.red : t.green, fontSize: 13 }}>{up ? '▲' : '▼'}</Label>
-          <Label secondary style={{ fontSize: 13 }}>
-            {formatCents(Math.abs(trend.difference), { showCents: false })} {up ? 'more' : 'less'} than this point in {monthName(prevMonth, 'long')}
-          </Label>
-        </View>
-        {projection && (
-          <Label secondary style={{ fontSize: 13 }}>
-            Projected by {monthName(month)} {days}: <Label style={{ fontSize: 13, fontWeight: '600' }}>~{formatCents(projection.end.mid, { showCents: false })}</Label>
-            {projection.method === 'monte_carlo' && projection.end.high > projection.end.low
-              ? ` · likely ${formatCents(projection.end.low, { showCents: false })}–${formatCents(projection.end.high, { showCents: false })}`
-              : ''}
-          </Label>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+        {projection ? (
+          <View style={{ flexShrink: 1 }}>
+            <Label secondary style={{ fontSize: 13 }}>Projected for {monthName(month, 'long')}</Label>
+            <Label style={{ fontSize: 34, fontWeight: '700', fontVariant: ['tabular-nums'] }}>~{formatCents(projection.end.mid, { showCents: false })}</Label>
+            <Label secondary style={{ fontSize: 13 }}>
+              {projection.end.high > projection.end.low
+                ? `Likely ${formatCents(projection.end.low, { showCents: false })}–${formatCents(projection.end.high, { showCents: false })}`
+                : 'At your current pace'}
+            </Label>
+          </View>
+        ) : (
+          <View style={{ flexShrink: 1 }}>
+            <Label secondary style={{ fontSize: 13 }}>Spent so far in {monthName(month, 'long')}</Label>
+            <Label style={{ fontSize: 34, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatCents(trend.spentSoFar, { showCents: false })}</Label>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Label style={{ color: up ? t.red : t.green, fontSize: 13 }}>{up ? '▲' : '▼'}</Label>
+              <Label secondary style={{ fontSize: 13 }}>
+                {formatCents(Math.abs(trend.difference), { showCents: false })} {up ? 'more' : 'less'} than {monthName(prevMonth)} {Math.min(last?.day ?? 1, trend.previous.length || 1)}
+              </Label>
+            </View>
+          </View>
+        )}
+        {forecast && forecast.points.length > 1 && (
+          <View style={[styles.segment, { backgroundColor: t.track }]} accessibilityRole="tablist">
+            {(['actual', 'projected'] as const).map((m) => (
+              <Pressable key={m} onPress={() => { setMode(m); setActiveDay(null); }} accessibilityRole="tab" accessibilityState={{ selected: mode === m }}
+                style={[styles.segmentItem, mode === m && { backgroundColor: t.card }]}>
+                <Label style={{ fontSize: 13, fontWeight: mode === m ? '600' : '400' }}>{m === 'actual' ? 'So far' : 'Projected'}</Label>
+              </Pressable>
+            ))}
+          </View>
         )}
       </View>
 
@@ -192,4 +210,6 @@ function Legend({ color, label, dashed, dotted }: { color: string; label: string
 
 const styles = StyleSheet.create({
   swatch: { width: 16, height: 0, borderTopWidth: 2 },
+  segment: { flexDirection: 'row', borderRadius: 9, padding: 2, marginTop: 2 },
+  segmentItem: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7 },
 });

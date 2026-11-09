@@ -1,4 +1,5 @@
-import { findSubscriptions } from './insights';
+import { findSubscriptions, type Insight } from './insights';
+import { formatCents } from './money';
 import { vendorKey } from './filters';
 import { daysInMonth, previousMonth } from './trend';
 import type { Allocation, Cents, Month, Transaction } from './types';
@@ -136,4 +137,33 @@ export function forecastMonth(
     return { day: today + 1 + i, low: pct(s, 0.1), mid: pct(s, 0.5), high: pct(s, 0.9) };
   })];
   return { points, end: points.at(-1)!, upcomingBills, method: 'monte_carlo' };
+}
+
+/**
+ * The month-end outlook as an insight card: where spending is heading, compared with
+ * the total budget and last month.
+ */
+export function projectionInsight(
+  forecast: MonthForecast,
+  { month, budgetTotal, previousTotal, previousMonthName }: { month: Month; budgetTotal: Cents; previousTotal: Cents; previousMonthName: string },
+): Insight | null {
+  if (forecast.points.length < 2) return null;
+  const short = (c: Cents) => formatCents(c, { showCents: false });
+  const { low, mid, high } = forecast.end;
+  const range = high > low ? `Likely ${short(low)}–${short(high)}. ` : '';
+  const vsBudget = budgetTotal > 0 ? mid - budgetTotal : 0;
+  const vsLast = previousTotal > 0 ? mid - previousTotal : 0;
+
+  let compare: string;
+  if (vsBudget > 0) compare = `About ${short(vsBudget)} over your ${short(budgetTotal)} budget.`;
+  else if (previousTotal > 0) compare = `${short(Math.abs(vsLast))} ${vsLast >= 0 ? 'more' : 'less'} than ${previousMonthName}, and within budget.`;
+  else compare = budgetTotal > 0 ? `${short(-vsBudget)} under your budget.` : '';
+
+  return {
+    id: `${month}:projection`, kind: 'month_projection',
+    priority: vsBudget > 0 ? 3 : vsLast > 0 ? 2 : 1,
+    title: `Heading for about ${short(mid)} this month`,
+    body: `${range}${compare}`.trim(),
+    amount: mid,
+  };
 }

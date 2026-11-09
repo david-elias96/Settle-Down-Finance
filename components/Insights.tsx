@@ -4,15 +4,16 @@ import { Label, Row, Section, useTheme } from '@/components/ui';
 import type { Insight } from '@/src/domain';
 
 const ICON: Record<Insight['kind'], string> = {
-  over_budget: '▲', overspend_risk: '▲', unusual_vendor: '●', subscription_change: '↻', under_budget: '▼',
+  month_projection: '↗', over_budget: '▲', overspend_risk: '▲', unusual_vendor: '●', subscription_change: '↻', under_budget: '▼',
 };
 
 /** Top spending insights, found by the budget logic. Tapping one opens its bucket or the Ask tab. */
 export function InsightsCard({ insights }: { insights: Insight[] }) {
   const t = useTheme();
   if (!insights.length) return null;
-  const color = (i: Insight) => (i.kind === 'over_budget' ? t.red : i.kind === 'under_budget' ? t.green : t.orange);
-  const shown = insights.slice(0, 3);
+  const color = (i: Insight) => (i.kind === 'month_projection' ? (i.priority === 3 ? t.red : t.tint) : i.kind === 'over_budget' ? t.red : i.kind === 'under_budget' ? t.green : t.orange);
+  // The month-end outlook plus the top three alerts.
+  const shown = insights.slice(0, insights[0]?.kind === 'month_projection' ? 4 : 3);
   return (
     <Section title="Insights">
       {shown.map((i, n) => (
