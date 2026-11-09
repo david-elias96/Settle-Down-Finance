@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  bucketStatuses, categorize, forecastMonth, projectionInsight, creditsLeft, creditsResetLabel, spendCredits, type CreditState, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
+  bucketStatuses, cancelRoute, categorize, forecastMonth, isAllowedUrl, isSensitiveField, redactText, projectionInsight, creditsLeft, creditsResetLabel, spendCredits, type CreditState, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
   transactionNotification, type Allocation, type Bucket, type SavingsGoal, type Transaction,
 } from './index';
 
@@ -334,5 +334,47 @@ describe('projectionInsight', () => {
     const i = projectionInsight(f(dollars(1700), dollars(1800), dollars(1950)), ctx)!;
     expect(i.priority).toBe(2);
     expect(i.body).toBe('Likely $1,700–$1,950. $200 more than October, and within budget.');
+  });
+});
+
+describe('cancel agent rules', () => {
+  it('only allows https pages on the service domains', () => {
+    expect(isAllowedUrl('https://www.netflix.com/cancelplan', ['netflix.com'])).toBe(true);
+    expect(isAllowedUrl('https://netflix.com.evil.io/', ['netflix.com'])).toBe(false);
+    expect(isAllowedUrl('http://www.netflix.com/', ['netflix.com'])).toBe(false);
+    expect(isAllowedUrl('javascript:alert(1)', ['netflix.com'])).toBe(false);
+  });
+
+  it('marks passwords, payment fields and codes as sensitive', () => {
+    expect(isSensitiveField({ type: 'password' })).toBe(true);
+    expect(isSensitiveField({ autocomplete: 'cc-number' })).toBe(true);
+    expect(isSensitiveField({ label: 'Verification code' })).toBe(true);
+    expect(isSensitiveField({ label: 'Reason for leaving' })).toBe(false);
+  });
+
+  it('masks emails and long numbers in page text', () => {
+    expect(redactText('Billed to a.b+c@mail.com, card 4111 1111 1111 1111, plan $22.99'))
+      .toBe('Billed to [email], card [number], plan $22.99');
+  });
+
+  it('routes subscriptions to Apple, a known guide, or a website the user gives', () => {
+    expect(cancelRoute('APPLE.COM/BILL')).toEqual({ via: 'apple' });
+    expect(cancelRoute('NETFLIX.COM')).toMatchObject({ via: 'agent', known: true, guide: { name: 'Netflix' } });
+    expect(cancelRoute('Disney Plus')).toMatchObject({ guide: { name: 'Disney+' } });
+    expect(cancelRoute('Maxwell Dental')).toBeNull();
+    expect(cancelRoute('Acme Gym', 'www.acmegym.com/account')).toMatchObject({ known: false, guide: { startUrl: 'https://acmegym.com/', domains: ['acmegym.com'] } });
+  });
+});
+
+describe('findSubscriptions', () => {
+  const t = (id: string, merchant: string, date: string, amount: number, plaidCategory?: string): Transaction =>
+    ({ id, merchant, date, amount: dollars(amount), accountId: 'a', pending: false, plaidCategory });
+  it('skips monthly shopping trips but keeps services', () => {
+    const subs = findSubscriptions([
+      t('1', 'Target', '2026-10-03', 118.9, 'GENERAL_MERCHANDISE'), t('2', 'Target', '2026-11-03', 125.1, 'GENERAL_MERCHANDISE'),
+      t('3', 'Netflix', '2026-10-07', 22.99, 'ENTERTAINMENT'), t('4', 'Netflix', '2026-11-07', 22.99, 'ENTERTAINMENT'),
+      t('5', 'Amazon Prime', '2026-10-09', 14.99, 'GENERAL_MERCHANDISE'), t('6', 'Amazon Prime', '2026-11-09', 14.99, 'GENERAL_MERCHANDISE'),
+    ]);
+    expect(subs.map((s) => s.vendor)).toEqual(['Netflix', 'Amazon Prime']);
   });
 });

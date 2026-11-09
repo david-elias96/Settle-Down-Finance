@@ -4,10 +4,13 @@
  * only after the monthly allowance runs out. The database function `spend_credit`
  * follows the same rules; these helpers drive the app and the tests.
  */
-export type CreditReason = 'ask' | 'receipt_scan';
+export type CreditReason = 'ask' | 'receipt_scan' | 'cancel_agent';
 
-/** What each AI action costs. Daily insights and the weekly summary are free. */
-export const CREDIT_COST: Record<CreditReason, number> = { ask: 1, receipt_scan: 1 };
+/**
+ * What each AI action costs. Daily insights and the weekly summary are free. Cancelling
+ * a subscription with the agent takes many steps, so it costs more (refunded if it fails).
+ */
+export const CREDIT_COST: Record<CreditReason, number> = { ask: 1, receipt_scan: 1, cancel_agent: 5 };
 
 export const PLANS = {
   monthly: { label: 'Monthly', price: '$5.99/month', monthlyCredits: 40 },

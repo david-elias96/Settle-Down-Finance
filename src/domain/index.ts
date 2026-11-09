@@ -11,3 +11,4 @@ export * from './filters';
 export * from './insights';
 export * from './credits';
 export * from './forecast';
+export * from './cancelAgent';

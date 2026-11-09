@@ -40,3 +40,13 @@ npx expo start      # scan the QR code with Expo Go on your iPhone
 - Registering the phone's push token
 - Receipt camera screen and the confirm-split UI
 - Editing buckets, goals and merchant rules
+
+## Subscription-cancelling agent
+
+Settings → Subscriptions lists recurring charges with a **Cancel** button (and a free practice run on a pretend service).
+
+- The browser runs **on the phone** (private in-app WebView). The phone sends the backend a text snapshot of the page with typed values, emails and long numbers removed; Claude (`supabase/functions/cancel-agent`) answers with one action at a time.
+- The user signs in themselves when the agent hands over. Password, payment and code fields are marked user-only and the phone refuses to let the agent type into them.
+- The phone enforces the rules regardless of what the model or page says: only the service's own domains, and the user approves the final cancel click.
+- Costs 5 credits, refunded unless the subscription ends up cancelled. Apple-billed subscriptions open iPhone Subscriptions instead.
+- Tests: `npm test` (rules), `npm run test:e2e` (page scripts against the practice site in Playwright), `deno test supabase/functions/cancel-agent`.

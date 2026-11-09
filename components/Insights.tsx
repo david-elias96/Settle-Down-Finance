@@ -18,7 +18,8 @@ export function InsightsCard({ insights }: { insights: Insight[] }) {
     <Section title="Insights">
       {shown.map((i, n) => (
         <Pressable key={i.id} accessibilityRole="button"
-          onPress={() => i.bucketId ? router.push({ pathname: '/bucket/[id]', params: { id: i.bucketId } }) : router.push('/ask')}>
+          onPress={() => i.kind === 'subscription_change' ? router.push('/subscriptions')
+            : i.bucketId ? router.push({ pathname: '/bucket/[id]', params: { id: i.bucketId } }) : router.push('/ask')}>
           <Row title={i.title} subtitle={i.body} last={n === shown.length - 1}
             right={<View style={{ width: 20, alignItems: 'center' }}><Label style={{ color: color(i), fontSize: 15 }}>{ICON[i.kind]}</Label></View>} />
         </Pressable>

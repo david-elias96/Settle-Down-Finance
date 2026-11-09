@@ -51,6 +51,13 @@ export default function SettingsScreen() {
         })}
         <Row icon={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }} title="Link a bank account" subtitle="Coming with the TestFlight build" last />
       </Section>
+      <Section title="Subscriptions" footer="Claude can cancel subscriptions for you. You sign in yourself; it never sees your password.">
+        <Link href="/subscriptions" asChild>
+          <Pressable accessibilityRole="button">
+            <Row icon={{ ios: 'arrow.triangle.2.circlepath', android: 'autorenew', web: 'autorenew' }} title="Subscriptions" subtitle="See recurring charges and cancel" last />
+          </Pressable>
+        </Link>
+      </Section>
       <Section title="Plan" footer={`Each Ask question or receipt scan uses 1 credit. Daily insights and the weekly summary are free. Monthly credits reset ${creditsResetLabel(month)}; extra packs (${CREDIT_PACK.credits} for ${CREDIT_PACK.price}) never expire.`}>
         <Row icon={{ ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' }} title="Settle Down" subtitle={`${PLANS.monthly.price} or ${PLANS.yearly.price}`} />
         <Row icon={{ ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' }} title="AI credits"

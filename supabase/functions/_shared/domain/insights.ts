@@ -1,4 +1,5 @@
 import type { BucketStatus } from './budget';
+import { cancelRoute } from './cancelAgent';
 import { vendorKey } from './filters';
 import { formatCents } from './money';
 import { bucketPace } from './pace';
@@ -85,6 +86,9 @@ function unusualVendorInsights({ month, transactions }: InsightInput): Insight[]
   const label = new Map<string, string>();
   for (const tx of transactions) {
     if (tx.amount <= 0) continue;
+    // Monthly shopping trips (Target, Costco, gas) aren't subscriptions, unless it's a
+    // known subscription service billed under a shopping category.
+    if (tx.plaidCategory && SHOPPING.has(tx.plaidCategory) && !cancelRoute(tx.merchant)) continue;
     const v = vendorKey(tx.merchant);
     label.set(v, tx.merchant.trim());
     const m = byVendorMonth.get(v) ?? new Map();
@@ -118,13 +122,16 @@ export interface Subscription {
 }
 
 /**
- * Charges from the same vendor in consecutive months at a similar amount (within 25%).
+ * Charges from the same vendor in consecutive months at a similar amount (within 15%). Shopping categories are skipped.
  * One charge per month at most, so groceries and gas aren't mistaken for subscriptions.
  */
 export function findSubscriptions(transactions: Transaction[]): Subscription[] {
   const byVendor = new Map<string, Transaction[]>();
   for (const tx of transactions) {
     if (tx.amount <= 0) continue;
+    // Monthly shopping trips (Target, Costco, gas) aren't subscriptions, unless it's a
+    // known subscription service billed under a shopping category.
+    if (tx.plaidCategory && SHOPPING.has(tx.plaidCategory) && !cancelRoute(tx.merchant)) continue;
     const v = vendorKey(tx.merchant);
     byVendor.set(v, [...(byVendor.get(v) ?? []), tx]);
   }
@@ -136,11 +143,13 @@ export function findSubscriptions(transactions: Transaction[]): Subscription[] {
     const [prev, last] = sorted.slice(-2);
     const gapMonths = monthIndex(last.date) - monthIndex(prev.date);
     if (gapMonths !== 1) continue;
-    if (Math.abs(last.amount - prev.amount) > prev.amount * 0.25) continue;
+    if (Math.abs(last.amount - prev.amount) > prev.amount * 0.15) continue;
     subs.push({ vendor: last.merchant.trim(), amount: last.amount, previousAmount: prev.amount, lastDate: last.date });
   }
   return subs.sort((a, b) => b.amount - a.amount);
 }
+
+const SHOPPING = new Set(['GENERAL_MERCHANDISE', 'FOOD_AND_DRINK', 'TRANSPORTATION', 'TRAVEL', 'HOME_IMPROVEMENT', 'PERSONAL_CARE']);
 
 const monthIndex = (date: string) => Number(date.slice(0, 4)) * 12 + Number(date.slice(5, 7));
 
