@@ -450,3 +450,13 @@ describe('applySplits', () => {
     expect(splitLabel(out.transactions[0])).toBe('Your share of $3,450');
   });
 });
+
+import { nextMonthlyDate } from './index';
+
+describe('nextMonthlyDate', () => {
+  it('moves to the same day next month, clamped to month length', () => {
+    expect(nextMonthlyDate('2026-11-08')).toBe('2026-12-08');
+    expect(nextMonthlyDate('2026-01-31')).toBe('2026-02-28');
+    expect(nextMonthlyDate('2026-12-15')).toBe('2027-01-15');
+  });
+});
