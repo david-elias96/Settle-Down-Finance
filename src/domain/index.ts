@@ -15,3 +15,4 @@ export * from './cancelAgent';
 export * from './askAnswer';
 export * from './billSplit';
 export * from './recap';
+export * from './autoSort';

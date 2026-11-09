@@ -36,6 +36,7 @@ const thisMonthTransactions: Transaction[] = [
   { id: 't10', accountId: 'cc', merchant: 'Spotify', amount: dollars(11.99), date: d(3), pending: false, plaidCategory: 'ENTERTAINMENT' },
   { id: 't11', accountId: 'partner-cc', merchant: 'Planet Fitness', amount: dollars(24.99), date: d(5), pending: false, plaidCategory: 'PERSONAL_CARE' },
   { id: 't12', accountId: 'cc', merchant: 'APPLE.COM/BILL', amount: dollars(2.99), date: d(6), pending: false, plaidCategory: 'GENERAL_SERVICES' },
+  { id: 't13', accountId: 'partner-cc', merchant: 'SQ *BLUE BOTTLE COFFEE', amount: dollars(14.75), date: d(9), pending: true },
   { id: 't8', accountId: 'cc', merchant: 'DoorDash', amount: dollars(141.3), date: d(8), pending: true, plaidCategory: 'FOOD_AND_DRINK' },
 ];
 
@@ -73,8 +74,15 @@ const targetSplit = splitByReceipt('t2', dollars(142.37), [
   { description: 'LEGO Classic set', amount: dollars(39.99), bucketId: 'kids' },
 ]);
 
+// The coffee purchase had no category from the bank, so the AI sorted it.
+const aiSorted: Record<string, Pick<Allocation, 'bucketId' | 'reason'>> = {
+  t13: { bucketId: 'dining', reason: 'Coffee shop paid through Square' },
+};
+
 export const demoAllocations: Allocation[] = demoTransactions.flatMap((t) =>
-  t.id === 't2' ? targetSplit : [{ transactionId: t.id, bucketId: categorize(t, demoRules, demoBuckets).bucketId, amount: t.amount, source: 'auto' as const }],
+  t.id === 't2' ? targetSplit
+    : aiSorted[t.id] ? [{ transactionId: t.id, amount: t.amount, source: 'ai' as const, ...aiSorted[t.id] }]
+    : [{ transactionId: t.id, bucketId: categorize(t, demoRules, demoBuckets).bucketId, amount: t.amount, source: 'auto' as const }],
 );
 
 export const demoGoals: SavingsGoal[] = [

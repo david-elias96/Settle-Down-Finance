@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { bucketStatuses, compareToLastMonth, forecastMonth, projectionInsight, previousMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type Transaction, applySplits, vendorKey, type BillSplit, type SplitSettings, weeklyRecap } from '@/src/domain';
-import { demoAccounts, demoAllocations, demoBuckets, demoGoals, demoMembers, demoSplits, demoTransactions } from './demo';
+import { bucketStatuses, compareToLastMonth, forecastMonth, projectionInsight, previousMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type Transaction, applySplits, vendorKey, type BillSplit, type MerchantRule, type SplitSettings, weeklyRecap } from '@/src/domain';
+import { demoAccounts, demoAllocations, demoBuckets, demoGoals, demoMembers, demoRules, demoSplits, demoTransactions } from './demo';
 
 /**
  * App state. Backed by demo data for now; will be swapped for Supabase queries
@@ -9,7 +9,27 @@ import { demoAccounts, demoAllocations, demoBuckets, demoGoals, demoMembers, dem
 function useBudgetState() {
   const [buckets, setBuckets] = useState<Bucket[]>(demoBuckets);
   const [rawTransactions] = useState<Transaction[]>(demoTransactions);
-  const [rawAllocations] = useState<Allocation[]>(demoAllocations);
+  const [rawAllocations, setRawAllocations] = useState<Allocation[]>(demoAllocations);
+  const [rules, setRules] = useState<MerchantRule[]>(demoRules);
+  /**
+   * Moves a purchase to another bucket. With `always`, the store gets a rule and its other
+   * purchases that weren't placed by hand or by a receipt move too.
+   */
+  const moveToBucket = (txId: string, bucketId: string, always: boolean) => {
+    const tx = rawTransactions.find((t) => t.id === txId);
+    if (!tx) return;
+    const key = vendorKey(tx.merchant);
+    const sameStore = new Set(rawTransactions.filter((t) => vendorKey(t.merchant) === key).map((t) => t.id));
+    setRawAllocations((all) => {
+      const movable = (a: Allocation) => a.transactionId === txId
+        || (always && sameStore.has(a.transactionId) && a.source !== 'user' && a.source !== 'receipt' && all.filter((b) => b.transactionId === a.transactionId).length === 1);
+      return all.map((a) => (movable(a) ? { transactionId: a.transactionId, bucketId, amount: a.amount, source: 'user' as const } : a))
+        // A receipt split collapses into one bucket.
+        .filter((a, i, arr) => a.transactionId !== txId || arr.findIndex((b) => b.transactionId === txId) === i)
+        .map((a) => (a.transactionId === txId ? { ...a, amount: tx.amount } : a));
+    });
+    if (always) setRules((rs) => [...rs.filter((r) => r.match !== key), { match: key, bucketId }]);
+  };
   const [splits, setSplits] = useState<SplitSettings>(demoSplits);
   // Everything downstream sees split bills at the household's share.
   const { transactions, allocations } = useMemo(() => applySplits(rawTransactions, rawAllocations, splits), [rawTransactions, rawAllocations, splits]);
@@ -85,7 +105,7 @@ function useBudgetState() {
   const addBucket = (name: string, monthlyLimit: number) =>
     setBuckets((bs) => [...bs, { id: `custom-${Date.now()}`, name, icon: 'star.fill', monthlyLimit, isCustom: true }]);
 
-  return { month, today, buckets, transactions, allocations, setBillSplit, goals, statuses, impact, trend, forecast, insights, recap, cutIdeas, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack, members, accounts, meId, accountLabel };
+  return { month, today, buckets, transactions, allocations, setBillSplit, rules, moveToBucket, goals, statuses, impact, trend, forecast, insights, recap, cutIdeas, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack, members, accounts, meId, accountLabel };
 }
 
 type BudgetState = ReturnType<typeof useBudgetState>;
