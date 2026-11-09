@@ -110,6 +110,8 @@ function unusualVendorInsights({ month, transactions }: InsightInput): Insight[]
     // Monthly shopping trips (Target, Costco, gas) aren't subscriptions, unless it's a
     // known subscription service billed under a shopping category.
     if (tx.plaidCategory && SHOPPING.has(tx.plaidCategory) && !cancelRoute(tx.merchant)) continue;
+    // Rent, utilities and loan payments repeat monthly too, but they're bills, not subscriptions.
+    if (tx.plaidCategory === 'RENT_AND_UTILITIES' || tx.plaidCategory === 'LOAN_PAYMENTS') continue;
     const v = vendorKey(tx.merchant);
     label.set(v, tx.merchant.trim());
     const m = byVendorMonth.get(v) ?? new Map();
@@ -154,6 +156,8 @@ export function findSubscriptions(transactions: Transaction[]): Subscription[] {
     // Monthly shopping trips (Target, Costco, gas) aren't subscriptions, unless it's a
     // known subscription service billed under a shopping category.
     if (tx.plaidCategory && SHOPPING.has(tx.plaidCategory) && !cancelRoute(tx.merchant)) continue;
+    // Rent, utilities and loan payments repeat monthly too, but they're bills, not subscriptions.
+    if (tx.plaidCategory === 'RENT_AND_UTILITIES' || tx.plaidCategory === 'LOAN_PAYMENTS') continue;
     const v = vendorKey(tx.merchant);
     byVendor.set(v, [...(byVendor.get(v) ?? []), tx]);
   }

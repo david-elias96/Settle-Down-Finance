@@ -1,5 +1,5 @@
-import { categorize, daysInMonth, DEFAULT_BUCKETS, dollars, previousMonth, splitByReceipt } from '@/src/domain';
-import type { Account, Allocation, Bucket, Member, MerchantRule, SavingsGoal, Transaction } from '@/src/domain';
+import { categorize, daysInMonth, DEFAULT_BUCKETS, dollars, previousMonth, splitByReceipt, splitWays } from '@/src/domain';
+import type { Account, Allocation, Bucket, Member, MerchantRule, SavingsGoal, SplitSettings, Transaction } from '@/src/domain';
 
 /** Sample data so the app is usable in Expo Go before Plaid and the backend are connected. */
 const now = new Date();
@@ -24,6 +24,7 @@ export const demoBuckets: Bucket[] = DEFAULT_BUCKETS.map(({ plaidPrimary, ...b }
 export const demoRules: MerchantRule[] = [{ match: 'costco', bucketId: 'groceries' }];
 
 const thisMonthTransactions: Transaction[] = [
+  { id: 't0', accountId: 'chk', merchant: 'Maple Court Apartments', amount: dollars(3000), date: d(1), pending: false, plaidCategory: 'RENT_AND_UTILITIES' },
   { id: 't1', accountId: 'partner-cc', merchant: 'Kroger', amount: dollars(184.12), date: d(2), pending: false, plaidCategory: 'FOOD_AND_DRINK', plaidDetailedCategory: 'FOOD_AND_DRINK_GROCERIES' },
   { id: 't2', accountId: 'cc', merchant: 'Target', amount: dollars(142.37), date: d(3), pending: false, plaidCategory: 'GENERAL_MERCHANDISE', plaidDetailedCategory: 'GENERAL_MERCHANDISE_SUPERSTORES' },
   { id: 't3', accountId: 'cc', merchant: 'Chipotle', amount: dollars(38.4), date: d(4), pending: false, plaidCategory: 'FOOD_AND_DRINK' },
@@ -44,14 +45,14 @@ const lastMonthPlan: [number, string, number, string][] = [
   [14, 'Kroger', 131.75, 'FOOD_AND_DRINK_GROCERIES'], [15, 'Topgolf', 64, ''], [16, 'Chevron', 45.3, ''],
   [18, 'Amazon', 59.99, ''], [19, 'Dunkin', 9.4, ''], [21, 'Costco', 212.4, ''], [22, 'Cinemark', 31.5, ''],
   [24, 'Maverik', 49.9, ''], [25, 'DoorDash', 38.6, ''], [26, 'REI', 89.95, ''], [28, 'Kroger', 104.2, 'FOOD_AND_DRINK_GROCERIES'],
-  [29, 'Shell', 51.1, ''], [30, 'Chipotle', 27.3, ''],
+  [29, 'Shell', 51.1, ''], [30, 'Chipotle', 27.3, ''], [1, 'Maple Court Apartments', 3000, ''],
 ];
 const plaidPrimary: Record<string, string> = {
   Shell: 'TRANSPORTATION', Maverik: 'TRANSPORTATION', Chevron: 'TRANSPORTATION', Chipotle: 'FOOD_AND_DRINK',
   'Jersey Mikes': 'FOOD_AND_DRINK', 'Olive Garden': 'FOOD_AND_DRINK', Dunkin: 'FOOD_AND_DRINK', DoorDash: 'FOOD_AND_DRINK',
   Netflix: 'ENTERTAINMENT', Adobe: 'ENTERTAINMENT', Topgolf: 'ENTERTAINMENT', Cinemark: 'ENTERTAINMENT', 'Home Depot': 'GENERAL_MERCHANDISE',
   Target: 'GENERAL_MERCHANDISE', Amazon: 'GENERAL_MERCHANDISE', REI: 'GENERAL_MERCHANDISE', Costco: 'GENERAL_MERCHANDISE',
-  Kroger: 'FOOD_AND_DRINK', Smiths: 'FOOD_AND_DRINK',
+  Kroger: 'FOOD_AND_DRINK', Smiths: 'FOOD_AND_DRINK', 'Maple Court Apartments': 'RENT_AND_UTILITIES',
 };
 const lastMonthTransactions: Transaction[] = lastMonthPlan
   .filter(([day]) => day <= daysInMonth(prev))
@@ -78,3 +79,6 @@ export const demoGoals: SavingsGoal[] = [
   { id: 'vacation', name: 'Summer Vacation', target: dollars(3000), balance: dollars(850), monthlyContribution: dollars(250), priority: 2, targetDate: '2027-06-01' },
   { id: 'christmas', name: 'Christmas', target: dollars(1200), balance: dollars(600), monthlyContribution: dollars(100), priority: 3, targetDate: '2026-12-15' },
 ];
+
+// Rent is shared three ways with roommates outside the app, so only a third counts.
+export const demoSplits: SplitSettings = { byTransaction: {}, byVendor: { 'maple court apartments': splitWays(3) } };
