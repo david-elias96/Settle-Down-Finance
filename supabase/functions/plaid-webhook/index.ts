@@ -5,7 +5,7 @@ import { admin, handle, json } from '../_shared/supabase.ts';
 import { plaid, toCents } from '../_shared/plaid.ts';
 import { pushToHousehold } from '../_shared/push.ts';
 import {
-  bucketStatuses, categorize, transactionNotification,
+  bucketStatuses, categorize, isBudgetSpending, transactionNotification,
   type Allocation, type Bucket, type MerchantRule, type Transaction,
 } from '../_shared/domain/index.ts';
 
@@ -93,6 +93,9 @@ async function syncItem(plaidItemId: string) {
           continue;
         }
       }
+
+      // Card payments, transfers and income are stored for the activity list but not budgeted.
+      if (!isBudgetSpending({ plaidCategory: row.plaid_category, plaidDetailedCategory: row.plaid_detailed_category })) continue;
 
       const { bucketId, source } = categorize(
         { merchant: row.merchant, plaidCategory: row.plaid_category, plaidDetailedCategory: row.plaid_detailed_category },

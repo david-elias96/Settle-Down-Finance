@@ -34,3 +34,16 @@ export function categorize(
 
   return { bucketId: active.has(FALLBACK_BUCKET_ID) ? FALLBACK_BUCKET_ID : [...active][0], source: 'auto' };
 }
+
+/**
+ * Money moving between the family's own accounts, card payments, and income are not
+ * spending: counting them would double-count purchases already made on a card.
+ */
+const NOT_SPENDING_PRIMARY = new Set(['INCOME', 'TRANSFER_IN', 'TRANSFER_OUT']);
+const NOT_SPENDING_DETAILED = new Set(['LOAN_PAYMENTS_CREDIT_CARD_PAYMENT']);
+
+export function isBudgetSpending(tx: Pick<Transaction, 'plaidCategory' | 'plaidDetailedCategory'>): boolean {
+  if (tx.plaidCategory && NOT_SPENDING_PRIMARY.has(tx.plaidCategory)) return false;
+  if (tx.plaidDetailedCategory && NOT_SPENDING_DETAILED.has(tx.plaidDetailedCategory)) return false;
+  return true;
+}

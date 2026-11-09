@@ -91,3 +91,44 @@ describe('overspendImpact', () => {
     expect(r.uncovered).toBe(0);
   });
 });
+
+import { compareToLastMonth, cumulativeSpend, isBudgetSpending, previousMonth } from './index';
+
+describe('isBudgetSpending', () => {
+  it('excludes card payments, transfers and income', () => {
+    expect(isBudgetSpending({ plaidCategory: 'LOAN_PAYMENTS', plaidDetailedCategory: 'LOAN_PAYMENTS_CREDIT_CARD_PAYMENT' })).toBe(false);
+    expect(isBudgetSpending({ plaidCategory: 'TRANSFER_OUT' })).toBe(false);
+    expect(isBudgetSpending({ plaidCategory: 'INCOME' })).toBe(false);
+    expect(isBudgetSpending({ plaidCategory: 'LOAN_PAYMENTS', plaidDetailedCategory: 'LOAN_PAYMENTS_CAR_PAYMENT' })).toBe(true);
+    expect(isBudgetSpending({ plaidCategory: 'FOOD_AND_DRINK' })).toBe(true);
+  });
+});
+
+describe('spending trend', () => {
+  const txs = [
+    { id: 'a', date: '2026-10-02' }, { id: 'b', date: '2026-10-20' },
+    { id: 'c', date: '2026-11-01' }, { id: 'd', date: '2026-11-03' }, { id: 'e', date: '2026-11-09' },
+  ];
+  const al = (transactionId: string, amount: number, bucketId = 'x'): Allocation => ({ transactionId, bucketId, amount, source: 'auto' });
+  const allocs = [al('a', 1000), al('b', 5000), al('c', 200), al('d', 300), al('d', 100, 'y'), al('e', -50)];
+
+  it('builds a running total per day, counting splits and refunds', () => {
+    const pts = cumulativeSpend(txs, allocs, '2026-11', 9);
+    expect(pts).toHaveLength(9);
+    expect(pts[0]).toEqual({ day: 1, cumulative: 200 });
+    expect(pts[2].cumulative).toBe(600);
+    expect(pts[8].cumulative).toBe(550);
+  });
+  it('compares with last month at the same day', () => {
+    const c = compareToLastMonth(txs, allocs, '2026-11', 9);
+    expect(c.previous).toHaveLength(31);
+    expect(c.previousByThisDay).toBe(1000);
+    expect(c.difference).toBe(550 - 1000);
+    expect(c.previousTotal).toBe(6000);
+  });
+  it('handles year boundaries and short months', () => {
+    expect(previousMonth('2026-01')).toBe('2025-12');
+    const c = compareToLastMonth([{ id: 'f', date: '2026-02-28' }], [al('f', 700)], '2026-03', 31);
+    expect(c.previousByThisDay).toBe(700);
+  });
+});

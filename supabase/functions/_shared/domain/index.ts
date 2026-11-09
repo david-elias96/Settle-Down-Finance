@@ -5,3 +5,4 @@ export * from './categorize';
 export * from './budget';
 export * from './splits';
 export * from './savings';
+export * from './trend';

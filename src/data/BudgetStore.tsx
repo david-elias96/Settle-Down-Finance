@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { bucketStatuses, overspendImpact, type Allocation, type Bucket, type SavingsGoal, type Transaction } from '@/src/domain';
+import { bucketStatuses, compareToLastMonth, overspendImpact, type Allocation, type Bucket, type SavingsGoal, type Transaction } from '@/src/domain';
 import { demoAllocations, demoBuckets, demoGoals, demoTransactions } from './demo';
 
 /**
@@ -15,11 +15,13 @@ function useBudgetState() {
 
   const statuses = useMemo(() => bucketStatuses(buckets, transactions, allocations, month), [buckets, transactions, allocations, month]);
   const impact = useMemo(() => overspendImpact(statuses, goals), [statuses, goals]);
+  const today = new Date().getDate();
+  const trend = useMemo(() => compareToLastMonth(transactions, allocations, month, today), [transactions, allocations, month, today]);
 
   const addBucket = (name: string, monthlyLimit: number) =>
     setBuckets((bs) => [...bs, { id: `custom-${Date.now()}`, name, icon: 'star.fill', monthlyLimit, isCustom: true }]);
 
-  return { month, buckets, transactions, allocations, goals, statuses, impact, addBucket };
+  return { month, buckets, transactions, allocations, goals, statuses, impact, trend, addBucket };
 }
 
 type BudgetState = ReturnType<typeof useBudgetState>;
