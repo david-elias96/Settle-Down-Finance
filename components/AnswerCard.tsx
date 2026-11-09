@@ -24,7 +24,7 @@ export function AnswerCard({ answer, buckets, preview }: { answer: AskAnswer; bu
                 <View style={{ flex: 1, gap: 2 }}>
                   <View style={styles.rowTop}>
                     <Label style={styles.label}>{r.label}</Label>
-                    <Label style={{ ...styles.value, ...(r.tone === 'bad' ? { color: t.red } : null) }}>{r.value}</Label>
+                    <Label style={{ ...styles.value, ...(r.tone === 'bad' ? { color: t.redText } : null) }}>{r.value}</Label>
                     {id ? <Label secondary style={{ fontSize: 15 }}>›</Label> : null}
                   </View>
                   {r.detail ? <Label secondary style={styles.detail}>{r.detail}</Label> : null}

@@ -20,12 +20,13 @@ export function InsightsCard({ insights }: { insights: Insight[] }) {
   const t = useTheme();
   if (!insights.length) return null;
   const tone = { good: t.green, warn: t.orange, bad: t.red };
+  const text = { good: t.greenText, warn: t.orangeText, bad: t.redText };
   const outlook = insights[0].kind === 'month_projection' ? insights[0] : null;
   const alerts = insights.filter((i) => i !== outlook).slice(0, 3);
 
   const Tag = ({ i }: { i: Insight }) => (
-    <View style={[styles.tag, { backgroundColor: `${tone[i.card.tone]}1F` }]}>
-      <Label style={{ color: tone[i.card.tone], fontSize: 12, fontWeight: '600' }}>{i.card.tag}</Label>
+    <View style={[styles.tag, { backgroundColor: `${tone[i.card.tone]}14` }]}>
+      <Label style={{ color: text[i.card.tone], fontSize: 12, fontWeight: '600' }}>{i.card.tag}</Label>
     </View>
   );
 
@@ -45,8 +46,8 @@ export function InsightsCard({ insights }: { insights: Insight[] }) {
       {alerts.map((i, n) => (
         <Pressable key={i.id} onPress={() => open(i)} accessibilityRole="button" accessibilityLabel={`${i.title}. ${i.body}`}
           style={[styles.row, n > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.separator }]}>
-          <View style={[styles.icon, { backgroundColor: `${tone[i.card.tone]}1F` }]}>
-            <Label style={{ color: tone[i.card.tone], fontSize: 14, fontWeight: '700' }}>{ICON[i.kind]}</Label>
+          <View style={[styles.icon, { backgroundColor: `${tone[i.card.tone]}14` }]}>
+            <Label style={{ color: text[i.card.tone], fontSize: 14, fontWeight: '700' }}>{ICON[i.kind]}</Label>
           </View>
           <View style={{ flex: 1, gap: 3 }}>
             <View style={styles.between}>

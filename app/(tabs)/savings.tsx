@@ -29,13 +29,13 @@ export default function SavingsScreen() {
           <View style={{ padding: 16, gap: 12 }}>
             <Label style={{ fontSize: 17, fontWeight: '600' }}>{formatCents(over)} over budget. Here's where it comes from:</Label>
             {/* One bar, split by what absorbs the overspending. */}
-            <View style={[styles.stack, { backgroundColor: t.track }]}>
+            <View style={[styles.stack, { backgroundColor: t.track }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
               {parts.map((p) => (
                 <View key={p.label} style={{ flex: p.amount, backgroundColor: toneColor(t, p.tone) }} />
               ))}
             </View>
             {parts.map((p) => (
-              <View key={p.label} style={styles.legend}>
+              <View key={p.label} style={styles.legend} accessible accessibilityLabel={`${p.label}: ${formatCents(p.amount)}`}>
                 <View style={[styles.swatch, { backgroundColor: toneColor(t, p.tone) }]} />
                 <Label style={{ fontSize: 15, flex: 1 }}>{p.label}</Label>
                 <Label style={{ fontSize: 15, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{formatCents(p.amount)}</Label>

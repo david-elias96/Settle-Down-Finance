@@ -73,7 +73,7 @@ export default function BudgetScreen() {
       )}
 
       <Link href="/new-bucket" asChild>
-        <Pressable><Label style={{ color: t.tint, fontSize: 17, textAlign: 'center' }}>Add custom bucket</Label></Pressable>
+        <Pressable accessibilityRole="button"><Label style={{ color: t.tint, fontSize: 17, textAlign: 'center' }}>Add custom bucket</Label></Pressable>
       </Link>
     </Screen>
   );

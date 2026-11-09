@@ -29,7 +29,7 @@ export default function SubscriptionsScreen() {
               right={
                 <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/cancel', params: { vendor: s.vendor, amount: String(s.amount) } })}
                   style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: t.track }}>
-                  <Label style={{ color: t.red, fontSize: 14, fontWeight: '600' }}>{route?.via === 'apple' ? 'Manage' : 'Cancel'}</Label>
+                  <Label style={{ color: t.redText, fontSize: 14, fontWeight: '600' }}>{route?.via === 'apple' ? 'Manage' : 'Cancel'}</Label>
                 </Pressable>
               } />
           );

@@ -19,7 +19,7 @@ export function Section({ title, footer, children }: { title?: string; footer?: 
   const t = useTheme();
   return (
     <View>
-      {title && <Text style={[styles.sectionTitle, { color: t.secondaryText }]}>{title.toUpperCase()}</Text>}
+      {title && <Text accessibilityRole="header" style={[styles.sectionTitle, { color: t.secondaryText }]}>{title.toUpperCase()}</Text>}
       <View style={[styles.card, { backgroundColor: t.card }]}>{children}</View>
       {footer && <Text style={[styles.footer, { color: t.secondaryText }]}>{footer}</Text>}
     </View>
@@ -31,7 +31,7 @@ export function Row({ icon, title, subtitle, right, children, last }: {
 }) {
   const t = useTheme();
   return (
-    <View style={[styles.row, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.separator }]}>
+    <View accessible={!right && !children} style={[styles.row, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.separator }]}>
       <View style={styles.rowTop}>
         {icon && <SymbolView name={icon} size={22} tintColor={t.tint} style={{ width: 28 }} />}
         <View style={{ flex: 1 }}>
@@ -54,7 +54,7 @@ export function ProgressBar({ ratio }: { ratio: number }) {
   const t = useTheme();
   const color = ratio > 1 ? t.red : ratio > 0.85 ? t.orange : t.green;
   return (
-    <View style={[styles.track, { backgroundColor: t.track }]}>
+    <View style={[styles.track, { backgroundColor: t.track }]} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: Math.round(ratio * 100) }}>
       <View style={{ width: `${Math.min(1, ratio) * 100}%`, backgroundColor: color, height: '100%', borderRadius: 4 }} />
     </View>
   );
@@ -66,13 +66,18 @@ export function toneColor(t: ReturnType<typeof useTheme>, tone: Tone) {
   return tone === 'good' ? t.green : tone === 'warn' ? t.orange : tone === 'bad' ? t.red : t.secondaryText;
 }
 
+/** Same tones, in the darker shades that are readable as text. */
+export function toneTextColor(t: ReturnType<typeof useTheme>, tone: Tone) {
+  return tone === 'good' ? t.greenText : tone === 'warn' ? t.orangeText : tone === 'bad' ? t.redText : t.secondaryText;
+}
+
 /** Small colored status pill: "Over budget", "Heading over", "On track". */
 export function Tag({ tone, children }: { tone: Tone; children: string }) {
   const t = useTheme();
   const c = toneColor(t, tone);
   return (
-    <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, backgroundColor: `${c}1F` }}>
-      <Text style={{ color: c, fontSize: 12, fontWeight: '600' }}>{children}</Text>
+    <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, backgroundColor: `${c}14` }}>
+      <Text style={{ color: toneTextColor(t, tone), fontSize: 12, fontWeight: '600' }}>{children}</Text>
     </View>
   );
 }
@@ -86,14 +91,15 @@ export function ListRow({ leading, title, note, figure, figureTone, tag, bar, on
   tag?: { tone: Tone; text: string } | null; bar?: ReactNode; onPress?: () => void; last?: boolean;
 }) {
   const t = useTheme();
+  const spoken = [title, figure?.replace(' / ', ' of '), note, tag?.text].filter(Boolean).join(', ');
   const body = (
-    <View style={[styles.listRow, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.separator }]}>
+    <View accessible={!onPress} aria-label={spoken} style={[styles.listRow, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.separator }]}>
       <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
         {leading}
         <View style={{ flex: 1, gap: 3 }}>
           <View style={styles.between}>
             <Text style={{ color: t.text, fontSize: 16, fontWeight: '500', flexShrink: 1 }} numberOfLines={1}>{title}</Text>
-            {figure ? <Text style={{ color: figureTone && figureTone !== 'neutral' ? toneColor(t, figureTone) : t.text, fontSize: 16, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{figure}</Text> : null}
+            {figure ? <Text style={{ color: figureTone && figureTone !== 'neutral' ? toneTextColor(t, figureTone) : t.text, fontSize: 16, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{figure}</Text> : null}
           </View>
           {(note || tag) ? (
             <View style={styles.between}>
@@ -106,16 +112,16 @@ export function ListRow({ leading, title, note, figure, figureTone, tag, bar, on
       {bar}
     </View>
   );
-  return onPress ? <Pressable onPress={onPress} accessibilityRole="button">{body}</Pressable> : body;
+  return onPress ? <Pressable onPress={onPress} accessibilityRole="button" aria-label={spoken}>{body}</Pressable> : body;
 }
 
 /** A big number with a small caption, for rows of 2-3 stats. */
 export function StatTile({ label, value, tone }: { label: string; value: string; tone?: Tone }) {
   const t = useTheme();
   return (
-    <View style={[styles.tile, { backgroundColor: t.card }]}>
+    <View accessible accessibilityLabel={`${label}: ${value}`} style={[styles.tile, { backgroundColor: t.card }]}>
       <Text style={{ color: t.secondaryText, fontSize: 13 }}>{label}</Text>
-      <Text style={{ color: tone && tone !== 'neutral' ? toneColor(t, tone) : t.text, fontSize: 20, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{value}</Text>
+      <Text style={{ color: tone && tone !== 'neutral' ? toneTextColor(t, tone) : t.text, fontSize: 20, fontWeight: '700', fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
     </View>
   );
 }
@@ -124,7 +130,7 @@ export function StatTile({ label, value, tone }: { label: string; value: string;
 export function PaceBar({ ratio, tone, paceAt }: { ratio: number; tone: Tone; paceAt?: number }) {
   const t = useTheme();
   return (
-    <View style={{ height: 8, marginTop: 8 }}>
+    <View style={{ height: 8, marginTop: 8 }} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: Math.round(ratio * 100) }}>
       <View style={[styles.track, { backgroundColor: t.track }]}>
         <View style={{ width: `${Math.min(1, ratio) * 100}%`, backgroundColor: toneColor(t, tone), height: '100%', borderRadius: 4 }} />
       </View>

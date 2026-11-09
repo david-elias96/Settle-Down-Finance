@@ -101,7 +101,7 @@ export default function AskScreen() {
         )}
       </View>
       <View style={[styles.inputBar, { backgroundColor: t.card }]}>
-        <TextInput value={draft} onChangeText={setDraft} placeholder={outOfCredits ? 'Out of credits this month' : 'Ask a question…'} editable={!outOfCredits} placeholderTextColor={t.secondaryText}
+        <TextInput accessibilityLabel="Ask a question" value={draft} onChangeText={setDraft} placeholder={outOfCredits ? 'Out of credits this month' : 'Ask a question…'} editable={!outOfCredits} placeholderTextColor={t.secondaryText}
           style={[styles.input, { color: t.text, backgroundColor: t.background }]} onSubmitEditing={() => send(draft)}
           returnKeyType="send" multiline={false} maxLength={500} />
         <Pressable onPress={() => send(draft)} disabled={!draft.trim() || busy || outOfCredits} accessibilityRole="button" accessibilityLabel="Send"

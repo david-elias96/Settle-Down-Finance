@@ -57,7 +57,7 @@ export default function SettingsScreen() {
           right={<Label secondary>{creditBalance.monthly} of {credits.allowance}{creditBalance.extra ? ` + ${creditBalance.extra}` : ''}</Label>} last />
       </Section>
       <Section title="Notifications" footer="Lock your phone after tapping Send. The alert arrives in 3 seconds.">
-        <Pressable onPress={sendPreview}>
+        <Pressable onPress={sendPreview} accessibilityRole="button">
           <Row icon={{ ios: 'bell.badge.fill', android: 'notifications', web: 'notifications' }} title="Send a sample transaction alert" right={<Label style={{ color: t.tint }}>Send</Label>} last />
         </Pressable>
       </Section>

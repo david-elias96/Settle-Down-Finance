@@ -54,7 +54,7 @@ export default function ActivityScreen() {
           <Chip label={filter.vendor ? vendorLabel ?? 'Vendor' : 'All vendors'} active={filter.vendor !== null} open={open === 'vendor'} onPress={() => setOpen(open === 'vendor' ? null : 'vendor')} />
         </View>
         {active && !open && (
-          <Pressable onPress={() => setFilter(NO_FILTER)} hitSlop={8}>
+          <Pressable onPress={() => setFilter(NO_FILTER)} hitSlop={8} accessibilityRole="button">
             <Label style={{ color: t.tint, fontSize: 15 }}>Clear filters</Label>
           </Pressable>
         )}
@@ -64,7 +64,7 @@ export default function ActivityScreen() {
         <Section>
           {open === 'vendor' && (
             <View style={[styles.search, { borderBottomColor: t.separator }]}>
-              <TextInput value={search} onChangeText={setSearch} placeholder="Search vendors" placeholderTextColor={t.secondaryText}
+              <TextInput accessibilityLabel="Search vendors" value={search} onChangeText={setSearch} placeholder="Search vendors" placeholderTextColor={t.secondaryText}
                 style={{ color: t.text, fontSize: 17 }} autoCorrect={false} />
             </View>
           )}
