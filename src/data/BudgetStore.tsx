@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { bucketStatuses, compareToLastMonth, forecastMonth, projectionInsight, previousMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type Transaction, applySplits, vendorKey, type BillSplit, type MerchantRule, type SplitSettings, weeklyRecap } from '@/src/domain';
+import { bucketStatuses, compareToLastMonth, forecastMonth, projectionInsight, previousMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type Transaction, applySplits, vendorKey, type BillSplit, type MerchantRule, type SplitSettings, weeklyRecap, findBills, billsByBucket, billsOutlook, withBills } from '@/src/domain';
 import { demoAccounts, demoAllocations, demoBuckets, demoGoals, demoMembers, demoRules, demoSplits, demoTransactions } from './demo';
 
 /**
@@ -50,9 +50,14 @@ function useBudgetState() {
   const [goals] = useState<SavingsGoal[]>(demoGoals);
   const month = new Date().toISOString().slice(0, 7);
 
-  const statuses = useMemo(() => bucketStatuses(buckets, transactions, allocations, month), [buckets, transactions, allocations, month]);
-  const impact = useMemo(() => overspendImpact(statuses, goals), [statuses, goals]);
   const today = new Date().getDate();
+  // Monthly bills, so buckets plan for rent and utilities instead of pacing them day by day.
+  const bills = useMemo(() => billsOutlook(findBills(transactions, month, today, allocations)), [transactions, month, today, allocations]);
+  const statuses = useMemo(
+    () => withBills(bucketStatuses(buckets, transactions, allocations, month), billsByBucket(bills.bills)),
+    [buckets, transactions, allocations, month, bills],
+  );
+  const impact = useMemo(() => overspendImpact(statuses, goals), [statuses, goals]);
   const insightInput = useMemo(
     () => ({ month, today, daysInMonth: daysInMonth(month), statuses, transactions, allocations }),
     [month, today, statuses, transactions, allocations],
@@ -105,7 +110,7 @@ function useBudgetState() {
   const addBucket = (name: string, monthlyLimit: number) =>
     setBuckets((bs) => [...bs, { id: `custom-${Date.now()}`, name, icon: 'star.fill', monthlyLimit, isCustom: true }]);
 
-  return { month, today, buckets, transactions, allocations, setBillSplit, rules, moveToBucket, goals, statuses, impact, trend, forecast, insights, recap, cutIdeas, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack, members, accounts, meId, accountLabel };
+  return { month, today, buckets, transactions, allocations, setBillSplit, rules, moveToBucket, goals, statuses, impact, trend, forecast, insights, recap, bills, cutIdeas, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack, members, accounts, meId, accountLabel };
 }
 
 type BudgetState = ReturnType<typeof useBudgetState>;

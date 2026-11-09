@@ -9,6 +9,13 @@ export interface BucketStatus {
   /** 0..n, where 1 = exactly at the limit. */
   ratio: number;
   overBy: Cents;
+  /** Monthly bills in this bucket: paid so far and still expected, so the pace doesn't treat rent as daily spending. */
+  bills?: { paid: Cents; toCome: Cents };
+}
+
+/** Adds each bucket's bills (from findBills) to its status. */
+export function withBills(statuses: BucketStatus[], byBucket: Map<string, { paid: Cents; toCome: Cents }>): BucketStatus[] {
+  return statuses.map((s) => (byBucket.has(s.bucket.id) ? { ...s, bills: byBucket.get(s.bucket.id) } : s));
 }
 
 export function bucketStatuses(

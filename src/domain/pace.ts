@@ -31,8 +31,13 @@ const TOLERANCE = 0.1;
 export function bucketPace(s: BucketStatus, day: number, daysInMonth: number): BucketPace {
   const limit = s.bucket.monthlyLimit;
   const monthElapsed = Math.min(1, Math.max(0, day / daysInMonth));
-  const expectedByToday = Math.round(limit * monthElapsed);
-  const projectedTotal = day > 0 ? Math.round((s.spent / day) * daysInMonth) : s.spent;
+  // Bills land on one day, not spread over the month: count paid ones as they are, plan for
+  // the ones still to come, and pace only the everyday spending over what's left.
+  const billsPaid = Math.min(s.bills?.paid ?? 0, s.spent);
+  const billsTotal = billsPaid + (s.bills?.toCome ?? 0);
+  const everyday = s.spent - billsPaid;
+  const expectedByToday = Math.round(billsPaid + Math.max(0, limit - billsTotal) * monthElapsed);
+  const projectedTotal = Math.round(billsTotal + (day > 0 ? (everyday / day) * daysInMonth : everyday));
   const percentUsed = limit > 0 ? Math.round((s.spent / limit) * 100) : s.spent > 0 ? 100 : 0;
   const gap = s.spent - expectedByToday;
   const band = Math.max(100, expectedByToday * TOLERANCE); // at least $1 so tiny buckets aren't jumpy

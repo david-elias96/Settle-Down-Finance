@@ -1,4 +1,5 @@
-import { findSubscriptions, type Insight } from './insights';
+import { findBills } from './bills';
+import type { Insight } from './insights';
 import { formatCents } from './money';
 import { vendorKey } from './filters';
 import { daysInMonth, previousMonth } from './trend';
@@ -49,7 +50,7 @@ function mulberry32(seed: number) {
  * back to a straight-line pace.
  */
 export function forecastMonth(
-  transactions: Pick<Transaction, 'id' | 'date' | 'merchant' | 'amount'>[],
+  transactions: Pick<Transaction, 'id' | 'date' | 'merchant' | 'amount' | 'plaidCategory'>[],
   allocations: Allocation[],
   month: Month,
   today: number,
@@ -57,8 +58,9 @@ export function forecastMonth(
 ): MonthForecast {
   const days = daysInMonth(month);
   const txById = new Map(transactions.map((t) => [t.id, t]));
-  const subs = findSubscriptions(transactions as Transaction[]);
-  const recurring = new Set(subs.map((s) => vendorKey(s.vendor)));
+  // Monthly bills (rent, utilities, subscriptions) are placed on their due day, not sampled.
+  const bills = findBills(transactions, month, today);
+  const recurring = new Set(bills.map((b) => b.key));
 
   // Daily totals of non-recurring spending, keyed by date.
   const daily = new Map<string, Cents>();
@@ -90,10 +92,10 @@ export function forecastMonth(
   }
   for (let d = 1; d < today; d++) add(`${month}-${String(d).padStart(2, '0')}`, 2);
 
-  // Bills still to come this month: due on the same day as last time.
-  const upcomingBills = subs
-    .filter((s) => s.lastDate.slice(0, 7) < month)
-    .map((s) => ({ vendor: s.vendor, amount: s.amount, day: Math.max(today + 1, Math.min(days, Number(s.lastDate.slice(8, 10)))) }))
+  // Bills still to come this month, on their usual day (tomorrow if one is running late).
+  const upcomingBills = bills
+    .filter((b) => b.status !== 'paid')
+    .map((b) => ({ vendor: b.vendor, amount: b.amount, day: Math.max(today + 1, Number(b.dueDate.slice(8, 10))) }))
     .filter((b) => b.day <= days);
   const billsOn = new Array<Cents>(days + 1).fill(0);
   for (const b of upcomingBills) billsOn[b.day] += b.amount;

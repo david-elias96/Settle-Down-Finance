@@ -556,3 +556,55 @@ describe('automatic bucket sorting', () => {
     expect([...ok]).toEqual([['x1', { bucketId: 'dining', reason: 'Coffee shop paid through Square' }]]);
   });
 });
+
+import { billsByBucket, findBills, withBills } from './index';
+
+describe('bill forecasting', () => {
+  let n = 0;
+  const tx = (date: string, merchant: string, dollarsAmt: number, plaidCategory?: string) =>
+    ({ id: `b${n++}`, accountId: 'a', merchant, amount: Math.round(dollarsAmt * 100), date, pending: false, plaidCategory });
+  const txs = [
+    // Rent around the 1st, once sent early on the 30th.
+    tx('2026-07-01', 'Oak Apartments', 2000, 'RENT_AND_UTILITIES'), tx('2026-07-30', 'Oak Apartments', 2000, 'RENT_AND_UTILITIES'),
+    tx('2026-09-02', 'Oak Apartments', 2000, 'RENT_AND_UTILITIES'), tx('2026-10-01', 'Oak Apartments', 2000, 'RENT_AND_UTILITIES'),
+    // A phone bill that varies.
+    tx('2026-08-08', 'Phone Co', 248, 'RENT_AND_UTILITIES'), tx('2026-09-08', 'Phone Co', 278, 'RENT_AND_UTILITIES'), tx('2026-10-07', 'Phone Co', 250, 'RENT_AND_UTILITIES'),
+    // A store charging several times a month, with one monthly plan inside.
+    tx('2026-08-14', 'APPLE.COM/BILL', 9.99), tx('2026-08-20', 'APPLE.COM/BILL', 4.99), tx('2026-09-14', 'APPLE.COM/BILL', 9.99),
+    tx('2026-09-02', 'APPLE.COM/BILL', 85.95), tx('2026-10-14', 'APPLE.COM/BILL', 9.99), tx('2026-10-03', 'APPLE.COM/BILL', 5.36),
+    // Gas every month isn't a bill.
+    tx('2026-08-05', 'Shell', 40, 'TRANSPORTATION'), tx('2026-09-05', 'Shell', 42, 'TRANSPORTATION'), tx('2026-10-05', 'Shell', 41, 'TRANSPORTATION'),
+    // This month so far: rent paid early on Oct 30.
+    tx('2026-10-30', 'Oak Apartments', 2000, 'RENT_AND_UTILITIES'),
+  ];
+
+  it('finds rent, a varying bill and a fixed plan inside a busy store, but not gas', () => {
+    const bills = findBills(txs, '2026-11', 12);
+    expect(bills.map((b) => [b.vendor, b.status, b.dueDate])).toEqual([
+      ['Oak Apartments', 'paid', '2026-11-01'],
+      ['Phone Co', 'late', '2026-11-08'],
+      ['APPLE.COM/BILL', 'due', '2026-11-14'],
+    ]);
+    const phone = bills[1];
+    expect([phone.amount, phone.low, phone.high, phone.varies]).toEqual([25000, 24800, 27800, true]);
+    expect(bills[2].amount).toBe(999);
+  });
+
+  it('a payment on the 30th counts for the next month, so no month has two rents', () => {
+    const oct = findBills(txs.slice(0, -1), '2026-10', 20).find((b) => b.vendor === 'Oak Apartments')!;
+    expect(oct.paid?.date).toBe('2026-10-01');
+    // August was paid on Jul 30, so it isn't counted as a missed month.
+    expect(oct.months).toBe(4);
+  });
+
+  it('paces a bucket around its bills instead of treating rent as daily spending', () => {
+    const status = { bucket: { id: 'housing', name: 'Housing', icon: '', monthlyLimit: 180000, isCustom: false }, spent: 100000, remaining: 80000, ratio: 100000 / 180000, overBy: 0 };
+    const plain = bucketPace(status, 9, 30);
+    expect(plain.label).toBe('Over pace');
+    const bills = new Map([['housing', { paid: 100000, toCome: 0 }]]);
+    const paced = bucketPace(withBills([status], bills)[0], 9, 30);
+    expect(paced.projectedTotal).toBe(100000);
+    expect(paced.label).toBe('Under pace');
+    expect(billsByBucket([{ ...findBills(txs, '2026-11', 12)[0], bucketId: 'housing' }]).get('housing')).toEqual({ paid: 200000, toCome: 0 });
+  });
+});

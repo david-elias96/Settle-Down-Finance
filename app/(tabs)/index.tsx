@@ -1,6 +1,7 @@
 import { Link, router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { BillsCard } from '@/components/Bills';
 import { InsightsCard } from '@/components/Insights';
 import { SpendingTrend } from '@/components/SpendingTrend';
 import { WeeklyRecapCard } from '@/components/WeeklyRecap';
@@ -9,7 +10,7 @@ import { useBudget } from '@/src/data/BudgetStore';
 import { bucketPace, byAttention, daysInMonth, formatCents, paceTag, weeklyAllowance } from '@/src/domain';
 
 export default function BudgetScreen() {
-  const { statuses, impact, trend, forecast, month, today, insights, recap } = useBudget();
+  const { statuses, impact, trend, forecast, month, today, insights, recap, bills } = useBudget();
   const t = useTheme();
   const days = daysInMonth(month);
   const $ = (c: number) => formatCents(c, { showCents: false });
@@ -45,6 +46,8 @@ export default function BudgetScreen() {
           <PaceBar ratio={totalSpent / Math.max(1, totalLimit)} tone={outlook?.card.tone ?? 'good'} paceAt={today / days} />
         </View>
       </Section>
+
+      <BillsCard outlook={bills} />
 
       <Section title="Buckets">
         {byAttention(statuses, today, days).map((s, i, all) => {
