@@ -7,7 +7,7 @@ export type AnswerTone = 'good' | 'warn' | 'bad' | 'neutral';
 export interface AnswerRow {
   /** Bucket, store or item name, e.g. "Groceries". */
   label: string;
-  /** The key figure, e.g. "$569 of $700" or "Save ~$150". */
+  /** The key figure, e.g. "$569 of $700" or "Save $150". */
   value: string;
   /** Optional short line under the label (under ~60 characters). */
   detail?: string | null;
@@ -43,7 +43,7 @@ export const ASK_ANSWER_SCHEMA = {
         required: ['label', 'value', 'detail', 'tone', 'bucket'],
         properties: {
           label: { type: 'string', description: 'Bucket, store or item name, 1-3 words.' },
-          value: { type: 'string', description: 'The key figure, e.g. "$569 of $700", "Save ~$150", "$22.99/mo".' },
+          value: { type: 'string', description: 'The key figure, e.g. "$569 of $700", "Save $150", "$22.99/mo".' },
           detail: { type: ['string', 'null'], description: 'One short line of context, under 60 characters, or null.' },
           tone: { type: 'string', enum: ['good', 'warn', 'bad', 'neutral'], description: 'good = on track, warn = at risk, bad = over, neutral = info.' },
           bucket: { type: ['string', 'null'], description: 'Exact bucket name if the row is about a bucket, else null.' },

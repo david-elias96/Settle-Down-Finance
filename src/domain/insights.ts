@@ -31,11 +31,13 @@ export interface InsightCard {
   label: string;
   /** Status tag, 1-3 words: "Over budget", "Heading over". */
   tag: string;
-  /** The key number: "$275 / $250", "~$2,373". */
+  /** The key number: "$275 / $250", "$2,373". */
   figure: string;
   /** One short line of context. */
   note: string;
   tone: 'good' | 'warn' | 'bad';
+  /** For a projection: the likely range, with an optional reference point such as last month's total. */
+  range?: { low: Cents; mid: Cents; high: Cents; marker?: Cents; markerLabel?: string };
 }
 
 export interface InsightInput {

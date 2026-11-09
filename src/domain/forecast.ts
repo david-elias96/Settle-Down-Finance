@@ -166,12 +166,11 @@ export function projectionInsight(
     body: `${range}${compare}`.trim(),
     amount: mid,
     card: {
-      label: 'This month',
+      label: `Projected by ${new Date(`${month}-15T12:00:00Z`).toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })} ${daysInMonth(month)}`,
       tag: vsBudget > 0 ? 'Over budget pace' : vsLast > 0 ? `Above ${previousMonthName}` : 'On track',
-      figure: `~${short(mid)}`,
-      note: [high > low ? `Likely ${short(low)}–${short(high)}` : null,
-        vsBudget > 0 ? `${short(vsBudget)} over budget` : previousTotal > 0 ? `${short(previousTotal)} in ${previousMonthName}` : null]
-        .filter(Boolean).join(' · '),
+      figure: short(mid),
+      note: vsBudget > 0 ? `${short(vsBudget)} over your ${short(budgetTotal)} budget` : previousTotal > 0 ? `${short(previousTotal)} in ${previousMonthName}` : '',
+      range: high > low ? { low, mid, high, ...(previousTotal > 0 ? { marker: previousTotal, markerLabel: previousMonthName } : {}) } : undefined,
       tone: vsBudget > 0 ? 'bad' : vsLast > 0 ? 'warn' : 'good',
     },
   };

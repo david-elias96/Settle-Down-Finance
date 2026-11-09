@@ -64,7 +64,7 @@ export default function BudgetScreen() {
 
       {subs.length > 0 && (
         <Section title="Subscriptions">
-          <ListRow title={`${subs.length} subscriptions`} figure={`${formatCents(subsTotal)}/mo`} note="Review or cancel with Claude"
+          <ListRow title={`${subs.length} subscriptions`} figure={`${formatCents(subsTotal)}/mo`} note="Review recurring charges"
             leading={<View style={[styles.icon, { backgroundColor: t.track }]}>
               <SymbolView name={{ ios: 'arrow.triangle.2.circlepath', android: 'autorenew', web: 'autorenew' }} size={15} tintColor={t.secondaryText} />
             </View>}

@@ -141,6 +141,49 @@ export function PaceBar({ ratio, tone, paceAt }: { ratio: number; tone: Tone; pa
   );
 }
 
+/** Marks a feature powered by Claude. Decorative: the button's own label says what it does. */
+export function AiMark({ size = 14, color }: { size?: number; color?: string }) {
+  const t = useTheme();
+  return (
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <SymbolView name={{ ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' }} size={size} tintColor={color ?? t.tint} />
+    </View>
+  );
+}
+
+/**
+ * A likely range on one line: a bar from low to high, a dot at the most likely value,
+ * and an optional tick for a reference such as last month.
+ */
+export function RangeBar({ low, mid, high, marker, markerLabel, tone, format }: {
+  low: number; mid: number; high: number; marker?: number; markerLabel?: string; tone: Tone; format: (n: number) => string;
+}) {
+  const t = useTheme();
+  const min = Math.min(low, marker ?? low); const max = Math.max(high, marker ?? high);
+  const pad = (max - min) * 0.08 || 1;
+  const at = (v: number) => `${((v - (min - pad)) / (max - min + 2 * pad)) * 100}%` as const;
+  const c = toneColor(t, tone);
+  return (
+    <View style={{ gap: 6 }} accessible aria-label={`Likely between ${format(low)} and ${format(high)}${marker != null ? `. ${markerLabel ?? 'Reference'}: ${format(marker)}` : ''}`}>
+      <View style={{ height: 14, justifyContent: 'center' }}>
+        <View style={{ height: 4, borderRadius: 2, backgroundColor: t.track }} />
+        <View style={{ position: 'absolute', left: at(low), width: `${((high - low) / (max - min + 2 * pad)) * 100}%`, height: 8, borderRadius: 4, backgroundColor: `${c}55` }} />
+        {marker != null && <View style={{ position: 'absolute', left: at(marker), marginLeft: -1, width: 2, height: 14, borderRadius: 1, backgroundColor: t.secondaryText }} />}
+        <View style={{ position: 'absolute', left: at(mid), marginLeft: -6, width: 12, height: 12, borderRadius: 6, backgroundColor: c, borderWidth: 2, borderColor: t.card }} />
+      </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+        <Text style={{ color: t.secondaryText, fontSize: 12, fontVariant: ['tabular-nums'] }}>Likely {format(low)}–{format(high)}</Text>
+        {marker != null && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+            <View style={{ width: 2, height: 10, borderRadius: 1, backgroundColor: t.secondaryText }} />
+            <Text style={{ color: t.secondaryText, fontSize: 12, fontVariant: ['tabular-nums'] }}>{markerLabel} {format(marker)}</Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   listRow: { paddingVertical: 12, paddingHorizontal: 16 },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
