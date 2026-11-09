@@ -7,3 +7,4 @@ export * from './splits';
 export * from './savings';
 export * from './trend';
 export * from './pace';
+export * from './filters';

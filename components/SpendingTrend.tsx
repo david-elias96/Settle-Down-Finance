@@ -41,7 +41,6 @@ export function SpendingTrend({ trend, month }: { trend: MonthComparison; month:
   const previousPath = useMemo(() => path(trend.previous.slice(0, days)), [trend, width]);
 
   const last = trend.current.at(-1);
-  const prevLast = trend.previous.at(Math.min(days, trend.previous.length) - 1);
   const ticks = [0, 0.5, 1].map((f) => f * yMax);
 
   const onTouch = (e: GestureResponderEvent) => {
@@ -90,6 +89,11 @@ export function SpendingTrend({ trend, month }: { trend: MonthComparison; month:
             {ticks.map((v) => (
               <Line key={v} x1={PAD.left} x2={width - PAD.right} y1={y(v)} y2={y(v)} stroke={t.separator} strokeWidth={1} />
             ))}
+            {/* Solid benchmark: last month's full total. */}
+            {trend.previousTotal > 0 && (
+              <Line x1={PAD.left} x2={width - PAD.right} y1={y(trend.previousTotal)} y2={y(trend.previousTotal)}
+                stroke={t.secondaryText} strokeWidth={1.5} />
+            )}
             <Path d={previousPath} stroke={t.secondaryText} strokeWidth={2} strokeDasharray="5 4" fill="none" strokeLinejoin="round" strokeLinecap="round" />
             <Path d={currentPath} stroke={t.tint} strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
 
@@ -117,9 +121,9 @@ export function SpendingTrend({ trend, month }: { trend: MonthComparison; month:
             {`${monthName(month)} ${d}`}
           </Axis>
         ))}
-        {width > 0 && prevLast && activeDay == null && (
-          <Axis style={{ right: PAD.right, top: y(prevLast.cumulative) - 22, textAlign: 'right' }}>
-            {`${monthName(prevMonth)} total ${formatCents(prevLast.cumulative, { showCents: false })}`}
+        {width > 0 && trend.previousTotal > 0 && (
+          <Axis style={{ left: PAD.left + 4, top: y(trend.previousTotal) - 17 }}>
+            {`${monthName(prevMonth)} total ${formatCents(trend.previousTotal, { showCents: false })}`}
           </Axis>
         )}
       </View>

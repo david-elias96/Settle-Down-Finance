@@ -167,3 +167,43 @@ describe('bucketPace', () => {
     expect(textBar(1.4)).toBe('▰▰▰▰▰▰▰▰▰▰');
   });
 });
+
+import { filterTransactions, monthOptions, vendorKey, vendorOptions } from './index';
+
+describe('transaction filters', () => {
+  const tx = (id: string, merchant: string, amount: number, date: string): Transaction =>
+    ({ id, merchant, amount: dollars(amount), date, accountId: 'a', pending: false });
+  const txs = [
+    tx('1', 'Target', 142.37, '2026-11-03'), tx('2', 'TARGET ', 20, '2026-10-12'),
+    tx('3', 'Kroger', 80, '2026-11-02'), tx('4', 'Shell', 40, '2026-10-05'),
+  ];
+  const allocs: Allocation[] = [
+    { transactionId: '1', bucketId: 'groceries', amount: dollars(99.3), source: 'receipt' },
+    { transactionId: '1', bucketId: 'kids', amount: dollars(43.07), source: 'receipt' },
+    { transactionId: '2', bucketId: 'shopping', amount: dollars(20), source: 'auto' },
+    { transactionId: '3', bucketId: 'groceries', amount: dollars(80), source: 'auto' },
+    { transactionId: '4', bucketId: 'transport', amount: dollars(40), source: 'auto' },
+  ];
+
+  it('filters by month', () => {
+    const r = filterTransactions(txs, allocs, { month: '2026-11', bucketId: null, vendor: null });
+    expect(r.items.map((i) => i.tx.id)).toEqual(['1', '3']);
+    expect(r.total).toBe(dollars(222.37));
+  });
+  it('counts only the bucket share of split purchases', () => {
+    const r = filterTransactions(txs, allocs, { month: null, bucketId: 'groceries', vendor: null });
+    expect(r.items.map((i) => i.tx.id)).toEqual(['1', '3']);
+    expect(r.total).toBe(dollars(179.3));
+  });
+  it('groups vendor spellings and combines filters', () => {
+    const r = filterTransactions(txs, allocs, { month: null, bucketId: null, vendor: vendorKey('target') });
+    expect(r.items).toHaveLength(2);
+    expect(filterTransactions(txs, allocs, { month: '2026-10', bucketId: null, vendor: 'target' }).items.map((i) => i.tx.id)).toEqual(['2']);
+  });
+  it('builds vendor and month lists from the data', () => {
+    const v = vendorOptions(txs);
+    expect(v[0]).toMatchObject({ value: 'target', label: 'Target', count: 2 });
+    expect(v.map((o) => o.value)).toEqual(['target', 'kroger', 'shell']);
+    expect(monthOptions(txs).map((o) => o.value)).toEqual(['2026-11', '2026-10']);
+  });
+});
