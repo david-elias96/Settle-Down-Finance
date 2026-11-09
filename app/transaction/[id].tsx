@@ -1,6 +1,6 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Pressable, View } from 'react-native';
-import { Label, ListRow, Screen, Section, Tag, useTheme } from '@/components/ui';
+import { Label, ListRow, Screen, Section, Tag, useTheme, AiMark } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { dayHeading, formatCents } from '@/src/domain';
 
@@ -41,7 +41,10 @@ export default function TransactionScreen() {
       {parts.length <= 1 && (
         <Pressable onPress={() => router.push({ pathname: '/scan-receipt', params: { transactionId: tx.id } })} accessibilityRole="button"
           style={{ backgroundColor: t.card, borderRadius: 12, padding: 14, alignItems: 'center' }}>
-          <Label style={{ color: t.tint, fontSize: 17 }}>Scan receipt to split</Label>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <AiMark size={16} />
+            <Label style={{ color: t.tint, fontSize: 17 }}>Scan receipt to split</Label>
+          </View>
           <Label secondary style={{ fontSize: 13, marginTop: 2 }}>For mixed trips, like groceries + toys</Label>
         </Pressable>
       )}

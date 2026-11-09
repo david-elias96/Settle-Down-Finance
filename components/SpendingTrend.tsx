@@ -112,7 +112,7 @@ export function SpendingTrend({ trend, forecast, month }: { trend: MonthComparis
       {/* Readout for the day under the finger (defaults to today). */}
       <View style={{ flexDirection: 'row', gap: 16, minHeight: 18 }}>
         {proj ? (
-          <Legend color={t.tint} dotted label={`${monthName(month)} ${active}: ~${formatCents(proj.mid, { showCents: false })}`} />
+          <Legend color={t.tint} dotted label={`${monthName(month)} ${active} projected: ${formatCents(proj.mid, { showCents: false })}`} />
         ) : (
           <Legend color={t.tint} label={`${monthName(month)} ${active}: ${cur ? formatCents(cur.cumulative, { showCents: false }) : '–'}`} />
         )}

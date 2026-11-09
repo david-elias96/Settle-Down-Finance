@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Label, Section, useTheme } from '@/components/ui';
+import { AiMark, Label, RangeBar, Section, useTheme } from '@/components/ui';
+import { formatCents } from '@/src/domain';
 import type { Insight } from '@/src/domain';
 
 const ICON: Record<Insight['kind'], string> = {
@@ -10,11 +11,11 @@ const ICON: Record<Insight['kind'], string> = {
 const open = (i: Insight) =>
   i.kind === 'subscription_change' ? router.push('/subscriptions')
     : i.bucketId ? router.push({ pathname: '/bucket/[id]', params: { id: i.bucketId } })
-    : router.push('/ask');
+    : router.push('/activity');
 
 /**
  * Month-end outlook on top, then the top alerts as rows: name and one short line on the
- * left, the key number and a status tag on the right. Tapping opens the bucket.
+ * left, the key number and a status tag on the right. Tapping a row opens its bucket.
  */
 export function InsightsCard({ insights }: { insights: Insight[] }) {
   const t = useTheme();
@@ -33,14 +34,19 @@ export function InsightsCard({ insights }: { insights: Insight[] }) {
   return (
     <Section title="Insights">
       {outlook && (
-        <Pressable onPress={() => router.push('/ask')} accessibilityRole="button" style={[styles.outlook, { borderBottomColor: t.separator }]}>
-          <Label secondary style={{ fontSize: 13 }}>Month-end outlook</Label>
+        <View style={[styles.outlook, { borderBottomColor: t.separator }]}>
+          <Label secondary style={{ fontSize: 13 }}>{outlook.card.label}</Label>
           <View style={styles.between}>
             <Label style={{ fontSize: 28, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{outlook.card.figure}</Label>
             <Tag i={outlook} />
           </View>
-          <Label secondary style={{ fontSize: 13 }}>{outlook.card.note}</Label>
-        </Pressable>
+          {outlook.card.range && (
+            <View style={{ marginTop: 8 }}>
+              <RangeBar {...outlook.card.range} tone={outlook.card.tone} format={(n) => formatCents(n, { showCents: false })} />
+            </View>
+          )}
+          {outlook.card.note && !outlook.card.range?.marker ? <Label secondary style={{ fontSize: 13 }}>{outlook.card.note}</Label> : null}
+        </View>
       )}
 
       {alerts.map((i, n) => (
@@ -64,7 +70,10 @@ export function InsightsCard({ insights }: { insights: Insight[] }) {
 
       <Pressable onPress={() => router.push({ pathname: '/ask', params: { q: 'How can I cut my spending this month?' } })} accessibilityRole="button">
         <View style={{ paddingHorizontal: 16, paddingVertical: 13, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.separator }}>
-          <Label style={{ color: t.tint, fontSize: 15 }}>Ask how to cut spending this month →</Label>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <AiMark size={15} />
+            <Label style={{ color: t.tint, fontSize: 15 }}>Ask how to cut spending this month</Label>
+          </View>
         </View>
       </Pressable>
     </Section>

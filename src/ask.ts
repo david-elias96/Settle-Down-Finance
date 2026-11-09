@@ -66,7 +66,7 @@ function previewAnswer(q: string, ctx: PreviewContext): AskAnswer {
     return {
       headline: `You could save about ${short(total)} this month.`,
       rowsTitle: 'Biggest opportunities',
-      rows: top.map((i) => ({ label: i.label, value: `Save ~${short(i.saving)}`, detail: i.note,
+      rows: top.map((i) => ({ label: i.label, value: `Save ${short(i.saving)}`, detail: i.note,
         tone: i.title.startsWith('Slow') ? 'warn' : 'neutral', bucket: i.title.startsWith('Slow') ? nameOf(i.bucketId) : null })),
       tip: `Start with ${top[0].label}. It's the biggest saving.`,
     };
