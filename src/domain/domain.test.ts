@@ -378,3 +378,18 @@ describe('findSubscriptions', () => {
     expect(subs.map((s) => s.vendor)).toEqual(['Netflix', 'Amazon Prime']);
   });
 });
+
+describe('waysToCut', () => {
+  const b: Bucket = { id: 'dining', name: 'Dining Out', icon: 'x', monthlyLimit: dollars(300), isCustom: false };
+  const note = (spent: number, today: number) => {
+    const txs: Transaction[] = [{ id: '1', date: '2026-11-02', merchant: 'Cafe', amount: dollars(spent), accountId: 'a', pending: false }];
+    const allocs: Allocation[] = [{ transactionId: '1', bucketId: 'dining', amount: dollars(spent), source: 'auto' }];
+    const statuses = bucketStatuses([b], txs, allocs, '2026-11');
+    return waysToCut({ month: '2026-11', today, daysInMonth: 30, statuses, transactions: txs, allocations: allocs }, () => 'Dining Out')
+      .find((i) => i.label === 'Dining Out')?.note;
+  };
+  it('gives a weekly allowance, or the total left in the last week', () => {
+    expect(note(150, 9)).toBe('On pace for $500 of $300, keep to $50/week'); // $150 left over 21 days
+    expect(note(280, 25)).toBe('On pace for $336 of $300, $20 left for 5 days');
+  });
+});

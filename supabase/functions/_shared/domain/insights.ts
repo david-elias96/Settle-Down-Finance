@@ -210,17 +210,22 @@ export function waysToCut(input: InsightInput, bucketName: (id: string) => strin
     const pace = bucketPace(s, today, daysInMonth);
     const over = Math.max(s.overBy, pace.projectedTotal - s.bucket.monthlyLimit);
     if (over <= 0 || s.bucket.monthlyLimit <= 0) continue;
-    const perDay = Math.max(0, s.remaining) / Math.max(1, daysInMonth - today);
+    // Weekly is easier to plan around than a daily number. In the last week, give the total left instead.
+    const daysLeft = Math.max(1, daysInMonth - today);
+    const left = Math.max(0, s.remaining);
+    const allowance = daysLeft >= 7
+      ? { short: `keep to ${short((left / daysLeft) * 7)}/week`, long: `Keeping to about ${short((left / daysLeft) * 7)} a week stays within it.` }
+      : { short: `${short(left)} left for ${daysLeft} days`, long: `Keeping to ${short(left)} for the last ${daysLeft} days stays within it.` };
     ideas.push({
       label: s.bucket.name,
       bucketId: s.bucket.id,
       note: s.overBy > 0
         ? `${short(s.overBy)} over already, pause for the month`
-        : `On pace for ${short(pace.projectedTotal)} of ${short(s.bucket.monthlyLimit)}, keep to ${short(perDay)}/day`,
+        : `On pace for ${short(pace.projectedTotal)} of ${short(s.bucket.monthlyLimit)}, ${allowance.short}`,
       title: `Slow down on ${s.bucket.name}`,
       detail: s.overBy > 0
         ? `Already ${formatCents(s.overBy)} over. Pausing it for the rest of the month keeps the overage from growing.`
-        : `On pace for ${short(pace.projectedTotal)} against a ${short(s.bucket.monthlyLimit)} limit. Keeping to about ${short(perDay)} a day stays within it.`,
+        : `On pace for ${short(pace.projectedTotal)} against a ${short(s.bucket.monthlyLimit)} limit. ${allowance.long}`,
       saving: over,
     });
   }
