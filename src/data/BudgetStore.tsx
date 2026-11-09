@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { bucketStatuses, compareToLastMonth, forecastMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Allocation, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type Transaction } from '@/src/domain';
-import { demoAllocations, demoBuckets, demoGoals, demoTransactions } from './demo';
+import { bucketStatuses, compareToLastMonth, forecastMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type Transaction } from '@/src/domain';
+import { demoAccounts, demoAllocations, demoBuckets, demoGoals, demoMembers, demoTransactions } from './demo';
 
 /**
  * App state. Backed by demo data for now; will be swapped for Supabase queries
@@ -42,10 +42,22 @@ function useBudgetState() {
     setCredits((c) => ({ ...c, period: month, usedThisMonth: Math.max(0, c.allowance - left.monthly), extra: left.extra }));
   const addCreditPack = (n: number) => setCredits((c) => ({ ...c, extra: c.extra + n }));
 
+  // Household: members and the accounts each of them linked.
+  const [members] = useState<Member[]>(demoMembers);
+  const [accounts] = useState<Account[]>(demoAccounts);
+  const meId = 'me';
+  /** "Sam's Capital One ··9012", or "Your Chase ··5678". */
+  const accountLabel = (accountId: string) => {
+    const a = accounts.find((x) => x.id === accountId);
+    if (!a) return '';
+    const owner = a.ownerId === meId ? 'Your' : `${members.find((m) => m.id === a.ownerId)?.name ?? 'Family'}'s`;
+    return `${owner} ${a.institution}${a.mask ? ` ··${a.mask}` : ''}`;
+  };
+
   const addBucket = (name: string, monthlyLimit: number) =>
     setBuckets((bs) => [...bs, { id: `custom-${Date.now()}`, name, icon: 'star.fill', monthlyLimit, isCustom: true }]);
 
-  return { month, today, buckets, transactions, allocations, goals, statuses, impact, trend, forecast, insights, cutIdeas, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack };
+  return { month, today, buckets, transactions, allocations, goals, statuses, impact, trend, forecast, insights, cutIdeas, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack, members, accounts, meId, accountLabel };
 }
 
 type BudgetState = ReturnType<typeof useBudgetState>;

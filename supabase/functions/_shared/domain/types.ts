@@ -60,3 +60,19 @@ export interface MerchantRule {
   match: string;
   bucketId: string;
 }
+
+/** A person in the household. Everyone sees the shared budget; each links their own banks. */
+export interface Member {
+  id: string;
+  name: string;
+  role: 'owner' | 'member';
+}
+
+/** A linked bank account or card, and the member who linked it. */
+export interface Account {
+  id: string;
+  name: string;
+  institution: string;
+  mask?: string;
+  ownerId: string;
+}

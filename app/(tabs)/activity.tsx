@@ -11,7 +11,7 @@ import {
 type Picker = 'month' | 'bucket' | 'vendor' | null;
 
 export default function ActivityScreen() {
-  const { transactions, allocations, buckets, month: currentMonth } = useBudget();
+  const { transactions, allocations, buckets, month: currentMonth, accountLabel } = useBudget();
   const t = useTheme();
   const [filter, setFilter] = useState<TransactionFilter>({ ...NO_FILTER, month: currentMonth });
   const [open, setOpen] = useState<Picker>(null);
@@ -86,7 +86,7 @@ export default function ActivityScreen() {
           const isShare = amount !== tx.amount;
           return (
             <Row key={tx.id} title={tx.merchant}
-              subtitle={`${tx.date.slice(5)}${tx.pending ? ' · Pending' : ''} · ${subtitle}${isShare ? ` · of ${formatCents(tx.amount)}` : ''}`}
+              subtitle={`${tx.date.slice(5)}${tx.pending ? ' · Pending' : ''} · ${subtitle}${isShare ? ` · of ${formatCents(tx.amount)}` : ''}${accountLabel(tx.accountId) ? `\n${accountLabel(tx.accountId)}` : ''}`}
               right={<Label style={{ fontVariant: ['tabular-nums'] }}>{formatCents(amount)}</Label>} last={i === items.length - 1}>
               {parts.length <= 1 && !filter.bucketId && (
                 <Link href={{ pathname: '/scan-receipt', params: { transactionId: tx.id } }} asChild>

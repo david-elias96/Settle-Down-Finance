@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import { Link } from 'expo-router';
 import { Alert, Pressable } from 'react-native';
 import { Label, Row, Screen, Section, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
@@ -6,7 +7,7 @@ import { CREDIT_PACK, creditsResetLabel, daysInMonth, PLANS, transactionNotifica
 import { TRANSACTION_CATEGORY } from '@/src/notifications';
 
 export default function SettingsScreen() {
-  const { transactions, allocations, statuses, month, credits, creditBalance } = useBudget();
+  const { transactions, allocations, statuses, month, credits, creditBalance, members, accounts, meId } = useBudget();
   const t = useTheme();
 
   // Preview of the push the backend will send when Plaid reports a new transaction.
@@ -27,8 +28,28 @@ export default function SettingsScreen() {
 
   return (
     <Screen>
-      <Section title="Accounts" footer="Bank linking through Plaid arrives once the backend is set up. The app is showing sample data for now.">
-        <Row icon={{ ios: 'building.columns.fill', android: 'account_balance', web: 'account_balance' }} title="Link a bank account" subtitle="Coming soon" last />
+      <Section title="Household" footer="Everyone in the household shares the same buckets and goals, and everyone gets the transaction alerts.">
+        {members.map((m) => (
+          <Row key={m.id} icon={{ ios: 'person.crop.circle.fill', android: 'account_circle', web: 'account_circle' }}
+            title={m.id !== meId ? m.name : m.name === 'You' ? 'You' : `${m.name} (you)`}
+            subtitle={(() => { const n = accounts.filter((a) => a.ownerId === m.id).length; return `${m.role === 'owner' ? 'Owner' : 'Member'} · ${n} linked account${n === 1 ? '' : 's'}`; })()} />
+        ))}
+        <Link href="/invite" asChild>
+          <Pressable accessibilityRole="button">
+            <Row icon={{ ios: 'person.badge.plus', android: 'person_add', web: 'person_add' }} title="Invite a family member"
+              right={<Label style={{ color: t.tint }}>Invite</Label>} last />
+          </Pressable>
+        </Link>
+      </Section>
+      <Section title="Linked accounts" footer="Each person links their own banks from their own phone, so nobody shares a bank password. Bank linking through Plaid turns on with the first TestFlight build; the app shows sample data for now.">
+        {accounts.map((a) => {
+          const owner = members.find((m) => m.id === a.ownerId);
+          return (
+            <Row key={a.id} icon={{ ios: 'building.columns.fill', android: 'account_balance', web: 'account_balance' }}
+              title={`${a.institution} ${a.name}`} subtitle={`··${a.mask} · ${a.ownerId === meId ? 'You' : owner?.name ?? 'Family'}`} />
+          );
+        })}
+        <Row icon={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }} title="Link a bank account" subtitle="Coming with the TestFlight build" last />
       </Section>
       <Section title="Plan" footer={`Each Ask question or receipt scan uses 1 credit. Daily insights and the weekly summary are free. Monthly credits reset ${creditsResetLabel(month)}; extra packs (${CREDIT_PACK.credits} for ${CREDIT_PACK.price}) never expire.`}>
         <Row icon={{ ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' }} title="Settle Down" subtitle={`${PLANS.monthly.price} or ${PLANS.yearly.price}`} />

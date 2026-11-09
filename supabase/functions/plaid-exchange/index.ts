@@ -6,20 +6,21 @@ import { plaid, toCents } from '../_shared/plaid.ts';
 
 Deno.serve(handle(async (req) => {
   const { householdId, publicToken, institutionName } = await req.json();
-  await requireMember(req, householdId);
+  // Each family member links their own banks; record who, so the app can show it.
+  const { userId } = await requireMember(req, householdId);
 
   const { access_token, item_id } = await plaid('/item/public_token/exchange', { public_token: publicToken });
   const { data: secretId, error: vaultErr } = await admin.rpc('store_plaid_token', { token: access_token, label: `plaid:${item_id}` });
   if (vaultErr) throw vaultErr;
 
   const { data: item, error } = await admin.from('plaid_items')
-    .insert({ household_id: householdId, plaid_item_id: item_id, access_token_secret_id: secretId, institution_name: institutionName })
+    .insert({ household_id: householdId, plaid_item_id: item_id, access_token_secret_id: secretId, institution_name: institutionName, linked_by: userId })
     .select('id').single();
   if (error) throw error;
 
   const { accounts } = await plaid('/accounts/get', { access_token });
   await admin.from('accounts').insert(accounts.map((a: any) => ({
-    household_id: householdId, plaid_item_id: item.id, plaid_account_id: a.account_id,
+    household_id: householdId, plaid_item_id: item.id, plaid_account_id: a.account_id, owner_user_id: userId,
     name: a.official_name ?? a.name, mask: a.mask, type: a.type, subtype: a.subtype,
     backs_savings_goals: a.subtype === 'savings',
     current_balance: a.balances.current == null ? null : toCents(a.balances.current),
