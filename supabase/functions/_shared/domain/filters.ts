@@ -86,3 +86,19 @@ export function vendorOptions(transactions: Transaction[]): Option[] {
 export function monthLabel(month: Month) {
   return new Date(`${month}-15T12:00:00Z`).toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 }
+
+export interface StoreSummary { store: string; visits: number; total: Cents; lastDate: string }
+
+/** Stores ranked by number of purchases ("visits") or by money spent, optionally within some months. */
+export function topStores(transactions: Transaction[], { months, by = 'visits', limit = 5 }: { months?: Month[]; by?: 'visits' | 'spend'; limit?: number } = {}): StoreSummary[] {
+  const txs = transactions.filter((t) => t.amount > 0 && (!months?.length || months.includes(t.date.slice(0, 7))));
+  const last = new Map<string, string>();
+  for (const t of txs) {
+    const k = vendorKey(t.merchant);
+    if ((last.get(k) ?? '') < t.date) last.set(k, t.date);
+  }
+  return vendorOptions(txs)
+    .map((o) => ({ store: o.label, visits: o.count, total: o.total, lastDate: last.get(o.value) ?? '' }))
+    .sort((a, b) => (by === 'visits' ? b.visits - a.visits || b.total - a.total : b.total - a.total))
+    .slice(0, limit);
+}

@@ -6,7 +6,7 @@ import { handle, HttpError, json, requireMember } from '../_shared/supabase.ts';
 import { loadHousehold, type HouseholdData } from '../_shared/household.ts';
 import { chargeCredits } from '../_shared/credits.ts';
 import {
-  ASK_ANSWER_SCHEMA, bucketPace, filterTransactions, type AskAnswer, findInsights, findSubscriptions, formatCents, monthLabel, vendorKey, waysToCut,
+  ASK_ANSWER_SCHEMA, topStores, bucketPace, filterTransactions, type AskAnswer, findInsights, findSubscriptions, formatCents, monthLabel, vendorKey, waysToCut,
 } from '../_shared/domain/index.ts';
 
 const client = new Anthropic();
@@ -53,6 +53,19 @@ const tools: Anthropic.Beta.BetaTool[] = [
     },
   },
   {
+    name: 'get_top_stores',
+    description: 'Stores ranked by number of purchases (visits) or by total spent. Use for "where do I go most", "most visited place", "which store do I spend the most at".',
+    input_schema: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        months: { type: 'array', items: { type: 'string', description: 'YYYY-MM' }, description: 'Months to include; omit for all loaded months (about 4).' },
+        sort_by: { type: 'string', enum: ['visits', 'spend'] },
+        limit: { type: 'integer', description: 'How many stores (default 5, max 15).' },
+      },
+    },
+  },
+  {
     name: 'get_monthly_totals',
     description: 'Spending per bucket for each loaded month, to compare months or spot trends.',
     input_schema: { type: 'object', properties: {}, additionalProperties: false },
@@ -79,6 +92,11 @@ function runTool(name: string, input: Record<string, unknown>, h: HouseholdData)
       return findInsights(h).map(({ title, body, kind }) => ({ kind, title, body }));
     case 'get_subscriptions':
       return findSubscriptions(h.transactions).map((s) => ({ store: s.vendor, amount: $(s.amount), previous: $(s.previousAmount), last_charged: s.lastDate }));
+    case 'get_top_stores':
+      return topStores(h.transactions, {
+        months: input.months as string[] | undefined, by: input.sort_by === 'spend' ? 'spend' : 'visits',
+        limit: Math.min(15, Number(input.limit ?? 5)),
+      }).map((x) => ({ store: x.store, visits: x.visits, total: $(x.total), last_visit: x.lastDate }));
     case 'get_monthly_totals': {
       const out: Record<string, Record<string, string>> = {};
       const sums = new Map<string, Map<string, number>>();

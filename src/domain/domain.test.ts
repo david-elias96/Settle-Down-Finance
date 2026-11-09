@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  bucketStatuses, cancelRoute, categorize, forecastMonth, isAllowedUrl, isSensitiveField, redactText, projectionInsight, creditsLeft, creditsResetLabel, spendCredits, type CreditState, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
+  bucketStatuses, topStores, cancelRoute, categorize, forecastMonth, isAllowedUrl, isSensitiveField, redactText, projectionInsight, creditsLeft, creditsResetLabel, spendCredits, type CreditState, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
   transactionNotification, type Allocation, type Bucket, type SavingsGoal, type Transaction,
 } from './index';
 
@@ -391,5 +391,16 @@ describe('waysToCut', () => {
   it('gives a weekly allowance, or the total left in the last week', () => {
     expect(note(150, 9)).toBe('On pace for $500 of $300, keep to $50/week'); // $150 left over 21 days
     expect(note(280, 25)).toBe('On pace for $336 of $300, $20 left for 5 days');
+  });
+});
+
+describe('topStores', () => {
+  const t = (id: string, merchant: string, date: string, amount: number): Transaction => ({ id, merchant, date, amount: dollars(amount), accountId: 'a', pending: false });
+  const txs = [t('1', 'Chipotle', '2026-11-02', 12), t('2', 'CHIPOTLE ', '2026-11-05', 14), t('3', 'Chipotle', '2026-11-08', 11),
+    t('4', 'Costco', '2026-11-03', 250), t('5', 'Chipotle', '2026-10-20', 13), t('6', 'Refund Co', '2026-11-04', -20)];
+  it('ranks by visits or spend within the chosen months', () => {
+    expect(topStores(txs, { months: ['2026-11'] })[0]).toEqual({ store: 'Chipotle', visits: 3, total: dollars(37), lastDate: '2026-11-08' });
+    expect(topStores(txs, { months: ['2026-11'], by: 'spend' })[0].store).toBe('Costco');
+    expect(topStores(txs)[0].visits).toBe(4);
   });
 });

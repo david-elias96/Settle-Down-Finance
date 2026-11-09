@@ -1,4 +1,4 @@
-import { answerToText, bucketPace, daysInMonth, findSubscriptions, formatCents, type AskAnswer, type BucketStatus, type CutIdea, type Transaction } from '@/src/domain';
+import { answerToText, bucketPace, previousMonth, topStores, daysInMonth, findSubscriptions, formatCents, type AskAnswer, type BucketStatus, type CutIdea, type Transaction } from '@/src/domain';
 
 export interface ChatTurn {
   role: 'user' | 'assistant';
@@ -81,6 +81,26 @@ function previewAnswer(q: string, ctx: PreviewContext): AskAnswer {
         detail: x.amount > x.previousAmount ? `Up from ${formatCents(x.previousAmount)}` : null,
         tone: x.amount > x.previousAmount ? 'warn' : 'neutral' })),
       tip: 'Settings → Subscriptions can cancel one for you.',
+    };
+  }
+  if (/store|shop|location|place|visit|vendor|merchant|restaurant|went|go to|eat at/.test(text)) {
+    const byVisits = !/spend|spent|money|cost|dollar|\$/.test(text) || /visit|often|times|went|go to/.test(text);
+    // This month and last, so there's enough history to show a pattern.
+    const months = [previousMonth(ctx.month), ctx.month];
+    const stores = topStores(ctx.transactions, { months, by: byVisits ? 'visits' : 'spend', limit: 5 });
+    if (!stores.length) return { headline: 'No purchases yet.', rows: [] };
+    const top = stores[0];
+    const tied = byVisits && stores[1]?.visits === top.visits;
+    return {
+      headline: tied
+        ? `${top.store} and ${stores[1].store} are tied for most visited, ${top.visits} times each.`
+        : byVisits
+          ? `You go to ${top.store} the most: ${top.visits} visit${top.visits > 1 ? 's' : ''} in the last two months.`
+          : `You spend the most at ${top.store}: ${short(top.total)} in the last two months.`,
+      rowsTitle: byVisits ? 'Most visited, last two months' : 'Top stores by spending, last two months',
+      rows: stores.map((x) => ({ label: x.store, value: byVisits ? `${x.visits} visit${x.visits > 1 ? 's' : ''}` : short(x.total),
+        detail: byVisits ? `${short(x.total)} total · last ${x.lastDate.slice(5)}` : `${x.visits} visit${x.visits > 1 ? 's' : ''} · last ${x.lastDate.slice(5)}`, tone: 'neutral' })),
+      tip: 'Activity → All vendors shows every purchase at a store.',
     };
   }
   if (/where|most|biggest|top/.test(text)) {
