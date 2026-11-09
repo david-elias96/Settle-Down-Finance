@@ -143,6 +143,20 @@ export interface Subscription {
   amount: Cents;
   previousAmount: Cents;
   lastDate: string;
+  /** First charge seen and how many monthly charges so far, for "since Mar · $180 so far". */
+  firstDate: string;
+  charges: number;
+  paidSoFar: Cents;
+  /** When the next charge is expected: the same day next month. */
+  nextDate: string;
+}
+
+/** The same day next month, clamped to the month's length ("2026-01-31" → "2026-02-28"). */
+export function nextMonthlyDate(date: string): string {
+  const [y, m, d] = date.split('-').map(Number);
+  const ny = m === 12 ? y + 1 : y; const nm = m === 12 ? 1 : m + 1;
+  const last = new Date(Date.UTC(ny, nm, 0)).getUTCDate();
+  return `${ny}-${String(nm).padStart(2, '0')}-${String(Math.min(d, last)).padStart(2, '0')}`;
 }
 
 /**
@@ -170,7 +184,14 @@ export function findSubscriptions(transactions: Transaction[]): Subscription[] {
     const gapMonths = monthIndex(last.date) - monthIndex(prev.date);
     if (gapMonths !== 1) continue;
     if (Math.abs(last.amount - prev.amount) > prev.amount * 0.15) continue;
-    subs.push({ vendor: last.merchant.trim(), amount: last.amount, previousAmount: prev.amount, lastDate: last.date });
+    // Count back through the unbroken run of monthly charges.
+    let start = sorted.length - 1;
+    while (start > 0 && monthIndex(sorted[start].date) - monthIndex(sorted[start - 1].date) === 1) start--;
+    const run = sorted.slice(start);
+    subs.push({
+      vendor: last.merchant.trim(), amount: last.amount, previousAmount: prev.amount, lastDate: last.date,
+      firstDate: run[0].date, charges: run.length, paidSoFar: run.reduce((s, t) => s + t.amount, 0), nextDate: nextMonthlyDate(last.date),
+    });
   }
   return subs.sort((a, b) => b.amount - a.amount);
 }

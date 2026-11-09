@@ -5,7 +5,7 @@ import { InsightsCard } from '@/components/Insights';
 import { SpendingTrend } from '@/components/SpendingTrend';
 import { Label, ListRow, PaceBar, Screen, Section, Tag, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
-import { bucketPace, byAttention, daysInMonth, findSubscriptions, formatCents, paceTag, weeklyAllowance } from '@/src/domain';
+import { bucketPace, byAttention, daysInMonth, formatCents, paceTag, weeklyAllowance } from '@/src/domain';
 
 export default function BudgetScreen() {
   const { statuses, impact, trend, forecast, month, today, insights, transactions } = useBudget();
@@ -18,8 +18,6 @@ export default function BudgetScreen() {
   const outlook = insights.find((i) => i.kind === 'month_projection');
   const daysLeft = Math.max(1, days - today);
   const weeklyLeft = Math.max(0, totalLimit - totalSpent) / daysLeft * 7;
-  const subs = findSubscriptions(transactions);
-  const subsTotal = subs.reduce((s, x) => s + x.amount, 0);
 
   return (
     <Screen>
@@ -62,15 +60,6 @@ export default function BudgetScreen() {
         })}
       </Section>
 
-      {subs.length > 0 && (
-        <Section title="Subscriptions">
-          <ListRow title={`${subs.length} subscriptions`} figure={`${formatCents(subsTotal)}/mo`} note="Review recurring charges"
-            leading={<View style={[styles.icon, { backgroundColor: t.track }]}>
-              <SymbolView name={{ ios: 'arrow.triangle.2.circlepath', android: 'autorenew', web: 'autorenew' }} size={15} tintColor={t.secondaryText} />
-            </View>}
-            onPress={() => router.push('/subscriptions')} last />
-        </Section>
-      )}
 
       <Link href="/new-bucket" asChild>
         <Pressable accessibilityRole="button"><Label style={{ color: t.tint, fontSize: 17, textAlign: 'center' }}>Add custom bucket</Label></Pressable>

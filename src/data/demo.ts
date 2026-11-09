@@ -33,6 +33,9 @@ const thisMonthTransactions: Transaction[] = [
   { id: 't6', accountId: 'cc', merchant: 'Olive Garden', amount: dollars(96.2), date: d(7), pending: false, plaidCategory: 'FOOD_AND_DRINK' },
   { id: 't7', accountId: 'cc', merchant: 'Netflix', amount: dollars(22.99), date: d(7), pending: false, plaidCategory: 'ENTERTAINMENT' },
   { id: 't9', accountId: 'cc', merchant: 'Adobe', amount: dollars(32.99), date: d(8), pending: false, plaidCategory: 'ENTERTAINMENT' },
+  { id: 't10', accountId: 'cc', merchant: 'Spotify', amount: dollars(11.99), date: d(3), pending: false, plaidCategory: 'ENTERTAINMENT' },
+  { id: 't11', accountId: 'partner-cc', merchant: 'Planet Fitness', amount: dollars(24.99), date: d(5), pending: false, plaidCategory: 'PERSONAL_CARE' },
+  { id: 't12', accountId: 'cc', merchant: 'APPLE.COM/BILL', amount: dollars(2.99), date: d(6), pending: false, plaidCategory: 'GENERAL_SERVICES' },
   { id: 't8', accountId: 'cc', merchant: 'DoorDash', amount: dollars(141.3), date: d(8), pending: true, plaidCategory: 'FOOD_AND_DRINK' },
 ];
 
@@ -45,14 +48,14 @@ const lastMonthPlan: [number, string, number, string][] = [
   [14, 'Kroger', 131.75, 'FOOD_AND_DRINK_GROCERIES'], [15, 'Topgolf', 64, ''], [16, 'Chevron', 45.3, ''],
   [18, 'Amazon', 59.99, ''], [19, 'Dunkin', 9.4, ''], [21, 'Costco', 212.4, ''], [22, 'Cinemark', 31.5, ''],
   [24, 'Maverik', 49.9, ''], [25, 'DoorDash', 38.6, ''], [26, 'REI', 89.95, ''], [28, 'Kroger', 104.2, 'FOOD_AND_DRINK_GROCERIES'],
-  [29, 'Shell', 51.1, ''], [30, 'Chipotle', 27.3, ''], [1, 'Maple Court Apartments', 3000, ''],
+  [29, 'Shell', 51.1, ''], [30, 'Chipotle', 27.3, ''], [1, 'Maple Court Apartments', 3000, ''], [3, 'Spotify', 10.99, ''], [5, 'Planet Fitness', 24.99, ''], [6, 'APPLE.COM/BILL', 2.99, ''], [20, 'Disney Plus', 13.99, ''],
 ];
 const plaidPrimary: Record<string, string> = {
   Shell: 'TRANSPORTATION', Maverik: 'TRANSPORTATION', Chevron: 'TRANSPORTATION', Chipotle: 'FOOD_AND_DRINK',
   'Jersey Mikes': 'FOOD_AND_DRINK', 'Olive Garden': 'FOOD_AND_DRINK', Dunkin: 'FOOD_AND_DRINK', DoorDash: 'FOOD_AND_DRINK',
   Netflix: 'ENTERTAINMENT', Adobe: 'ENTERTAINMENT', Topgolf: 'ENTERTAINMENT', Cinemark: 'ENTERTAINMENT', 'Home Depot': 'GENERAL_MERCHANDISE',
   Target: 'GENERAL_MERCHANDISE', Amazon: 'GENERAL_MERCHANDISE', REI: 'GENERAL_MERCHANDISE', Costco: 'GENERAL_MERCHANDISE',
-  Kroger: 'FOOD_AND_DRINK', Smiths: 'FOOD_AND_DRINK', 'Maple Court Apartments': 'RENT_AND_UTILITIES',
+  Kroger: 'FOOD_AND_DRINK', Smiths: 'FOOD_AND_DRINK', 'Maple Court Apartments': 'RENT_AND_UTILITIES', Spotify: 'ENTERTAINMENT', 'Planet Fitness': 'PERSONAL_CARE', 'APPLE.COM/BILL': 'GENERAL_SERVICES', 'Disney Plus': 'ENTERTAINMENT',
 };
 const lastMonthTransactions: Transaction[] = lastMonthPlan
   .filter(([day]) => day <= daysInMonth(prev))

@@ -14,7 +14,7 @@ export default function JoinScreen() {
 
   const join = () => {
     Alert.alert('Preview', 'Joining a household turns on once sign-in is connected. Next you would link your own bank accounts.');
-    router.replace('/(tabs)/settings');
+    router.replace('/settings');
   };
 
   return (
