@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { ActivitySummary, type SummaryData } from '@/components/ActivitySummary';
 import { SymbolView } from 'expo-symbols';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -32,6 +33,13 @@ export default function ActivityScreen() {
     }).filter((o) => o.count > 0);
   }, [transactions, allocations, buckets, filter]);
 
+  const summary = useMemo<SummaryData>(() => {
+    const monthName = filter.month ? monthLabel(filter.month).replace(` ${todayIso.slice(0, 4)}`, '') : null;
+    const who = filter.vendor ? `At ${vendors.find((v) => v.value === filter.vendor)?.label ?? filter.vendor}` : filter.bucketId ? bucketName(filter.bucketId) : 'Spent';
+    const scope = monthName ? `${who} in ${monthName}` : `${who}, all time`;
+    return { scope, count: items.length, total };
+  }, [items, total, filter, vendors, buckets]);
+
   const set = (patch: Partial<TransactionFilter>) => { setFilter((f) => ({ ...f, ...patch })); setOpen(null); setSearch(''); };
   const vendorLabel = vendors.find((v) => v.value === filter.vendor)?.label ?? filter.vendor;
   const active = filter.month !== null || filter.bucketId !== null || filter.vendor !== null;
@@ -47,6 +55,7 @@ export default function ActivityScreen() {
 
   return (
     <Screen>
+      <ActivitySummary data={summary} />
       <View style={{ gap: 10 }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           <Chip label={filter.month ? shortMonth(filter.month) : 'All months'} active={filter.month !== null} open={open === 'month'} onPress={() => setOpen(open === 'month' ? null : 'month')} />
@@ -77,10 +86,6 @@ export default function ActivityScreen() {
         </Section>
       )}
 
-      <View accessible accessibilityRole="header" style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: -8 }}>
-        <Label style={{ fontSize: 22, fontWeight: '700' }}>{items.length} purchase{items.length === 1 ? '' : 's'}</Label>
-        <Label style={{ fontSize: 22, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatCents(total, { showCents: false })}</Label>
-      </View>
       {items.length === 0 && <Section><Row title="No purchases match these filters" last /></Section>}
       {groupByDay(items).map(([date, group]) => (
         <Section key={date} title={dayHeading(date, todayIso)}>
