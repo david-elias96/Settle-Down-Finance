@@ -7,6 +7,13 @@ export interface ChatTurn {
   preview?: boolean;
 }
 
+export type CreditsLeft = { monthly: number; extra: number; total: number };
+
+/** Thrown when the household has no AI credits left this month. */
+export class OutOfCreditsError extends Error {
+  constructor(public credits?: CreditsLeft) { super('out_of_credits'); }
+}
+
 /** Set EXPO_PUBLIC_SUPABASE_URL to send questions to the `ask` backend function. */
 const API = process.env.EXPO_PUBLIC_SUPABASE_URL;
 
@@ -21,7 +28,7 @@ export async function ask(
   question: string,
   history: ChatTurn[],
   ctx: { householdId?: string; accessToken?: string; statuses: BucketStatus[]; cutIdeas: CutIdea[]; month: string; today: number },
-): Promise<ChatTurn> {
+): Promise<ChatTurn & { credits?: CreditsLeft }> {
   if (API && ctx.householdId && ctx.accessToken) {
     const res = await fetch(`${API}/functions/v1/ask`, {
       method: 'POST',
@@ -29,8 +36,9 @@ export async function ask(
       body: JSON.stringify({ householdId: ctx.householdId, question, history: history.map(({ role, text }) => ({ role, text })) }),
     });
     const data = await res.json();
+    if (res.status === 402) throw new OutOfCreditsError(data.credits);
     if (!res.ok) throw new Error(data.error ?? 'Something went wrong');
-    return { role: 'assistant', text: data.answer };
+    return { role: 'assistant', text: data.answer, credits: data.credits };
   }
   return { role: 'assistant', text: previewAnswer(question, ctx), preview: true };
 }

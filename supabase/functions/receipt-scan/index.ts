@@ -3,6 +3,7 @@
 // (using splitByReceipt so tax/discounts are spread and totals match the bank charge).
 import Anthropic from '@anthropic-ai/sdk';
 import { admin, handle, HttpError, json, requireMember } from '../_shared/supabase.ts';
+import { chargeCredits } from '../_shared/credits.ts';
 
 const client = new Anthropic(); // reads ANTHROPIC_API_KEY
 
@@ -34,8 +35,24 @@ type Scan = { merchant: string; date: string | null; total: number; items: { des
 
 Deno.serve(handle(async (req) => {
   const { householdId, imageBase64, mediaType = 'image/jpeg', transactionId } = await req.json();
+  if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mediaType)) throw new HttpError(400, 'Unsupported image type');
   await requireMember(req, householdId);
   if (!imageBase64) throw new HttpError(400, 'imageBase64 is required');
+
+  // One credit per scan, refunded if the receipt can't be read.
+  const credit = await chargeCredits(householdId, 'receipt_scan', crypto.randomUUID());
+  try {
+    return json({ ...(await scanReceipt(householdId, imageBase64, mediaType, transactionId)), credits: credit.left });
+  } catch (e) {
+    const credits = await credit.refund();
+    if (e instanceof HttpError) throw new HttpError(e.status, e.message, { credits });
+    throw e;
+  }
+}));
+
+type ImageType = 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+
+async function scanReceipt(householdId: string, imageBase64: string, mediaType: ImageType, transactionId?: string) {
 
   const [{ data: buckets }, { data: rules }] = await Promise.all([
     admin.from('buckets').select('id, name').eq('household_id', householdId).eq('archived', false),
@@ -84,5 +101,5 @@ Deno.serve(handle(async (req) => {
   }));
   await admin.from('receipt_lines').insert(lines);
 
-  return json({ receiptId: receipt.id, merchant: scan.merchant, date: scan.date, total: toCents(scan.total), lines, merchantRules: rules ?? [] });
-}));
+  return { receiptId: receipt.id, merchant: scan.merchant, date: scan.date, total: toCents(scan.total), lines, merchantRules: rules ?? [] };
+}

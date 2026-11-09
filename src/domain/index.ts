@@ -9,3 +9,4 @@ export * from './trend';
 export * from './pace';
 export * from './filters';
 export * from './insights';
+export * from './credits';

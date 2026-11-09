@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  bucketStatuses, categorize, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
+  bucketStatuses, categorize, creditsLeft, creditsResetLabel, spendCredits, type CreditState, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
   transactionNotification, type Allocation, type Bucket, type SavingsGoal, type Transaction,
 } from './index';
 
@@ -247,5 +247,31 @@ describe('insights', () => {
     const ideas = waysToCut(input, (id) => id);
     expect(ideas[0].title).toBe('Slow down on Dining');
     expect(ideas.some((i) => i.title.startsWith('Review 2 subscriptions'))).toBe(true);
+  });
+});
+
+describe('credits', () => {
+  const start: CreditState = { period: '2026-11', allowance: 40, usedThisMonth: 39, extra: 2 };
+
+  it('uses the monthly allowance before purchased credits', () => {
+    const a = spendCredits(start, '2026-11', 1)!;
+    expect(creditsLeft(a, '2026-11')).toEqual({ monthly: 0, extra: 2, total: 2 });
+    const b = spendCredits(a, '2026-11', 1)!;
+    expect(creditsLeft(b, '2026-11')).toEqual({ monthly: 0, extra: 1, total: 1 });
+  });
+
+  it('refuses when out of credits', () => {
+    expect(spendCredits({ ...start, usedThisMonth: 40, extra: 0 }, '2026-11', 1)).toBeNull();
+  });
+
+  it('resets the allowance in a new month but keeps purchased credits', () => {
+    const s = { ...start, usedThisMonth: 40 };
+    expect(creditsLeft(s, '2026-12')).toEqual({ monthly: 40, extra: 2, total: 42 });
+    expect(spendCredits(s, '2026-12', 1)).toEqual({ period: '2026-12', allowance: 40, usedThisMonth: 1, extra: 2 });
+  });
+
+  it('labels the reset date', () => {
+    expect(creditsResetLabel('2026-11')).toBe('Dec 1');
+    expect(creditsResetLabel('2026-12')).toBe('Jan 1');
   });
 });

@@ -23,7 +23,7 @@ export async function requireMember(req: Request, householdId: string): Promise<
 }
 
 export class HttpError extends Error {
-  constructor(public status: number, message: string) { super(message); }
+  constructor(public status: number, message: string, public extra: Record<string, unknown> = {}) { super(message); }
 }
 
 export function handle(fn: (req: Request) => Promise<Response>) {
@@ -31,7 +31,7 @@ export function handle(fn: (req: Request) => Promise<Response>) {
     try {
       return await fn(req);
     } catch (e) {
-      if (e instanceof HttpError) return json({ error: e.message }, e.status);
+      if (e instanceof HttpError) return json({ error: e.message, ...e.extra }, e.status);
       console.error(e);
       return json({ error: 'Internal error' }, 500);
     }

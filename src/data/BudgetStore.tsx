@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { bucketStatuses, compareToLastMonth, daysInMonth, findInsights, overspendImpact, waysToCut, type Allocation, type Bucket, type SavingsGoal, type Transaction } from '@/src/domain';
+import { bucketStatuses, compareToLastMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Allocation, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type Transaction } from '@/src/domain';
 import { demoAllocations, demoBuckets, demoGoals, demoTransactions } from './demo';
 
 /**
@@ -27,10 +27,24 @@ function useBudgetState() {
   );
   const trend = useMemo(() => compareToLastMonth(transactions, allocations, month, today), [transactions, allocations, month, today]);
 
+  // AI credits. Kept on the phone for the preview; the backend is the source of truth once connected.
+  const [credits, setCredits] = useState<CreditState>({ period: month, allowance: PLANS.monthly.monthlyCredits, usedThisMonth: 6, extra: 0 });
+  const creditBalance = creditsLeft(credits, month);
+  /** Spends credits for an AI action; false when there aren't enough. */
+  const useCredits = (reason: CreditReason) => {
+    const next = spendCredits(credits, month, CREDIT_COST[reason]);
+    if (next) setCredits(next);
+    return next !== null;
+  };
+  /** Mirrors the balance the backend returns with each answer. */
+  const syncCredits = (left: { monthly: number; extra: number }) =>
+    setCredits((c) => ({ ...c, period: month, usedThisMonth: Math.max(0, c.allowance - left.monthly), extra: left.extra }));
+  const addCreditPack = (n: number) => setCredits((c) => ({ ...c, extra: c.extra + n }));
+
   const addBucket = (name: string, monthlyLimit: number) =>
     setBuckets((bs) => [...bs, { id: `custom-${Date.now()}`, name, icon: 'star.fill', monthlyLimit, isCustom: true }]);
 
-  return { month, today, buckets, transactions, allocations, goals, statuses, impact, trend, insights, cutIdeas, addBucket };
+  return { month, today, buckets, transactions, allocations, goals, statuses, impact, trend, insights, cutIdeas, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack };
 }
 
 type BudgetState = ReturnType<typeof useBudgetState>;

@@ -4,6 +4,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { handle, HttpError, json, requireMember } from '../_shared/supabase.ts';
 import { loadHousehold, type HouseholdData } from '../_shared/household.ts';
+import { chargeCredits } from '../_shared/credits.ts';
 import {
   bucketPace, filterTransactions, findInsights, findSubscriptions, formatCents, monthLabel, vendorKey, waysToCut,
 } from '../_shared/domain/index.ts';
@@ -118,6 +119,18 @@ Deno.serve(handle(async (req) => {
   if (typeof question !== 'string' || !question.trim()) throw new HttpError(400, 'question is required');
   if (question.length > 1000) throw new HttpError(400, 'Question is too long');
 
+  // One credit per question, charged up front and refunded if no answer comes back.
+  const credit = await chargeCredits(householdId, 'ask', crypto.randomUUID());
+  try {
+    return json({ answer: await answer(householdId, question, history), credits: credit.left });
+  } catch (e) {
+    const credits = await credit.refund();
+    if (e instanceof HttpError) throw new HttpError(e.status, e.message, { credits });
+    throw e;
+  }
+}));
+
+async function answer(householdId: string, question: string, history: unknown[]): Promise<string> {
   const h = await loadHousehold(householdId);
   // Earlier turns are passed back as plain text so follow-ups ("what about last month?") work.
   const messages: Anthropic.Beta.BetaMessageParam[] = [
@@ -137,10 +150,9 @@ Deno.serve(handle(async (req) => {
       messages,
     });
 
-    if (response.stop_reason === 'refusal') return json({ answer: "Sorry, I can't help with that one. Try asking about your spending or budget." });
+    if (response.stop_reason === 'refusal') return "Sorry, I can't help with that one. Try asking about your spending or budget.";
     if (response.stop_reason !== 'tool_use') {
-      const answer = response.content.filter((b) => b.type === 'text').map((b) => (b as { text: string }).text).join('\n').trim();
-      return json({ answer });
+      return response.content.filter((b) => b.type === 'text').map((b) => (b as { text: string }).text).join('\n').trim();
     }
 
     messages.push({ role: 'assistant', content: response.content });
@@ -149,5 +161,5 @@ Deno.serve(handle(async (req) => {
       .map((b) => ({ type: 'tool_result', tool_use_id: b.id, content: JSON.stringify(runTool(b.name, b.input as Record<string, unknown>, h)) }));
     messages.push({ role: 'user', content: results });
   }
-  return json({ answer: 'That question needed more steps than I can take at once. Try asking something narrower.' });
-}));
+  return 'That question needed more steps than I can take at once. Try asking something narrower.';
+}
