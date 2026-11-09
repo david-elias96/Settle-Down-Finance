@@ -22,6 +22,20 @@ export interface Insight {
   bucketId?: string;
   vendor?: string;
   amount?: Cents;
+  /** Short pieces for the Insights card, so it can be laid out instead of shown as a sentence. */
+  card: InsightCard;
+}
+
+export interface InsightCard {
+  /** What it's about: a bucket, a store, or "This month". */
+  label: string;
+  /** Status tag, 1-3 words: "Over budget", "Heading over". */
+  tag: string;
+  /** The key number: "$275 / $250", "~$2,373". */
+  figure: string;
+  /** One short line of context. */
+  note: string;
+  tone: 'good' | 'warn' | 'bad';
 }
 
 export interface InsightInput {
@@ -56,6 +70,8 @@ function budgetInsights({ month, today, daysInMonth, statuses }: InsightInput): 
         id: `${month}:over:${s.bucket.id}`, kind: 'over_budget', priority: 3, bucketId: s.bucket.id, amount: s.overBy,
         title: `${s.bucket.name} is over budget`,
         body: `${formatCents(s.overBy)} over the ${short(s.bucket.monthlyLimit)} limit with ${daysInMonth - today} days left.`,
+        card: { label: s.bucket.name, tag: 'Over budget', figure: `${short(s.spent)} / ${short(s.bucket.monthlyLimit)}`,
+          note: `${short(s.overBy)} over · ${daysInMonth - today} days left`, tone: 'bad' },
       });
     } else if (pace.label === 'Over pace' && pace.projectedTotal > s.bucket.monthlyLimit) {
       const over = pace.projectedTotal - s.bucket.monthlyLimit;
@@ -64,6 +80,8 @@ function budgetInsights({ month, today, daysInMonth, statuses }: InsightInput): 
         bucketId: s.bucket.id, amount: over,
         title: `${s.bucket.name} is on pace to go over`,
         body: `At this rate it ends the month near ${short(pace.projectedTotal)}, about ${short(over)} over. ${short(s.remaining)} left for ${daysInMonth - today} days.`,
+        card: { label: s.bucket.name, tag: 'Heading over', figure: `${short(s.spent)} / ${short(s.bucket.monthlyLimit)}`,
+          note: `On pace for ${short(pace.projectedTotal)} · ${short(s.remaining)} left`, tone: 'warn' },
       });
     }
   }
@@ -75,6 +93,7 @@ function budgetInsights({ month, today, daysInMonth, statuses }: InsightInput): 
       id: `${month}:under`, kind: 'under_budget', priority: 1, amount: left,
       title: `${short(left)} under budget`,
       body: `With ${daysInMonth - today} days left you're ${short(left)} under budget overall. Move some to a savings goal?`,
+      card: { label: 'Whole budget', tag: 'Under budget', figure: `${short(left)} left`, note: 'Move some to a savings goal?', tone: 'good' },
     });
   }
   return out;
@@ -108,6 +127,7 @@ function unusualVendorInsights({ month, transactions }: InsightInput): Insight[]
         id: `${month}:vendor:${v}`, kind: 'unusual_vendor', priority: 2, vendor: label.get(v), amount: Math.round(now - avg),
         title: `More than usual at ${label.get(v)}`,
         body: `${short(now)} so far this month, compared with about ${short(avg)} in a typical month.`,
+        card: { label: label.get(v)!, tag: 'More than usual', figure: short(now), note: `Usually about ${short(avg)} a month`, tone: 'warn' },
       });
     }
   }
@@ -161,6 +181,7 @@ function subscriptionInsights({ month, transactions }: InsightInput): Insight[] 
       vendor: s.vendor, amount: s.amount - s.previousAmount,
       title: `${s.vendor} went up`,
       body: `Now ${formatCents(s.amount)} a month, up from ${formatCents(s.previousAmount)}.`,
+      card: { label: s.vendor, tag: 'Price went up', figure: `${formatCents(s.amount)}/mo`, note: `Was ${formatCents(s.previousAmount)}`, tone: 'warn' as const },
     }));
 }
 
