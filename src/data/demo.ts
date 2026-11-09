@@ -49,14 +49,16 @@ const lastMonthPlan: [number, string, number, string][] = [
   [14, 'Kroger', 131.75, 'FOOD_AND_DRINK_GROCERIES'], [15, 'Topgolf', 64, ''], [16, 'Chevron', 45.3, ''],
   [18, 'Amazon', 59.99, ''], [19, 'Dunkin', 9.4, ''], [21, 'Costco', 212.4, ''], [22, 'Cinemark', 31.5, ''],
   [24, 'Maverik', 49.9, ''], [25, 'DoorDash', 38.6, ''], [26, 'REI', 89.95, ''], [28, 'Kroger', 104.2, 'FOOD_AND_DRINK_GROCERIES'],
-  [29, 'Shell', 51.1, ''], [30, 'Chipotle', 27.3, ''], [1, 'Maple Court Apartments', 3000, ''], [3, 'Spotify', 10.99, ''], [5, 'Planet Fitness', 24.99, ''], [6, 'APPLE.COM/BILL', 2.99, ''], [20, 'Disney Plus', 13.99, ''],
+  [29, 'Shell', 51.1, ''], [30, 'Chipotle', 27.3, ''], [1, 'Maple Court Apartments', 3000, ''],
+  [15, 'City Power & Light', 112.8, ''], [22, 'Verizon Wireless', 85, ''], [10, 'State Farm', 128, ''], [3, 'Spotify', 10.99, ''], [5, 'Planet Fitness', 24.99, ''], [6, 'APPLE.COM/BILL', 2.99, ''], [20, 'Disney Plus', 13.99, ''],
 ];
 const plaidPrimary: Record<string, string> = {
   Shell: 'TRANSPORTATION', Maverik: 'TRANSPORTATION', Chevron: 'TRANSPORTATION', Chipotle: 'FOOD_AND_DRINK',
   'Jersey Mikes': 'FOOD_AND_DRINK', 'Olive Garden': 'FOOD_AND_DRINK', Dunkin: 'FOOD_AND_DRINK', DoorDash: 'FOOD_AND_DRINK',
   Netflix: 'ENTERTAINMENT', Adobe: 'ENTERTAINMENT', Topgolf: 'ENTERTAINMENT', Cinemark: 'ENTERTAINMENT', 'Home Depot': 'GENERAL_MERCHANDISE',
   Target: 'GENERAL_MERCHANDISE', Amazon: 'GENERAL_MERCHANDISE', REI: 'GENERAL_MERCHANDISE', Costco: 'GENERAL_MERCHANDISE',
-  Kroger: 'FOOD_AND_DRINK', Smiths: 'FOOD_AND_DRINK', 'Maple Court Apartments': 'RENT_AND_UTILITIES', Spotify: 'ENTERTAINMENT', 'Planet Fitness': 'PERSONAL_CARE', 'APPLE.COM/BILL': 'GENERAL_SERVICES', 'Disney Plus': 'ENTERTAINMENT',
+  Kroger: 'FOOD_AND_DRINK', Smiths: 'FOOD_AND_DRINK', 'Maple Court Apartments': 'RENT_AND_UTILITIES',
+  'City Power & Light': 'RENT_AND_UTILITIES', 'Verizon Wireless': 'RENT_AND_UTILITIES', 'State Farm': 'GENERAL_SERVICES', Spotify: 'ENTERTAINMENT', 'Planet Fitness': 'PERSONAL_CARE', 'APPLE.COM/BILL': 'GENERAL_SERVICES', 'Disney Plus': 'ENTERTAINMENT',
 };
 const lastMonthTransactions: Transaction[] = lastMonthPlan
   .filter(([day]) => day <= daysInMonth(prev))
@@ -66,7 +68,18 @@ const lastMonthTransactions: Transaction[] = lastMonthPlan
     plaidCategory: plaidPrimary[merchant], plaidDetailedCategory: detailed || undefined,
   }));
 
-export const demoTransactions: Transaction[] = [...thisMonthTransactions, ...lastMonthTransactions];
+// The month before: just the monthly bills, so bill forecasting has a pattern to go on.
+const prev2 = previousMonth(prev);
+const twoMonthsAgoPlan: [number, string, number][] = [
+  [1, 'Maple Court Apartments', 3000], [15, 'City Power & Light', 96.4], [22, 'Verizon Wireless', 85], [10, 'State Farm', 128],
+  [4, 'Netflix', 22.99], [16, 'Adobe', 29.99], [3, 'Spotify', 10.99], [5, 'Planet Fitness', 24.99], [6, 'APPLE.COM/BILL', 2.99],
+];
+const twoMonthsAgoTransactions: Transaction[] = twoMonthsAgoPlan.map(([day, merchant, amount], i) => ({
+  id: `q${i}`, accountId: merchant === 'Maple Court Apartments' ? 'chk' : 'cc', merchant, amount: dollars(amount), pending: false,
+  date: `${prev2}-${String(day).padStart(2, '0')}`, plaidCategory: plaidPrimary[merchant],
+}));
+
+export const demoTransactions: Transaction[] = [...thisMonthTransactions, ...lastMonthTransactions, ...twoMonthsAgoTransactions];
 
 // The Target trip was receipt-scanned and split between groceries and kids.
 const targetSplit = splitByReceipt('t2', dollars(142.37), [

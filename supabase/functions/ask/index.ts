@@ -6,7 +6,7 @@ import { handle, HttpError, json, requireMember } from '../_shared/supabase.ts';
 import { loadHousehold, type HouseholdData } from '../_shared/household.ts';
 import { chargeCredits } from '../_shared/credits.ts';
 import {
-  ASK_ANSWER_SCHEMA, topStores, bucketPace, filterTransactions, type AskAnswer, findInsights, findSubscriptions, formatCents, monthLabel, recapFacts, vendorKey, waysToCut, weeklyRecap,
+  ASK_ANSWER_SCHEMA, billNote, findBills, topStores, bucketPace, filterTransactions, type AskAnswer, findInsights, findSubscriptions, formatCents, monthLabel, recapFacts, vendorKey, waysToCut, weeklyRecap,
 } from '../_shared/domain/index.ts';
 
 const client = new Anthropic();
@@ -77,6 +77,11 @@ const tools: Anthropic.Beta.BetaTool[] = [
     input_schema: { type: 'object', properties: {}, additionalProperties: false },
   },
   {
+    name: 'get_bills',
+    description: 'Monthly bills found from past payments (rent, utilities, phone, insurance, loans, subscriptions): expected amount and range, due date, and whether this month is paid, still due, or not seen yet.',
+    input_schema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
     name: 'get_subscriptions',
     description: 'Recurring monthly charges detected from the transactions, with current and previous amounts.',
     input_schema: { type: 'object', properties: {}, additionalProperties: false },
@@ -98,6 +103,11 @@ function runTool(name: string, input: Record<string, unknown>, h: HouseholdData)
       return findInsights(h).map(({ title, body, kind }) => ({ kind, title, body }));
     case 'get_weekly_recap':
       return recapFacts(weeklyRecap({ ...h, end: h.todayIso }));
+    case 'get_bills':
+      return findBills(h.transactions, h.month, h.today, h.allocations).map((b) => ({
+        bill: b.vendor, expected: $(b.amount), recent_range: b.varies ? `${$(b.low)} to ${$(b.high)}` : null,
+        status: b.status, note: billNote(b), paid: b.paid ? $(b.paid.amount) : null, bucket: b.bucketId ? h.bucketName(b.bucketId) : null,
+      }));
     case 'get_subscriptions':
       return findSubscriptions(h.transactions).map((s) => ({ store: s.vendor, amount: $(s.amount), previous: $(s.previousAmount), last_charged: s.lastDate }));
     case 'get_top_stores':

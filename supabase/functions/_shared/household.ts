@@ -1,6 +1,6 @@
 import { admin } from './supabase.ts';
 import {
-  bucketStatuses, type Allocation, type Bucket, type BucketStatus, type InsightInput, type Transaction,
+  billsByBucket, bucketStatuses, findBills, withBills, type Allocation, type Bucket, type BucketStatus, type InsightInput, type Transaction,
 } from './domain/index.ts';
 
 export interface HouseholdData extends InsightInput {
@@ -39,8 +39,10 @@ export async function loadHousehold(householdId: string, monthsBack = 4): Promis
   const allocations: Allocation[] = (allocRows ?? []).map((a) => ({
     transactionId: a.transaction_id, bucketId: bucketIdMap.get(a.bucket_id) ?? a.bucket_id, amount: a.amount, source: a.source,
   }));
-  const statuses: BucketStatus[] = bucketStatuses(buckets, transactions, allocations, month);
   const daysInMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate();
+  // Rent and other monthly bills are planned for, not paced as daily spending.
+  const bills = findBills(transactions, month, now.getUTCDate(), allocations);
+  const statuses: BucketStatus[] = withBills(bucketStatuses(buckets, transactions, allocations, month), billsByBucket(bills));
 
   return {
     householdId, month, today: now.getUTCDate(), todayIso: now.toISOString().slice(0, 10), daysInMonth, buckets, statuses, transactions, allocations,

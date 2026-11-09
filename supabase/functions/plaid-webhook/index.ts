@@ -6,7 +6,7 @@ import { plaid, toCents } from '../_shared/plaid.ts';
 import { pushToHousehold } from '../_shared/push.ts';
 import { aiSort } from '../_shared/aiSort.ts';
 import {
-  bucketStatuses, isBudgetSpending, sortTransaction, transactionNotification, vendorKey,
+  billsByBucket, bucketStatuses, findBills, isBudgetSpending, sortTransaction, withBills, transactionNotification, vendorKey,
   type Allocation, type Bucket, type MerchantRule, type PastChoice, type Transaction,
 } from '../_shared/domain/index.ts';
 
@@ -152,22 +152,27 @@ async function syncItem(plaidItemId: string) {
 
 async function notify(householdId: string, buckets: Bucket[], transactionIds: string[]) {
   if (!transactionIds.length) return;
-  const month = new Date().toISOString().slice(0, 7);
-  const { data: monthTx } = await admin.from('transactions').select('*')
-    .eq('household_id', householdId).gte('date', `${month}-01`);
-  const { data: allocRows } = await admin.from('allocations').select('*').eq('household_id', householdId)
-    .in('transaction_id', (monthTx ?? []).map((t) => t.id));
+  const now = new Date();
+  const month = now.toISOString().slice(0, 7);
+  // A few months back, so monthly bills like rent are recognised and planned for.
+  const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 4, 1)).toISOString().slice(0, 10);
+  const { data: txRows } = await admin.from('transactions').select('*')
+    .eq('household_id', householdId).gte('date', since);
+  const { data: allocRows } = await admin.from('allocations').select('*, transactions!inner(date)').eq('household_id', householdId)
+    .gte('transactions.date', since);
 
-  const transactions: Transaction[] = (monthTx ?? []).map((t) => ({
+  const transactions: Transaction[] = (txRows ?? []).map((t) => ({
     id: t.id, accountId: t.account_id, merchant: t.merchant, amount: t.amount, date: t.date, pending: t.pending,
+    plaidCategory: t.plaid_category ?? undefined,
   }));
   const allocations: Allocation[] = (allocRows ?? []).map((a) => ({
     transactionId: a.transaction_id, bucketId: a.bucket_id, amount: a.amount, source: a.source,
   }));
-  const statuses = bucketStatuses(buckets, transactions, allocations, month);
+  const bills = findBills(transactions, month, now.getUTCDate(), allocations);
+  const statuses = withBills(bucketStatuses(buckets, transactions, allocations, month), billsByBucket(bills));
 
   for (const id of transactionIds) {
-    const tx = transactions.find((t) => t.id === id);
+    const tx = transactions.find((t) => t.id === id && t.date.startsWith(month));
     if (!tx) continue; // older than this month
     const parts = allocations.filter((a) => a.transactionId === id)
       .map((a) => ({ amount: a.amount, status: statuses.find((s) => s.bucket.id === a.bucketId)! }))
