@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { bucketStatuses, compareToLastMonth, forecastMonth, projectionInsight, previousMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type Transaction } from '@/src/domain';
-import { demoAccounts, demoAllocations, demoBuckets, demoGoals, demoMembers, demoTransactions } from './demo';
+import { bucketStatuses, compareToLastMonth, forecastMonth, projectionInsight, previousMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type Transaction, applySplits, vendorKey, type BillSplit, type SplitSettings } from '@/src/domain';
+import { demoAccounts, demoAllocations, demoBuckets, demoGoals, demoMembers, demoSplits, demoTransactions } from './demo';
 
 /**
  * App state. Backed by demo data for now; will be swapped for Supabase queries
@@ -8,8 +8,25 @@ import { demoAccounts, demoAllocations, demoBuckets, demoGoals, demoMembers, dem
  */
 function useBudgetState() {
   const [buckets, setBuckets] = useState<Bucket[]>(demoBuckets);
-  const [transactions] = useState<Transaction[]>(demoTransactions);
-  const [allocations] = useState<Allocation[]>(demoAllocations);
+  const [rawTransactions] = useState<Transaction[]>(demoTransactions);
+  const [rawAllocations] = useState<Allocation[]>(demoAllocations);
+  const [splits, setSplits] = useState<SplitSettings>(demoSplits);
+  // Everything downstream sees split bills at the household's share.
+  const { transactions, allocations } = useMemo(() => applySplits(rawTransactions, rawAllocations, splits), [rawTransactions, rawAllocations, splits]);
+  /** Split a bill (or stop splitting it). `everyCharge` applies it to every charge from that vendor. */
+  const setBillSplit = (txId: string, split: BillSplit | null, everyCharge: boolean) => {
+    const tx = rawTransactions.find((t) => t.id === txId);
+    if (!tx) return;
+    const key = vendorKey(tx.merchant);
+    setSplits((s) => {
+      const byTransaction = { ...s.byTransaction }; const byVendor = { ...s.byVendor };
+      delete byTransaction[txId];
+      delete byVendor[key];
+      if (split && everyCharge) byVendor[key] = split;
+      else if (split) byTransaction[txId] = split;
+      return { byTransaction, byVendor };
+    });
+  };
   const [goals] = useState<SavingsGoal[]>(demoGoals);
   const month = new Date().toISOString().slice(0, 7);
 
@@ -66,7 +83,7 @@ function useBudgetState() {
   const addBucket = (name: string, monthlyLimit: number) =>
     setBuckets((bs) => [...bs, { id: `custom-${Date.now()}`, name, icon: 'star.fill', monthlyLimit, isCustom: true }]);
 
-  return { month, today, buckets, transactions, allocations, goals, statuses, impact, trend, forecast, insights, cutIdeas, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack, members, accounts, meId, accountLabel };
+  return { month, today, buckets, transactions, allocations, setBillSplit, goals, statuses, impact, trend, forecast, insights, cutIdeas, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack, members, accounts, meId, accountLabel };
 }
 
 type BudgetState = ReturnType<typeof useBudgetState>;

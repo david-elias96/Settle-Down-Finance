@@ -13,3 +13,4 @@ export * from './credits';
 export * from './forecast';
 export * from './cancelAgent';
 export * from './askAnswer';
+export * from './billSplit';

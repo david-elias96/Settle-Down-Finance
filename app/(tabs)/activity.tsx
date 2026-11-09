@@ -6,7 +6,7 @@ import { AccessibilityInfo, Animated, Modal, Pressable, ScrollView, StyleSheet, 
 import { Label, ListRow, Row, Screen, Section, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import {
-  dayHeading, filterTransactions, formatCents, monthLabel, monthOptions, NO_FILTER, vendorOptions,
+  dayHeading, filterTransactions, splitLabel, formatCents, monthLabel, monthOptions, NO_FILTER, vendorOptions,
   type Option, type TransactionFilter,
 } from '@/src/domain';
 
@@ -132,6 +132,7 @@ export default function ActivityScreen() {
               tx.pending ? 'Pending' : null,
               owner && owner !== meId ? `${members.find((m) => m.id === owner)?.name ?? 'Family'}'s card` : null,
               amount !== tx.amount ? `share of ${formatCents(tx.amount)}` : null,
+              splitLabel(tx),
             ].filter(Boolean).join(' · ');
             return (
               <ListRow key={tx.id} title={tx.merchant.trim()} figure={formatCents(amount)} note={note} last={i === group.length - 1}

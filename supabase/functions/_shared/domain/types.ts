@@ -29,6 +29,11 @@ export interface Transaction {
   /** Plaid personal_finance_category.primary, e.g. "FOOD_AND_DRINK". */
   plaidCategory?: string;
   plaidDetailedCategory?: string;
+  /**
+   * Set when the bill is shared with people outside the app (roommates, a landlord split).
+   * `amount` is then the household's share, and `fullAmount` is what the bank charged.
+   */
+  split?: { fullAmount: Cents; ways: number | null; recurring: boolean };
 }
 
 /**

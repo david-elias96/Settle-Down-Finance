@@ -413,3 +413,40 @@ describe('shared status helpers', () => {
     expect(dayHeading('2026-11-06', '2026-11-09')).toBe('Fri, Nov 6');
   });
 });
+
+import { applySplits, splitShare, splitWays, splitLabel, NO_SPLITS } from './index';
+
+describe('applySplits', () => {
+  const rent = { id: 'r1', accountId: 'a', merchant: 'Oak Apartments', amount: 345000, date: '2026-11-01', pending: false };
+  const target = { id: 'g1', accountId: 'a', merchant: 'Target', amount: 10001, date: '2026-11-02', pending: false };
+  const allocs = [
+    { transactionId: 'r1', bucketId: 'housing', amount: 345000, source: 'auto' as const },
+    { transactionId: 'g1', bucketId: 'groceries', amount: 6001, source: 'receipt' as const },
+    { transactionId: 'g1', bucketId: 'kids', amount: 4000, source: 'receipt' as const },
+  ];
+
+  it('leaves everything alone with no splits', () => {
+    const out = applySplits([rent, target], allocs, NO_SPLITS);
+    expect(out.transactions[0].amount).toBe(345000);
+  });
+
+  it('a vendor rule splits every charge from that vendor', () => {
+    const out = applySplits([rent], allocs, { byTransaction: {}, byVendor: { 'oak apartments': splitWays(3) } });
+    expect(out.transactions[0]).toMatchObject({ amount: 115000, split: { fullAmount: 345000, ways: 3, recurring: true } });
+    expect(out.allocations.find((a) => a.transactionId === 'r1')!.amount).toBe(115000);
+    expect(splitLabel(out.transactions[0])).toBe('Your 1/3 of $3,450');
+  });
+
+  it('a one-off split shrinks receipt parts so they still add up to the share', () => {
+    const out = applySplits([target], allocs, { byTransaction: { g1: splitWays(2) }, byVendor: {} });
+    const parts = out.allocations.filter((a) => a.transactionId === 'g1');
+    expect(out.transactions[0].amount).toBe(5001);
+    expect(parts.reduce((s, p) => s + p.amount, 0)).toBe(5001);
+  });
+
+  it('a typed share becomes a fraction and is labelled as a share', () => {
+    const out = applySplits([rent], allocs, { byTransaction: { r1: splitShare(115000, 345000) }, byVendor: {} });
+    expect(out.transactions[0].amount).toBe(115000);
+    expect(splitLabel(out.transactions[0])).toBe('Your share of $3,450');
+  });
+});
