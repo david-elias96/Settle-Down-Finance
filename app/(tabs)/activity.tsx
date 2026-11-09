@@ -105,7 +105,7 @@ export default function ActivityScreen() {
             {open === 'vendor' && (
               <View style={[styles.search, { borderBottomColor: t.separator }]}>
                 <TextInput accessibilityLabel="Search vendors" value={search} onChangeText={setSearch} placeholder="Search vendors" placeholderTextColor={t.secondaryText}
-                  style={{ color: t.text, fontSize: 17 }} autoCorrect={false} autoFocus />
+                  style={{ color: t.text, fontSize: 17 }} autoCorrect={false} returnKeyType="search" />
               </View>
             )}
             <ScrollView keyboardShouldPersistTaps="handled">
