@@ -1,0 +1,8 @@
+{
+  "unstable": ["sloppy-imports"],
+  "imports": {
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2",
+    "@anthropic-ai/sdk": "npm:@anthropic-ai/sdk@1",
+    "jose": "npm:jose@5"
+  }
+}

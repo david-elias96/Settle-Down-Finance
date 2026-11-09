@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "family-budget",
+    "name": "Family Budget",
     "slug": "family-budget",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -21,7 +21,7 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "server",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
