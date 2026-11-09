@@ -7,7 +7,7 @@ Deno.serve(handle(async (req) => {
   const { userId } = await requireMember(req, householdId);
   const data = await plaid('/link/token/create', {
     user: { client_user_id: userId },
-    client_name: 'Family Budget',
+    client_name: 'Settle Down Finance',
     products: ['transactions'],
     transactions: { days_requested: 90 },
     country_codes: ['US'],

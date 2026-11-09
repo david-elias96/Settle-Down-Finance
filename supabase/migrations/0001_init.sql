@@ -1,4 +1,4 @@
--- Family Budget: initial schema.
+-- Settle Down Finance: initial schema.
 -- Multi-household from day one so the same backend can serve paying customers later.
 -- Money is stored as integer cents.
 
