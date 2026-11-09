@@ -6,6 +6,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { BudgetProvider } from '@/src/data/BudgetStore';
+import { useNotificationRouting } from '@/src/notifications';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -45,6 +46,7 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  useNotificationRouting();
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
@@ -53,6 +55,7 @@ function RootLayoutNav() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="new-bucket" options={{ presentation: 'modal', title: 'New Bucket' }} />
           <Stack.Screen name="scan-receipt" options={{ presentation: 'modal', title: 'Scan Receipt' }} />
+          <Stack.Screen name="bucket/[id]" options={{ title: 'Bucket', headerBackTitle: 'Back' }} />
         </Stack>
       </BudgetProvider>
     </ThemeProvider>

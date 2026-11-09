@@ -28,7 +28,8 @@ export default function BudgetScreen() {
 
       <Section title="Buckets">
         {statuses.map((s, i) => (
-          <Row key={s.bucket.id} icon={{ ios: s.bucket.icon as any, android: 'category', web: 'category' }} title={s.bucket.name}
+          <Link key={s.bucket.id} href={{ pathname: '/bucket/[id]', params: { id: s.bucket.id } }} asChild><Pressable>
+          <Row icon={{ ios: s.bucket.icon as any, android: 'category', web: 'category' }} title={s.bucket.name}
             subtitle={`${formatCents(s.spent, { showCents: false })} of ${formatCents(s.bucket.monthlyLimit, { showCents: false })}`}
             right={<Label style={{ color: s.overBy > 0 ? t.red : t.secondaryText, fontVariant: ['tabular-nums'] }}>
               {s.overBy > 0 ? `${formatCents(s.overBy, { showCents: false })} over` : `${formatCents(s.remaining, { showCents: false })} left`}
@@ -36,6 +37,7 @@ export default function BudgetScreen() {
             last={i === statuses.length - 1}>
             <ProgressBar ratio={s.ratio} />
           </Row>
+          </Pressable></Link>
         ))}
       </Section>
 

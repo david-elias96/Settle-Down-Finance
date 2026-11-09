@@ -142,7 +142,10 @@ async function notify(householdId: string, buckets: Bucket[], transactionIds: st
     const parts = allocations.filter((a) => a.transactionId === id)
       .map((a) => ({ amount: a.amount, status: statuses.find((s) => s.bucket.id === a.bucketId)! }))
       .filter((p) => p.status);
-    await pushToHousehold(householdId, { ...transactionNotification(tx, parts), data: { transactionId: id } });
+    const today = new Date();
+    const days = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 0)).getUTCDate();
+    const { title, body, bucketId } = transactionNotification(tx, parts, today.getUTCDate(), days);
+    await pushToHousehold(householdId, { title, body, data: { transactionId: id, bucketId } });
     await admin.from('transactions').update({ notified_at: new Date().toISOString() }).eq('id', id);
   }
 }

@@ -59,9 +59,10 @@ describe('bucketStatuses + notification', () => {
     ];
     const s = bucketStatuses(buckets, txs, allocs, '2026-11').find((b) => b.bucket.id === 'groceries')!;
     expect(s.spent).toBe(dollars(684.12));
-    const n = transactionNotification({ merchant: 'Kroger', amount: dollars(84.12), pending: true }, [{ status: s, amount: dollars(84.12) }]);
+    const n = transactionNotification({ merchant: 'Kroger', amount: dollars(84.12), pending: true }, [{ status: s, amount: dollars(84.12) }], 9, 30);
     expect(n.title).toBe('$84.12 at Kroger (pending)');
-    expect(n.body).toBe('Groceries: $684 of $700 (98%) · $15 left');
+    expect(n.body).toBe('Groceries · Over pace\n▰▰▰▰▰▰▰▰▰▱ 98% · $684 of $700');
+    expect(n.bucketId).toBe('groceries');
   });
 });
 
@@ -130,5 +131,39 @@ describe('spending trend', () => {
     expect(previousMonth('2026-01')).toBe('2025-12');
     const c = compareToLastMonth([{ id: 'f', date: '2026-02-28' }], [al('f', 700)], '2026-03', 31);
     expect(c.previousByThisDay).toBe(700);
+  });
+});
+
+import { bucketPace, textBar } from './index';
+
+describe('bucketPace', () => {
+  const st = (limit: number, spent: number) => {
+    const bucket = { ...buckets[1], monthlyLimit: dollars(limit) };
+    const remaining = bucket.monthlyLimit - dollars(spent);
+    return { bucket, spent: dollars(spent), remaining, ratio: spent / limit, overBy: Math.max(0, -remaining) };
+  };
+  it('is on track near an even pace', () => {
+    const p = bucketPace(st(300, 95), 10, 30); // even pace = $100
+    expect(p.status).toBe('on_track');
+    expect(p.percentUsed).toBe(32);
+    expect(p.expectedByToday).toBe(dollars(100));
+  });
+  it('flags spending ahead of pace with a projection', () => {
+    const p = bucketPace(st(300, 150), 10, 30);
+    expect(p.status).toBe('over');
+    expect(p.label).toBe('Over pace');
+    expect(p.projectedTotal).toBe(dollars(450));
+  });
+  it('flags under pace', () => {
+    expect(bucketPace(st(300, 40), 10, 30).status).toBe('under');
+  });
+  it('over budget wins regardless of pace', () => {
+    const p = bucketPace(st(300, 320), 29, 30);
+    expect(p.label).toBe('Over budget');
+    expect(p.detail).toContain('$20.00 over');
+  });
+  it('draws a text bar', () => {
+    expect(textBar(0.73)).toBe('▰▰▰▰▰▰▰▱▱▱');
+    expect(textBar(1.4)).toBe('▰▰▰▰▰▰▰▰▰▰');
   });
 });

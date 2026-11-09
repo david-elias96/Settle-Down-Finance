@@ -1,5 +1,6 @@
 import type { Allocation, Bucket, Cents, Month, Transaction } from './types';
 import { formatCents, monthOf } from './money';
+import { bucketPace, textBar } from './pace';
 
 export interface BucketStatus {
   bucket: Bucket;
@@ -41,16 +42,19 @@ export function bucketStatuses(
 export function transactionNotification(
   tx: Pick<Transaction, 'merchant' | 'amount' | 'pending'>,
   parts: { status: BucketStatus; amount: Cents }[],
-): { title: string; body: string } {
+  day: number,
+  daysInMonth: number,
+): { title: string; body: string; bucketId?: string } {
   const title = `${formatCents(tx.amount)} at ${tx.merchant}${tx.pending ? ' (pending)' : ''}`;
-  const lines = parts.map(({ status, amount }) => {
-    const pct = Math.round(status.ratio * 100);
+  const lines = parts.flatMap(({ status, amount }) => {
+    const pace = bucketPace(status, day, daysInMonth);
     const prefix = parts.length > 1 ? `${formatCents(amount)} → ` : '';
-    const state =
-      status.overBy > 0
-        ? `${formatCents(status.overBy)} over limit`
-        : `${formatCents(status.remaining, { showCents: false })} left`;
-    return `${prefix}${status.bucket.name}: ${formatCents(status.spent, { showCents: false })} of ${formatCents(status.bucket.monthlyLimit, { showCents: false })} (${pct}%) · ${state}`;
+    return [
+      `${prefix}${status.bucket.name} · ${pace.label}`,
+      `${textBar(status.ratio)} ${pace.percentUsed}% · ${formatCents(status.spent, { showCents: false })} of ${formatCents(status.bucket.monthlyLimit, { showCents: false })}`,
+    ];
   });
-  return { title, body: lines.join('\n') };
+  // Tapping opens the bucket the charge landed in (the biggest share for split purchases).
+  const main = [...parts].sort((a, b) => b.amount - a.amount)[0];
+  return { title, body: lines.join('\n'), bucketId: main?.status.bucket.id };
 }
