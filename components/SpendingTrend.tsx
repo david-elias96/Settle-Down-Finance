@@ -38,6 +38,7 @@ export function SpendingTrend({ trend, month }: { trend: MonthComparison; month:
   const path = (pts: TrendPoint[]) =>
     pts.map((p, i) => `${i ? 'L' : 'M'}${x(Math.min(p.day, days)).toFixed(1)},${y(p.cumulative).toFixed(1)}`).join(' ');
   const currentPath = useMemo(() => path(trend.current), [trend, width]);
+  const prevEnd = trend.previous.at(Math.min(days, trend.previous.length) - 1);
   const previousPath = useMemo(() => path(trend.previous.slice(0, days)), [trend, width]);
 
   const last = trend.current.at(-1);
@@ -89,12 +90,18 @@ export function SpendingTrend({ trend, month }: { trend: MonthComparison; month:
             {ticks.map((v) => (
               <Line key={v} x1={PAD.left} x2={width - PAD.right} y1={y(v)} y2={y(v)} stroke={t.separator} strokeWidth={1} />
             ))}
-            {/* Solid benchmark: last month's full total. */}
+            {/* Solid benchmark at last month's total. Drawn faint and underneath so last month's
+                dashed line visibly climbs into it instead of being covered by it. */}
             {trend.previousTotal > 0 && (
               <Line x1={PAD.left} x2={width - PAD.right} y1={y(trend.previousTotal)} y2={y(trend.previousTotal)}
-                stroke={t.secondaryText} strokeWidth={1.5} />
+                stroke={t.secondaryText} strokeOpacity={0.45} strokeWidth={1.5} />
             )}
+            {/* Surface-colored halo separates the dashed line from the benchmark where they meet. */}
+            <Path d={previousPath} stroke={t.card} strokeWidth={5} fill="none" strokeLinejoin="round" strokeLinecap="round" />
             <Path d={previousPath} stroke={t.secondaryText} strokeWidth={2} strokeDasharray="5 4" fill="none" strokeLinejoin="round" strokeLinecap="round" />
+            {prevEnd && (
+              <Circle cx={x(Math.min(prevEnd.day, days))} cy={y(prevEnd.cumulative)} r={4} fill={t.secondaryText} stroke={t.card} strokeWidth={2} />
+            )}
             <Path d={currentPath} stroke={t.tint} strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
 
             {activeDay != null && (
