@@ -128,7 +128,7 @@ export function SpendingTrend({ trend, forecast, month }: { trend: MonthComparis
         onResponderRelease={() => setActiveDay(null)}
         onResponderTerminationRequest={() => false}
         accessibilityRole="image"
-        accessibilityLabel={`Spending this month ${formatCents(trend.spentSoFar)} so far, compared with ${formatCents(trend.previousByThisDay)} by the same day last month.`}
+        accessibilityLabel={`Spending this month ${formatCents(trend.spentSoFar)} so far, compared with ${formatCents(trend.previousByThisDay)} by the same day last month.${projection ? ` Projected month end about ${formatCents(projection.end.mid, { showCents: false })}, likely between ${formatCents(projection.end.low, { showCents: false })} and ${formatCents(projection.end.high, { showCents: false })}.` : ''}`}
         style={{ height: HEIGHT }}>
         {width > 0 && (
           <Svg width={width} height={HEIGHT}>

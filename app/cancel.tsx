@@ -80,7 +80,7 @@ function Intro({ name, amount, practice, route, vendor, website, setWebsite, onS
           </Section>
           {needsSite && (
             <Section title="Website" footer={`We don't have ${vendor} on file yet. Enter its website and Claude will find the cancel page there.`}>
-              <TextInput value={website} onChangeText={setWebsite} placeholder="e.g. acmegym.com" placeholderTextColor={t.secondaryText}
+              <TextInput accessibilityLabel="Website" value={website} onChangeText={setWebsite} placeholder="e.g. acmegym.com" placeholderTextColor={t.secondaryText}
                 autoCapitalize="none" autoCorrect={false} keyboardType="url" style={{ padding: 14, fontSize: 17, color: t.text }} />
             </Section>
           )}
@@ -150,7 +150,7 @@ function AgentRun({ run }: { run: Run }) {
   return (
     <View style={{ flex: 1, backgroundColor: t.background }}>
       <Stack.Screen options={{ title: run.demo ? 'Practice run' : run.name, headerRight: () => (
-        <Pressable onPress={() => { agent.stop(); router.back(); }} accessibilityRole="button"><Label style={{ color: t.red, fontSize: 17 }}>Stop</Label></Pressable>
+        <Pressable onPress={() => { agent.stop(); router.back(); }} accessibilityRole="button"><Label style={{ color: t.redText, fontSize: 17 }}>Stop</Label></Pressable>
       ) }} />
       <View style={[styles.status, { backgroundColor: userTurn ? t.tint : t.card, borderBottomColor: t.separator }]}>
         {userTurn ? (

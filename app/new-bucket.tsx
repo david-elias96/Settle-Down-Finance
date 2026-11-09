@@ -16,10 +16,10 @@ export default function NewBucket() {
   return (
     <Screen>
       <Section>
-        <Row title="Name" right={<TextInput style={input} value={name} onChangeText={setName} placeholder="e.g. Pets" placeholderTextColor={t.secondaryText} />} />
-        <Row title="Monthly limit" right={<TextInput style={input} value={limit} onChangeText={setLimit} keyboardType="decimal-pad" placeholder="$0" placeholderTextColor={t.secondaryText} />} last />
+        <Row title="Name" right={<TextInput accessibilityLabel="Bucket name" style={input} value={name} onChangeText={setName} placeholder="e.g. Pets" placeholderTextColor={t.secondaryText} />} />
+        <Row title="Monthly limit" right={<TextInput accessibilityLabel="Monthly limit in dollars" style={input} value={limit} onChangeText={setLimit} keyboardType="decimal-pad" placeholder="$0" placeholderTextColor={t.secondaryText} />} last />
       </Section>
-      <Pressable disabled={!valid} onPress={() => { addBucket(name.trim(), dollars(Number(limit))); router.back(); }}>
+      <Pressable accessibilityRole="button" accessibilityState={{ disabled: !valid }} disabled={!valid} onPress={() => { addBucket(name.trim(), dollars(Number(limit))); router.back(); }}>
         <Label style={{ color: valid ? t.tint : t.secondaryText, fontSize: 17, textAlign: 'center' }}>Add bucket</Label>
       </Pressable>
     </Screen>

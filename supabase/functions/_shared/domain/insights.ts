@@ -2,7 +2,7 @@ import type { BucketStatus } from './budget';
 import { cancelRoute } from './cancelAgent';
 import { vendorKey } from './filters';
 import { formatCents } from './money';
-import { bucketPace } from './pace';
+import { bucketPace, weeklyAllowance } from './pace';
 import type { Allocation, Cents, Month, Transaction } from './types';
 
 /**
@@ -22,6 +22,20 @@ export interface Insight {
   bucketId?: string;
   vendor?: string;
   amount?: Cents;
+  /** Short pieces for the Insights card, so it can be laid out instead of shown as a sentence. */
+  card: InsightCard;
+}
+
+export interface InsightCard {
+  /** What it's about: a bucket, a store, or "This month". */
+  label: string;
+  /** Status tag, 1-3 words: "Over budget", "Heading over". */
+  tag: string;
+  /** The key number: "$275 / $250", "~$2,373". */
+  figure: string;
+  /** One short line of context. */
+  note: string;
+  tone: 'good' | 'warn' | 'bad';
 }
 
 export interface InsightInput {
@@ -56,6 +70,8 @@ function budgetInsights({ month, today, daysInMonth, statuses }: InsightInput): 
         id: `${month}:over:${s.bucket.id}`, kind: 'over_budget', priority: 3, bucketId: s.bucket.id, amount: s.overBy,
         title: `${s.bucket.name} is over budget`,
         body: `${formatCents(s.overBy)} over the ${short(s.bucket.monthlyLimit)} limit with ${daysInMonth - today} days left.`,
+        card: { label: s.bucket.name, tag: 'Over budget', figure: `${short(s.spent)} / ${short(s.bucket.monthlyLimit)}`,
+          note: `${short(s.overBy)} over · ${daysInMonth - today} days left`, tone: 'bad' },
       });
     } else if (pace.label === 'Over pace' && pace.projectedTotal > s.bucket.monthlyLimit) {
       const over = pace.projectedTotal - s.bucket.monthlyLimit;
@@ -64,6 +80,8 @@ function budgetInsights({ month, today, daysInMonth, statuses }: InsightInput): 
         bucketId: s.bucket.id, amount: over,
         title: `${s.bucket.name} is on pace to go over`,
         body: `At this rate it ends the month near ${short(pace.projectedTotal)}, about ${short(over)} over. ${short(s.remaining)} left for ${daysInMonth - today} days.`,
+        card: { label: s.bucket.name, tag: 'Heading over', figure: `${short(s.spent)} / ${short(s.bucket.monthlyLimit)}`,
+          note: `On pace for ${short(pace.projectedTotal)} · ${short(s.remaining)} left`, tone: 'warn' },
       });
     }
   }
@@ -75,6 +93,7 @@ function budgetInsights({ month, today, daysInMonth, statuses }: InsightInput): 
       id: `${month}:under`, kind: 'under_budget', priority: 1, amount: left,
       title: `${short(left)} under budget`,
       body: `With ${daysInMonth - today} days left you're ${short(left)} under budget overall. Move some to a savings goal?`,
+      card: { label: 'Whole budget', tag: 'Under budget', figure: `${short(left)} left`, note: 'Move some to a savings goal?', tone: 'good' },
     });
   }
   return out;
@@ -108,6 +127,7 @@ function unusualVendorInsights({ month, transactions }: InsightInput): Insight[]
         id: `${month}:vendor:${v}`, kind: 'unusual_vendor', priority: 2, vendor: label.get(v), amount: Math.round(now - avg),
         title: `More than usual at ${label.get(v)}`,
         body: `${short(now)} so far this month, compared with about ${short(avg)} in a typical month.`,
+        card: { label: label.get(v)!, tag: 'More than usual', figure: short(now), note: `Usually about ${short(avg)} a month`, tone: 'warn' },
       });
     }
   }
@@ -161,10 +181,16 @@ function subscriptionInsights({ month, transactions }: InsightInput): Insight[] 
       vendor: s.vendor, amount: s.amount - s.previousAmount,
       title: `${s.vendor} went up`,
       body: `Now ${formatCents(s.amount)} a month, up from ${formatCents(s.previousAmount)}.`,
+      card: { label: s.vendor, tag: 'Price went up', figure: `${formatCents(s.amount)}/mo`, note: `Was ${formatCents(s.previousAmount)}`, tone: 'warn' as const },
     }));
 }
 
 export interface CutIdea {
+  /** Short name for a list row: a bucket, a store, or "Subscriptions". */
+  label: string;
+  /** One short line for a list row. */
+  note: string;
+  bucketId?: string;
   title: string;
   detail: string;
   /** Rough monthly saving if acted on. */
@@ -184,12 +210,20 @@ export function waysToCut(input: InsightInput, bucketName: (id: string) => strin
     const pace = bucketPace(s, today, daysInMonth);
     const over = Math.max(s.overBy, pace.projectedTotal - s.bucket.monthlyLimit);
     if (over <= 0 || s.bucket.monthlyLimit <= 0) continue;
-    const perDay = Math.max(0, s.remaining) / Math.max(1, daysInMonth - today);
+    const w = weeklyAllowance(s, today, daysInMonth);
+    const allowance = w.kind === 'week'
+      ? { short: `keep to ${short(w.amount)}/week`, long: `Keeping to about ${short(w.amount)} a week stays within it.` }
+      : { short: w.text, long: `Keeping to ${w.text.replace(' left for', ' for the last')} stays within it.` };
     ideas.push({
+      label: s.bucket.name,
+      bucketId: s.bucket.id,
+      note: s.overBy > 0
+        ? `${short(s.overBy)} over already, pause for the month`
+        : `On pace for ${short(pace.projectedTotal)} of ${short(s.bucket.monthlyLimit)}, ${allowance.short}`,
       title: `Slow down on ${s.bucket.name}`,
       detail: s.overBy > 0
         ? `Already ${formatCents(s.overBy)} over. Pausing it for the rest of the month keeps the overage from growing.`
-        : `On pace for ${short(pace.projectedTotal)} against a ${short(s.bucket.monthlyLimit)} limit. Keeping to about ${short(perDay)} a day stays within it.`,
+        : `On pace for ${short(pace.projectedTotal)} against a ${short(s.bucket.monthlyLimit)} limit. ${allowance.long}`,
       saving: over,
     });
   }
@@ -208,6 +242,9 @@ export function waysToCut(input: InsightInput, bucketName: (id: string) => strin
   for (const e of [...vendorSpend.values()].sort((a, b) => b.total - a.total).slice(0, 3)) {
     if (e.total < 3000) continue;
     ideas.push({
+      label: e.label,
+      bucketId: e.bucket,
+      note: `${short(e.total)} over ${e.count} order${e.count > 1 ? 's' : ''}, halve it`,
       title: `${e.label}: ${short(e.total)} so far`,
       detail: `${e.count} purchase${e.count > 1 ? 's' : ''} this month in ${bucketName(e.bucket)}. Halving it would save about ${short(e.total / 2)}.`,
       saving: Math.round(e.total / 2),
@@ -219,6 +256,8 @@ export function waysToCut(input: InsightInput, bucketName: (id: string) => strin
   const subTotal = subs.reduce((s, x) => s + x.amount, 0);
   if (subs.length >= 2) {
     ideas.push({
+      label: 'Subscriptions',
+      note: `${subs.length} for ${short(subTotal)}/mo, cancel one you rarely use`,
       title: `Review ${subs.length} subscriptions (${short(subTotal)}/mo)`,
       detail: `${subs.slice(0, 4).map((s) => `${s.vendor} ${formatCents(s.amount)}`).join(', ')}. Cancelling one you rarely use is the easiest saving.`,
       saving: subs[subs.length - 1].amount,

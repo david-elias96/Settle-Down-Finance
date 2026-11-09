@@ -65,3 +65,32 @@ export function textBar(ratio: number, slots = 10): string {
   const filled = Math.max(0, Math.min(slots, Math.floor(ratio * slots)));
   return '▰'.repeat(filled) + '▱'.repeat(slots - filled);
 }
+
+export type Tone = 'good' | 'warn' | 'bad';
+
+/** One status vocabulary for the whole app: tag text plus its color. */
+export function paceTag(s: BucketStatus, pace: BucketPace): { tag: string; tone: Tone } {
+  if (s.overBy > 0) return { tag: 'Over budget', tone: 'bad' };
+  if (pace.status === 'over' && pace.projectedTotal > s.bucket.monthlyLimit) return { tag: 'Heading over', tone: 'warn' };
+  return { tag: 'On track', tone: 'good' };
+}
+
+/**
+ * What's left to spend, framed per week (easier to plan around than per day). In the
+ * last week it gives the total left instead; over budget it gives nothing.
+ */
+export function weeklyAllowance(s: BucketStatus, day: number, daysInMonth: number):
+  { kind: 'week'; amount: Cents; text: string } | { kind: 'rest'; amount: Cents; days: number; text: string } | { kind: 'none'; text: string } {
+  const daysLeft = Math.max(1, daysInMonth - day);
+  const left = Math.max(0, s.remaining);
+  if (s.overBy > 0 || left === 0) return { kind: 'none', text: s.overBy > 0 ? `${formatCents(s.overBy, { showCents: false })} over` : 'Nothing left' };
+  if (daysLeft < 7) return { kind: 'rest', amount: left, days: daysLeft, text: `${formatCents(left, { showCents: false })} left for ${daysLeft} day${daysLeft > 1 ? 's' : ''}` };
+  const amount = Math.round((left / daysLeft) * 7);
+  return { kind: 'week', amount, text: `${formatCents(amount, { showCents: false })}/week left` };
+}
+
+/** Buckets needing attention first: over budget, then heading over, then by how much is used. */
+export function byAttention(statuses: BucketStatus[], day: number, daysInMonth: number): BucketStatus[] {
+  const rank = (s: BucketStatus) => ({ bad: 0, warn: 1, good: 2 })[paceTag(s, bucketPace(s, day, daysInMonth)).tone];
+  return [...statuses].sort((a, b) => rank(a) - rank(b) || b.ratio - a.ratio);
+}

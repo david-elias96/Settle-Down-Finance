@@ -26,7 +26,7 @@ export default function JoinScreen() {
         </Label>
       </View>
       <Section title={`Invite ${String(code ?? '').toUpperCase()}`}>
-        <TextInput value={name} onChangeText={setName} placeholder="Your first name" placeholderTextColor={t.secondaryText}
+        <TextInput accessibilityLabel="Your first name" value={name} onChangeText={setName} placeholder="Your first name" placeholderTextColor={t.secondaryText}
           style={{ padding: 14, fontSize: 17, color: t.text }} autoCapitalize="words" returnKeyType="done" />
       </Section>
       <Pressable onPress={join} disabled={!name.trim()} accessibilityRole="button"

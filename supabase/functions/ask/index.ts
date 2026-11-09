@@ -6,7 +6,7 @@ import { handle, HttpError, json, requireMember } from '../_shared/supabase.ts';
 import { loadHousehold, type HouseholdData } from '../_shared/household.ts';
 import { chargeCredits } from '../_shared/credits.ts';
 import {
-  bucketPace, filterTransactions, findInsights, findSubscriptions, formatCents, monthLabel, vendorKey, waysToCut,
+  ASK_ANSWER_SCHEMA, topStores, bucketPace, filterTransactions, type AskAnswer, findInsights, findSubscriptions, formatCents, monthLabel, vendorKey, waysToCut,
 } from '../_shared/domain/index.ts';
 
 const client = new Anthropic();
@@ -16,7 +16,8 @@ const SYSTEM = `You are the assistant inside Settle Down Finance, a family budge
 Answer questions about the family's own spending, budget buckets, and savings.
 
 - Use the tools for every number. Never estimate or do your own arithmetic on amounts; if a tool doesn't give a figure, say you don't have it.
-- Be brief and practical: a one-sentence answer first, then at most 4 short bullets. Plain language, no jargon.
+- Answer in the JSON format given: a one-sentence headline that directly answers the question, up to 5 rows (each a bucket, store or item with its key figure and an optional short detail), and at most one practical tip. No paragraphs. Plain language, no jargon.
+- Rows: label 1-3 words, value is the figure ("$569 of $700", "Save ~$150"), detail under 60 characters. Use tone: good = on track, warn = at risk, bad = over budget, neutral = information. Set bucket to the exact bucket name when a row is about a bucket.
 - For "how can I cut/save" questions, start from get_ways_to_cut and name specific buckets, stores, and dollar amounts.
 - Be encouraging, never judgmental. Don't give investment, tax, or legal advice; suggest a professional for those.
 - Money is US dollars. Today is day {TODAY} of {MONTH}.`;
@@ -52,6 +53,19 @@ const tools: Anthropic.Beta.BetaTool[] = [
     },
   },
   {
+    name: 'get_top_stores',
+    description: 'Stores ranked by number of purchases (visits) or by total spent. Use for "where do I go most", "most visited place", "which store do I spend the most at".',
+    input_schema: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        months: { type: 'array', items: { type: 'string', description: 'YYYY-MM' }, description: 'Months to include; omit for all loaded months (about 4).' },
+        sort_by: { type: 'string', enum: ['visits', 'spend'] },
+        limit: { type: 'integer', description: 'How many stores (default 5, max 15).' },
+      },
+    },
+  },
+  {
     name: 'get_monthly_totals',
     description: 'Spending per bucket for each loaded month, to compare months or spot trends.',
     input_schema: { type: 'object', properties: {}, additionalProperties: false },
@@ -78,6 +92,11 @@ function runTool(name: string, input: Record<string, unknown>, h: HouseholdData)
       return findInsights(h).map(({ title, body, kind }) => ({ kind, title, body }));
     case 'get_subscriptions':
       return findSubscriptions(h.transactions).map((s) => ({ store: s.vendor, amount: $(s.amount), previous: $(s.previousAmount), last_charged: s.lastDate }));
+    case 'get_top_stores':
+      return topStores(h.transactions, {
+        months: input.months as string[] | undefined, by: input.sort_by === 'spend' ? 'spend' : 'visits',
+        limit: Math.min(15, Number(input.limit ?? 5)),
+      }).map((x) => ({ store: x.store, visits: x.visits, total: $(x.total), last_visit: x.lastDate }));
     case 'get_monthly_totals': {
       const out: Record<string, Record<string, string>> = {};
       const sums = new Map<string, Map<string, number>>();
@@ -130,7 +149,7 @@ Deno.serve(handle(async (req) => {
   }
 }));
 
-async function answer(householdId: string, question: string, history: unknown[]): Promise<string> {
+async function answer(householdId: string, question: string, history: unknown[]): Promise<AskAnswer> {
   const h = await loadHousehold(householdId);
   // Earlier turns are passed back as plain text so follow-ups ("what about last month?") work.
   const messages: Anthropic.Beta.BetaMessageParam[] = [
@@ -142,7 +161,7 @@ async function answer(householdId: string, question: string, history: unknown[])
     const response = await client.beta.messages.create({
       model: 'claude-opus-5-5',
       max_tokens: 16000,
-      output_config: { effort: 'medium' },
+      output_config: { effort: 'medium', format: { type: 'json_schema', schema: ASK_ANSWER_SCHEMA } },
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default',
       system: SYSTEM.replace('{TODAY}', String(h.today)).replace('{MONTH}', monthLabel(h.month)),
@@ -150,9 +169,14 @@ async function answer(householdId: string, question: string, history: unknown[])
       messages,
     });
 
-    if (response.stop_reason === 'refusal') return "Sorry, I can't help with that one. Try asking about your spending or budget.";
+    if (response.stop_reason === 'refusal') return { headline: "Sorry, I can't help with that one.", rows: [], tip: 'Try asking about your spending or budget.' };
     if (response.stop_reason !== 'tool_use') {
-      return response.content.filter((b) => b.type === 'text').map((b) => (b as { text: string }).text).join('\n').trim();
+      const text = response.content.filter((b) => b.type === 'text').map((b) => (b as { text: string }).text).join('').trim();
+      try {
+        return JSON.parse(text) as AskAnswer;
+      } catch {
+        return { headline: text.slice(0, 300) || 'Sorry, something went wrong.', rows: [] };
+      }
     }
 
     messages.push({ role: 'assistant', content: response.content });
@@ -161,5 +185,5 @@ async function answer(householdId: string, question: string, history: unknown[])
       .map((b) => ({ type: 'tool_result', tool_use_id: b.id, content: JSON.stringify(runTool(b.name, b.input as Record<string, unknown>, h)) }));
     messages.push({ role: 'user', content: results });
   }
-  return 'That question needed more steps than I can take at once. Try asking something narrower.';
+  return { headline: 'That question needed more steps than I can take at once.', rows: [], tip: 'Try asking something narrower.' };
 }

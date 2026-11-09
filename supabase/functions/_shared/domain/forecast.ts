@@ -165,5 +165,14 @@ export function projectionInsight(
     title: `Heading for about ${short(mid)} this month`,
     body: `${range}${compare}`.trim(),
     amount: mid,
+    card: {
+      label: 'This month',
+      tag: vsBudget > 0 ? 'Over budget pace' : vsLast > 0 ? `Above ${previousMonthName}` : 'On track',
+      figure: `~${short(mid)}`,
+      note: [high > low ? `Likely ${short(low)}–${short(high)}` : null,
+        vsBudget > 0 ? `${short(vsBudget)} over budget` : previousTotal > 0 ? `${short(previousTotal)} in ${previousMonthName}` : null]
+        .filter(Boolean).join(' · '),
+      tone: vsBudget > 0 ? 'bad' : vsLast > 0 ? 'warn' : 'good',
+    },
   };
 }

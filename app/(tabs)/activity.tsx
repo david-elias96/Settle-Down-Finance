@@ -1,17 +1,18 @@
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { Label, Row, Screen, Section, useTheme } from '@/components/ui';
+import { Label, ListRow, Row, Screen, Section, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import {
-  filterTransactions, formatCents, monthLabel, monthOptions, NO_FILTER, vendorOptions,
+  dayHeading, filterTransactions, formatCents, monthLabel, monthOptions, NO_FILTER, vendorOptions,
   type Option, type TransactionFilter,
 } from '@/src/domain';
 
 type Picker = 'month' | 'bucket' | 'vendor' | null;
 
 export default function ActivityScreen() {
-  const { transactions, allocations, buckets, month: currentMonth, accountLabel } = useBudget();
+  const { transactions, allocations, buckets, month: currentMonth, accounts, members, meId } = useBudget();
   const t = useTheme();
   const [filter, setFilter] = useState<TransactionFilter>({ ...NO_FILTER, month: currentMonth });
   const [open, setOpen] = useState<Picker>(null);
@@ -53,7 +54,7 @@ export default function ActivityScreen() {
           <Chip label={filter.vendor ? vendorLabel ?? 'Vendor' : 'All vendors'} active={filter.vendor !== null} open={open === 'vendor'} onPress={() => setOpen(open === 'vendor' ? null : 'vendor')} />
         </View>
         {active && !open && (
-          <Pressable onPress={() => setFilter(NO_FILTER)} hitSlop={8}>
+          <Pressable onPress={() => setFilter(NO_FILTER)} hitSlop={8} accessibilityRole="button">
             <Label style={{ color: t.tint, fontSize: 15 }}>Clear filters</Label>
           </Pressable>
         )}
@@ -63,7 +64,7 @@ export default function ActivityScreen() {
         <Section>
           {open === 'vendor' && (
             <View style={[styles.search, { borderBottomColor: t.separator }]}>
-              <TextInput value={search} onChangeText={setSearch} placeholder="Search vendors" placeholderTextColor={t.secondaryText}
+              <TextInput accessibilityLabel="Search vendors" value={search} onChangeText={setSearch} placeholder="Search vendors" placeholderTextColor={t.secondaryText}
                 style={{ color: t.text, fontSize: 17 }} autoCorrect={false} />
             </View>
           )}
@@ -76,29 +77,42 @@ export default function ActivityScreen() {
         </Section>
       )}
 
-      <Section title={`${items.length} transaction${items.length === 1 ? '' : 's'} · ${formatCents(total)}`}
-        footer="Tap “Scan receipt” to split a mixed purchase (like Target groceries + toys) across buckets.">
-        {items.length === 0 && <Row title="No transactions match these filters" last />}
-        {items.map(({ tx, parts, amount }, i) => {
-          const subtitle = parts.length > 1
-            ? parts.map((p) => `${bucketName(p.bucketId)} ${formatCents(p.amount)}`).join(' · ')
-            : bucketName(parts[0]?.bucketId ?? '');
-          const isShare = amount !== tx.amount;
-          return (
-            <Row key={tx.id} title={tx.merchant}
-              subtitle={`${tx.date.slice(5)}${tx.pending ? ' · Pending' : ''} · ${subtitle}${isShare ? ` · of ${formatCents(tx.amount)}` : ''}${accountLabel(tx.accountId) ? `\n${accountLabel(tx.accountId)}` : ''}`}
-              right={<Label style={{ fontVariant: ['tabular-nums'] }}>{formatCents(amount)}</Label>} last={i === items.length - 1}>
-              {parts.length <= 1 && !filter.bucketId && (
-                <Link href={{ pathname: '/scan-receipt', params: { transactionId: tx.id } }} asChild>
-                  <Pressable><Label style={{ color: t.tint, fontSize: 15 }}>Scan receipt</Label></Pressable>
-                </Link>
-              )}
-            </Row>
-          );
-        })}
-      </Section>
+      <View accessible accessibilityRole="header" style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: -8 }}>
+        <Label style={{ fontSize: 22, fontWeight: '700' }}>{items.length} purchase{items.length === 1 ? '' : 's'}</Label>
+        <Label style={{ fontSize: 22, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatCents(total, { showCents: false })}</Label>
+      </View>
+      {items.length === 0 && <Section><Row title="No purchases match these filters" last /></Section>}
+      {groupByDay(items).map(([date, group]) => (
+        <Section key={date} title={dayHeading(date, todayIso)}>
+          {group.map(({ tx, parts, amount }, i) => {
+            const bucket = buckets.find((b) => b.id === parts[0]?.bucketId);
+            const owner = accounts.find((a) => a.id === tx.accountId)?.ownerId;
+            const note = [
+              parts.map((p) => bucketName(p.bucketId)).join(' + '),
+              tx.pending ? 'Pending' : null,
+              owner && owner !== meId ? `${members.find((m) => m.id === owner)?.name ?? 'Family'}'s card` : null,
+              amount !== tx.amount ? `share of ${formatCents(tx.amount)}` : null,
+            ].filter(Boolean).join(' · ');
+            return (
+              <ListRow key={tx.id} title={tx.merchant.trim()} figure={formatCents(amount)} note={note} last={i === group.length - 1}
+                leading={<View style={[styles.icon, { backgroundColor: t.track }]}>
+                  <SymbolView name={{ ios: (bucket?.icon ?? 'circle') as any, android: 'category', web: 'category' }} size={15} tintColor={t.secondaryText} />
+                </View>}
+                onPress={() => router.push({ pathname: '/transaction/[id]', params: { id: tx.id } })} />
+            );
+          })}
+        </Section>
+      ))}
     </Screen>
   );
+}
+
+const todayIso = new Date().toISOString().slice(0, 10);
+
+function groupByDay<T extends { tx: { date: string } }>(items: T[]): [string, T[]][] {
+  const m = new Map<string, T[]>();
+  for (const it of items) m.set(it.tx.date, [...(m.get(it.tx.date) ?? []), it]);
+  return [...m].sort((a, b) => b[0].localeCompare(a[0]));
 }
 
 const shortMonth = (m: string) => new Date(`${m}-15T12:00:00Z`).toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
@@ -128,5 +142,6 @@ function OptionRow({ label, detail, selected, onPress, last }: { label: string; 
 
 const styles = StyleSheet.create({
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
+  icon: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   search: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
 });

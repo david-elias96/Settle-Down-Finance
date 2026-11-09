@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  bucketStatuses, cancelRoute, categorize, forecastMonth, isAllowedUrl, isSensitiveField, redactText, projectionInsight, creditsLeft, creditsResetLabel, spendCredits, type CreditState, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
+  bucketStatuses, topStores, shortDate, dayHeading, cancelRoute, categorize, forecastMonth, isAllowedUrl, isSensitiveField, redactText, projectionInsight, creditsLeft, creditsResetLabel, spendCredits, type CreditState, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
   transactionNotification, type Allocation, type Bucket, type SavingsGoal, type Transaction,
 } from './index';
 
@@ -61,7 +61,7 @@ describe('bucketStatuses + notification', () => {
     expect(s.spent).toBe(dollars(684.12));
     const n = transactionNotification({ merchant: 'Kroger', amount: dollars(84.12), pending: true }, [{ status: s, amount: dollars(84.12) }], 9, 30);
     expect(n.title).toBe('$84.12 at Kroger (pending)');
-    expect(n.body).toBe('Groceries · Over pace\n▰▰▰▰▰▰▰▰▰▱ 98% · $684 of $700');
+    expect(n.body).toBe('Groceries · Heading over\n$15 left · $5/week');
     expect(n.bucketId).toBe('groceries');
   });
 });
@@ -376,5 +376,40 @@ describe('findSubscriptions', () => {
       t('5', 'Amazon Prime', '2026-10-09', 14.99, 'GENERAL_MERCHANDISE'), t('6', 'Amazon Prime', '2026-11-09', 14.99, 'GENERAL_MERCHANDISE'),
     ]);
     expect(subs.map((s) => s.vendor)).toEqual(['Netflix', 'Amazon Prime']);
+  });
+});
+
+describe('waysToCut', () => {
+  const b: Bucket = { id: 'dining', name: 'Dining Out', icon: 'x', monthlyLimit: dollars(300), isCustom: false };
+  const note = (spent: number, today: number) => {
+    const txs: Transaction[] = [{ id: '1', date: '2026-11-02', merchant: 'Cafe', amount: dollars(spent), accountId: 'a', pending: false }];
+    const allocs: Allocation[] = [{ transactionId: '1', bucketId: 'dining', amount: dollars(spent), source: 'auto' }];
+    const statuses = bucketStatuses([b], txs, allocs, '2026-11');
+    return waysToCut({ month: '2026-11', today, daysInMonth: 30, statuses, transactions: txs, allocations: allocs }, () => 'Dining Out')
+      .find((i) => i.label === 'Dining Out')?.note;
+  };
+  it('gives a weekly allowance, or the total left in the last week', () => {
+    expect(note(150, 9)).toBe('On pace for $500 of $300, keep to $50/week'); // $150 left over 21 days
+    expect(note(280, 25)).toBe('On pace for $336 of $300, $20 left for 5 days');
+  });
+});
+
+describe('topStores', () => {
+  const t = (id: string, merchant: string, date: string, amount: number): Transaction => ({ id, merchant, date, amount: dollars(amount), accountId: 'a', pending: false });
+  const txs = [t('1', 'Chipotle', '2026-11-02', 12), t('2', 'CHIPOTLE ', '2026-11-05', 14), t('3', 'Chipotle', '2026-11-08', 11),
+    t('4', 'Costco', '2026-11-03', 250), t('5', 'Chipotle', '2026-10-20', 13), t('6', 'Refund Co', '2026-11-04', -20)];
+  it('ranks by visits or spend within the chosen months', () => {
+    expect(topStores(txs, { months: ['2026-11'] })[0]).toEqual({ store: 'Chipotle', visits: 3, total: dollars(37), lastDate: '2026-11-08' });
+    expect(topStores(txs, { months: ['2026-11'], by: 'spend' })[0].store).toBe('Costco');
+    expect(topStores(txs)[0].visits).toBe(4);
+  });
+});
+
+describe('shared status helpers', () => {
+  it('formats dates and day headings', () => {
+    expect(shortDate('2026-11-08')).toBe('Nov 8');
+    expect(dayHeading('2026-11-09', '2026-11-09')).toBe('Today');
+    expect(dayHeading('2026-11-08', '2026-11-09')).toBe('Yesterday');
+    expect(dayHeading('2026-11-06', '2026-11-09')).toBe('Fri, Nov 6');
   });
 });

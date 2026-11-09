@@ -57,6 +57,7 @@ function RootLayoutNav() {
           <Stack.Screen name="scan-receipt" options={{ presentation: 'modal', title: 'Scan Receipt' }} />
           <Stack.Screen name="bucket/[id]" options={{ title: 'Bucket', headerBackTitle: 'Back' }} />
           <Stack.Screen name="invite" options={{ presentation: 'modal', title: 'Invite' }} />
+          <Stack.Screen name="transaction/[id]" options={{ title: 'Purchase', headerBackTitle: 'Back' }} />
           <Stack.Screen name="subscriptions" options={{ title: 'Subscriptions', headerBackTitle: 'Back' }} />
           <Stack.Screen name="cancel" options={{ title: 'Cancel subscription', headerBackTitle: 'Back' }} />
           <Stack.Screen name="join/[code]" options={{ title: 'Join' }} />
