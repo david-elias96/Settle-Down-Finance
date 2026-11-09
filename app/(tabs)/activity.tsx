@@ -77,9 +77,10 @@ export default function ActivityScreen() {
         </Section>
       )}
 
-      <Label secondary style={{ fontSize: 13, marginLeft: 16, marginBottom: -12 }}>
-        {items.length} purchase{items.length === 1 ? '' : 's'} · {formatCents(total, { showCents: false })}
-      </Label>
+      <View accessible accessibilityRole="header" style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: -8 }}>
+        <Label style={{ fontSize: 22, fontWeight: '700' }}>{items.length} purchase{items.length === 1 ? '' : 's'}</Label>
+        <Label style={{ fontSize: 22, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatCents(total, { showCents: false })}</Label>
+      </View>
       {items.length === 0 && <Section><Row title="No purchases match these filters" last /></Section>}
       {groupByDay(items).map(([date, group]) => (
         <Section key={date} title={dayHeading(date, todayIso)}>
