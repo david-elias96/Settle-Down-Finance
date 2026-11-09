@@ -7,6 +7,8 @@ export interface HouseholdData extends InsightInput {
   householdId: string;
   buckets: Bucket[];
   bucketName: (id: string) => string;
+  /** Today as YYYY-MM-DD. */
+  todayIso: string;
 }
 
 /**
@@ -41,7 +43,7 @@ export async function loadHousehold(householdId: string, monthsBack = 4): Promis
   const daysInMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate();
 
   return {
-    householdId, month, today: now.getUTCDate(), daysInMonth, buckets, statuses, transactions, allocations,
+    householdId, month, today: now.getUTCDate(), todayIso: now.toISOString().slice(0, 10), daysInMonth, buckets, statuses, transactions, allocations,
     bucketName: (id) => buckets.find((b) => b.id === id)?.name ?? 'Unassigned',
   };
 }

@@ -6,7 +6,7 @@ import { handle, HttpError, json, requireMember } from '../_shared/supabase.ts';
 import { loadHousehold, type HouseholdData } from '../_shared/household.ts';
 import { chargeCredits } from '../_shared/credits.ts';
 import {
-  ASK_ANSWER_SCHEMA, topStores, bucketPace, filterTransactions, type AskAnswer, findInsights, findSubscriptions, formatCents, monthLabel, vendorKey, waysToCut,
+  ASK_ANSWER_SCHEMA, topStores, bucketPace, filterTransactions, type AskAnswer, findInsights, findSubscriptions, formatCents, monthLabel, recapFacts, vendorKey, waysToCut, weeklyRecap,
 } from '../_shared/domain/index.ts';
 
 const client = new Anthropic();
@@ -71,6 +71,11 @@ const tools: Anthropic.Beta.BetaTool[] = [
     input_schema: { type: 'object', properties: {}, additionalProperties: false },
   },
   {
+    name: 'get_weekly_recap',
+    description: 'The last 7 days: everyday spending (bills apart) against the weekly pace, the week before, a typical week, each bucket, and what stood out.',
+    input_schema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
     name: 'get_subscriptions',
     description: 'Recurring monthly charges detected from the transactions, with current and previous amounts.',
     input_schema: { type: 'object', properties: {}, additionalProperties: false },
@@ -90,6 +95,8 @@ function runTool(name: string, input: Record<string, unknown>, h: HouseholdData)
       return waysToCut(h, h.bucketName).map((i) => ({ ...i, saving: $(i.saving) }));
     case 'get_insights':
       return findInsights(h).map(({ title, body, kind }) => ({ kind, title, body }));
+    case 'get_weekly_recap':
+      return recapFacts(weeklyRecap({ ...h, end: h.todayIso }));
     case 'get_subscriptions':
       return findSubscriptions(h.transactions).map((s) => ({ store: s.vendor, amount: $(s.amount), previous: $(s.previousAmount), last_charged: s.lastDate }));
     case 'get_top_stores':

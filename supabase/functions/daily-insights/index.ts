@@ -6,7 +6,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { admin, handle, HttpError, json } from '../_shared/supabase.ts';
 import { loadHousehold } from '../_shared/household.ts';
 import { pushToHousehold } from '../_shared/push.ts';
-import { bucketPace, findInsights, formatCents } from '../_shared/domain/index.ts';
+import { findInsights, recapFacts, weeklyRecap } from '../_shared/domain/index.ts';
 
 const client = new Anthropic();
 
@@ -42,9 +42,12 @@ the family recently marked unhelpful. Choose the single insight most useful to a
 null if none is worth interrupting them for. Write a short, friendly, non-judgmental title and
 body. Use only numbers present in the input. Add one practical tip when it fits.`;
 
-const WEEKLY_SYSTEM = `You write a family's weekly budget summary as one push notification.
-Use only the numbers given. Lead with how the month is going overall, then the one bucket that
-most needs attention or a win worth celebrating. Friendly and brief. Set insight_id to null.`;
+const WEEKLY_SYSTEM = `You write a family's weekly money recap as one push notification.
+The facts cover the last 7 days and are exact; use only numbers that appear in them. Lead with
+everyday spending against the weekly pace (compare with a typical week when given, since single
+weeks are lumpy). Then name the one thing that stood out most: a bucket that jumped, or a win
+worth celebrating. Bills are reported apart; mention them only if nothing else stood out.
+Friendly, never judgmental, no exclamation marks. Set insight_id to null.`;
 
 function inQuietHours(tz: string, start: number, end: number) {
   const hour = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone: tz }).format(new Date()));
@@ -70,15 +73,9 @@ Deno.serve(handle(async (req) => {
     const isSunday = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: hh.timezone }).format(new Date()) === 'Sun';
 
     if (isSunday && hh.weekly_summary) {
-      const spent = h.statuses.reduce((s, b) => s + b.spent, 0);
-      const limit = h.statuses.reduce((s, b) => s + b.bucket.monthlyLimit, 0);
-      const facts = {
-        day_of_month: h.today, days_in_month: h.daysInMonth,
-        spent: formatCents(spent), budget: formatCents(limit),
-        buckets: h.statuses.map((s) => ({ name: s.bucket.name, ...pick(bucketPace(s, h.today, h.daysInMonth)) })),
-      };
+      const facts = recapFacts(weeklyRecap({ ...h, end: h.todayIso }));
       const msg = await word(WEEKLY_SYSTEM, facts);
-      if (msg) await send(hh.id, { id: `${h.month}:weekly:${h.today}`, kind: 'weekly_summary', facts }, msg);
+      if (msg) await send(hh.id, { id: `weekly:${h.todayIso}`, kind: 'weekly_summary', facts }, msg);
       results[hh.id] = 'weekly summary';
       continue;
     }
@@ -98,8 +95,6 @@ Deno.serve(handle(async (req) => {
   }
   return json({ results });
 }));
-
-const pick = (p: ReturnType<typeof bucketPace>) => ({ percent_used: p.percentUsed, status: p.label, detail: p.detail });
 
 async function send(
   householdId: string,

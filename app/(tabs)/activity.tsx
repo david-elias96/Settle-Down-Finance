@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ActivitySummary, type SummaryData } from '@/components/ActivitySummary';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
@@ -6,7 +6,7 @@ import { AccessibilityInfo, Animated, Modal, Pressable, ScrollView, StyleSheet, 
 import { Label, ListRow, Row, Screen, Section, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import {
-  dayHeading, filterTransactions, splitLabel, formatCents, monthLabel, monthOptions, NO_FILTER, vendorOptions,
+  dayHeading, filterTransactions, splitLabel, formatCents, monthLabel, monthOptions, NO_FILTER, vendorKey, vendorOptions,
   type Option, type TransactionFilter,
 } from '@/src/domain';
 
@@ -17,6 +17,11 @@ export default function ActivityScreen() {
   const t = useTheme();
   const [filter, setFilter] = useState<TransactionFilter>({ ...NO_FILTER, month: currentMonth });
   const [open, setOpen] = useState<Picker>(null);
+  // Opened from elsewhere (e.g. the weekly recap) to show one store's purchases.
+  const params = useLocalSearchParams<{ vendor?: string; at?: string }>();
+  useEffect(() => {
+    if (params.vendor) setFilter({ ...NO_FILTER, month: currentMonth, vendor: vendorKey(params.vendor) });
+  }, [params.vendor, params.at, currentMonth]);
   const [search, setSearch] = useState('');
   // "Clear filters" sits a little in from the first chip's left edge, under its curve.
   const [chipHeight, setChipHeight] = useState(36);

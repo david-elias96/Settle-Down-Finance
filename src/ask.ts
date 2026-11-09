@@ -1,4 +1,4 @@
-import { answerToText, bucketPace, previousMonth, topStores, shortDate, daysInMonth, findSubscriptions, formatCents, type AskAnswer, type BucketStatus, type CutIdea, type Transaction } from '@/src/domain';
+import { answerToText, bucketPace, previousMonth, topStores, shortDate, daysInMonth, findSubscriptions, formatCents, type AskAnswer, type WeeklyRecap, type BucketStatus, type CutIdea, type Transaction } from '@/src/domain';
 
 export interface ChatTurn {
   role: 'user' | 'assistant';
@@ -47,7 +47,7 @@ export async function ask(
   return { role: 'assistant', text: answerToText(answer), answer, preview: true };
 }
 
-type PreviewContext = { statuses: BucketStatus[]; cutIdeas: CutIdea[]; transactions: Transaction[]; month: string; today: number };
+type PreviewContext = { statuses: BucketStatus[]; cutIdeas: CutIdea[]; transactions: Transaction[]; month: string; today: number; recap: WeeklyRecap };
 
 /**
  * Until the backend is connected, answer common questions on the phone with the same
@@ -59,6 +59,17 @@ function previewAnswer(q: string, ctx: PreviewContext): AskAnswer {
   const days = daysInMonth(ctx.month);
   const nameOf = (id?: string) => ctx.statuses.find((s) => s.bucket.id === id)?.bucket.name ?? null;
 
+  if (/week/.test(text)) {
+    const r = ctx.recap;
+    const vs = r.typicalSpent !== null ? `${short(r.typicalSpent)} in a typical week` : `${short(r.prevSpent)} the week before`;
+    return {
+      headline: r.headline,
+      rowsTitle: 'What stood out',
+      rows: r.points.map((p) => ({ label: p.label, value: p.figure, detail: p.note, tone: p.tone,
+        bucket: p.bucketId ? nameOf(p.bucketId) : null })),
+      tip: `For comparison, you spent ${vs}.${r.billsTotal > 0 ? ' Bills are counted separately.' : ''}`,
+    };
+  }
   if (/cut|save|saving|reduce|less|spend less|lower/.test(text)) {
     if (!ctx.cutIdeas.length) return { headline: "You're on track everywhere, so there's nothing urgent to cut.", rows: [] };
     const top = ctx.cutIdeas.slice(0, 4);
@@ -80,7 +91,7 @@ function previewAnswer(q: string, ctx: PreviewContext): AskAnswer {
       rows: subs.map((x) => ({ label: x.vendor, value: `${formatCents(x.amount)}/mo`,
         detail: x.amount > x.previousAmount ? `Up from ${formatCents(x.previousAmount)}` : null,
         tone: x.amount > x.previousAmount ? 'warn' : 'neutral' })),
-      tip: 'Settings → Subscriptions can cancel one for you.',
+      tip: 'The Subscriptions tab can cancel one for you.',
     };
   }
   if (/store|shop|location|place|visit|vendor|merchant|restaurant|went|go to|eat at/.test(text)) {

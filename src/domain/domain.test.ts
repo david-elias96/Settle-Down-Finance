@@ -460,3 +460,55 @@ describe('nextMonthlyDate', () => {
     expect(nextMonthlyDate('2026-12-15')).toBe('2027-01-15');
   });
 });
+
+import { weeklyRecap } from './index';
+
+describe('weeklyRecap', () => {
+  const buckets = [
+    { id: 'housing', name: 'Housing', icon: '', monthlyLimit: 180000, isCustom: false },
+    { id: 'dining', name: 'Dining Out', icon: '', monthlyLimit: 30000, isCustom: false },
+    { id: 'groceries', name: 'Groceries', icon: '', monthlyLimit: 60000, isCustom: false },
+  ];
+  const tx = (id: string, date: string, merchant: string, amount: number, plaidCategory?: string) =>
+    ({ id, accountId: 'a', merchant, amount, date, pending: false, plaidCategory });
+  const transactions = [
+    tx('o1', '2026-10-01', 'Kroger', 9000),
+    tx('p1', '2026-11-01', 'Kroger', 12000),
+    tx('p2', '2026-11-02', 'Chipotle', 2000),
+    tx('w0', '2026-11-03', 'Oak Apartments', 150000, 'RENT_AND_UTILITIES'),
+    tx('w1', '2026-11-04', 'Kroger', 8000),
+    tx('w2', '2026-11-06', 'Kroger', 7000),
+    tx('w3', '2026-11-07', 'Sushi Place', 9000),
+  ];
+  const bucketOf: Record<string, string> = { Kroger: 'groceries', Chipotle: 'dining', 'Sushi Place': 'dining', 'Oak Apartments': 'housing' };
+  const allocations = transactions.map((t) => ({ transactionId: t.id, bucketId: bucketOf[t.merchant], amount: t.amount, source: 'auto' as const }));
+  const r = weeklyRecap({ transactions, allocations, buckets, end: '2026-11-09' });
+
+  it('covers the last 7 days and leaves rent out of everyday spending', () => {
+    expect([r.start, r.end]).toEqual(['2026-11-03', '2026-11-09']);
+    expect(r.spent).toBe(24000);
+    expect(r.count).toBe(3);
+    expect(r.prevSpent).toBe(14000);
+    expect(r.billsTotal).toBe(150000);
+    expect(r.days).toHaveLength(7);
+    expect(r.typicalSpent).toBe(0);
+  });
+
+  it('has no typical week without 4 weeks of history', () => {
+    const recent = transactions.filter((t) => t.id !== 'o1');
+    expect(weeklyRecap({ transactions: recent, allocations, buckets, end: '2026-11-09' }).typicalSpent).toBeNull();
+  });
+
+  it('paces against the everyday buckets only', () => {
+    expect(r.pace).toBe(Math.round((90000 * 7) / 30));
+    expect(r.tone).toBe('warn');
+    expect(r.headline).toBe('You spent $240 this week, $30 over your weekly pace. Dining Out was the biggest jump.');
+  });
+
+  it('calls out the jump, the biggest purchase, repeat visits, new stores and bills', () => {
+    expect(r.points.map((p) => p.kind)).toEqual(['bucket_up', 'biggest', 'top_store', 'new_store', 'bills']);
+    expect(r.points[0]).toMatchObject({ label: 'Dining Out', note: 'Up $70 from the week before' });
+    expect(r.points[2]).toMatchObject({ label: 'Kroger', note: '2 visits this week' });
+    expect(r.points[3]).toMatchObject({ label: 'Sushi Place' });
+  });
+});
