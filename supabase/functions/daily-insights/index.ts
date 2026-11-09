@@ -40,14 +40,16 @@ const PICK_SYSTEM = `You write push notifications for a family budgeting app.
 You get today's candidate insights (already computed; their numbers are exact) and the kinds
 the family recently marked unhelpful. Choose the single insight most useful to act on today, or
 null if none is worth interrupting them for. Write a short, friendly, non-judgmental title and
-body. Use only numbers present in the input. Add one practical tip when it fits.`;
+body. Use only numbers present in the input. Add one practical tip when it fits. If you refer to
+the app, call it SettleDown.`;
 
 const WEEKLY_SYSTEM = `You write a family's weekly money recap as one push notification.
 The facts cover the last 7 days and are exact; use only numbers that appear in them. Lead with
 everyday spending against the weekly pace (compare with a typical week when given, since single
 weeks are lumpy). Then name the one thing that stood out most: a bucket that jumped, or a win
 worth celebrating. Bills are reported apart; mention them only if nothing else stood out.
-Friendly, never judgmental, no exclamation marks. Set insight_id to null.`;
+Friendly, never judgmental, no exclamation marks. If you refer to the app, call it SettleDown.
+Set insight_id to null.`;
 
 function inQuietHours(tz: string, start: number, end: number) {
   const hour = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone: tz }).format(new Date()));

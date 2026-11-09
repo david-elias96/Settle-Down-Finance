@@ -74,12 +74,12 @@ function Intro({ name, amount, practice, route, vendor, website, setWebsite, onS
       ) : (
         <>
           <Section title="How it works">
-            <Step icon="🔒" text="You sign in yourself, right on the service's own page. Claude never sees or stores your password." t={t} />
-            <Step icon="✋" text="Claude skips the “stay for 50% off” offers and never buys or changes anything else." t={t} />
+            <Step icon="🔒" text="You sign in yourself, right on the service's own page. SettleDown never sees or stores your password." t={t} />
+            <Step icon="✋" text="SettleDown skips the “stay for 50% off” offers and never buys or changes anything else." t={t} />
             <Step icon="✅" text="Nothing is cancelled until you approve the final step." t={t} last />
           </Section>
           {needsSite && (
-            <Section title="Website" footer={`We don't have ${vendor} on file yet. Enter its website and Claude will find the cancel page there.`}>
+            <Section title="Website" footer={`We don't have ${vendor} on file yet. Enter its website and SettleDown will find the cancel page there.`}>
               <TextInput accessibilityLabel="Website" value={website} onChangeText={setWebsite} placeholder="e.g. acmegym.com" placeholderTextColor={t.secondaryText}
                 autoCapitalize="none" autoCorrect={false} keyboardType="url" style={{ padding: 14, fontSize: 17, color: t.text }} />
             </Section>
@@ -157,7 +157,7 @@ function AgentRun({ run }: { run: Run }) {
           <>
             <View style={{ flex: 1, gap: 2 }}>
               <Label style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 15 }}>Your turn</Label>
-              <Label style={{ color: '#FFFFFF', fontSize: 14 }}>{phase.message} Claude can't see what you type.</Label>
+              <Label style={{ color: '#FFFFFF', fontSize: 14 }}>{phase.message} SettleDown can't see what you type.</Label>
             </View>
             <Pressable onPress={agent.userDone} accessibilityRole="button" style={[styles.pill, { backgroundColor: '#FFFFFF' }]}>
               <Label style={{ color: t.tint, fontWeight: '700', fontSize: 14 }}>Done</Label>
@@ -167,7 +167,7 @@ function AgentRun({ run }: { run: Run }) {
           <>
             <ActivityIndicator />
             <View style={{ flex: 1 }}>
-              <Label secondary style={{ fontSize: 12 }}>Claude is working</Label>
+              <Label secondary style={{ fontSize: 12 }}>SettleDown is working</Label>
               <Label style={{ fontSize: 15, fontWeight: '600' }}>{phase.status}</Label>
             </View>
           </>
@@ -175,13 +175,13 @@ function AgentRun({ run }: { run: Run }) {
       </View>
       <View style={{ flex: 1 }}>
         <AgentBrowser ref={browser} source={run.source} allowedDomains={run.domains} userControl={userTurn} onPageLoaded={agent.onPageLoaded} />
-        {/* The page is hands-off while Claude works, so taps don't fight with it. */}
+        {/* The page is hands-off while SettleDown works, so taps don't fight with it. */}
         {!userTurn && <View style={StyleSheet.absoluteFill} pointerEvents="auto" />}
       </View>
       {phase.name === 'confirm' && (
         <View style={[styles.sheet, { backgroundColor: t.card, borderTopColor: t.separator }]}>
           <Label style={{ fontSize: 18, fontWeight: '700' }}>Cancel {run.name}?</Label>
-          <Label secondary style={{ fontSize: 15, lineHeight: 21 }}>This is the last step. Claude will click “{phase.button}” on {run.name}'s site.</Label>
+          <Label secondary style={{ fontSize: 15, lineHeight: 21 }}>This is the last step. SettleDown will click “{phase.button}” on {run.name}'s site.</Label>
           <Pressable onPress={() => agent.confirm(true)} accessibilityRole="button" style={[styles.primary, { backgroundColor: t.red }]}>
             <Label style={styles.primaryText}>Yes, cancel it</Label>
           </Pressable>

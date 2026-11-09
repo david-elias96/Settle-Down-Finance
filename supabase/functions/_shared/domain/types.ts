@@ -45,7 +45,9 @@ export interface Allocation {
   transactionId: string;
   bucketId: string;
   amount: Cents;
-  source: 'auto' | 'rule' | 'user' | 'receipt';
+  source: 'auto' | 'rule' | 'user' | 'receipt' | 'ai';
+  /** Why it landed in this bucket, e.g. the AI's short reason. */
+  reason?: string;
 }
 
 export interface SavingsGoal {

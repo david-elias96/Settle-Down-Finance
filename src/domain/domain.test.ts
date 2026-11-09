@@ -512,3 +512,47 @@ describe('weeklyRecap', () => {
     expect(r.points[3]).toMatchObject({ label: 'Sushi Place' });
   });
 });
+
+import { acceptAiChoices, aiSortInput, sortTransaction } from './index';
+
+describe('automatic bucket sorting', () => {
+  const buckets = [
+    { id: 'groceries', name: 'Groceries' }, { id: 'dining', name: 'Dining Out' },
+    { id: 'shopping', name: 'Shopping' }, { id: 'other', name: 'Everything Else' }, { id: 'old', name: 'Old', archived: true },
+  ];
+  const rules = [{ match: 'costco', bucketId: 'groceries' }];
+
+  it('uses rules and clear Plaid categories without asking the AI', () => {
+    expect(sortTransaction({ merchant: 'COSTCO #123' }, rules, buckets)).toMatchObject({ bucketId: 'groceries', source: 'rule', askAi: false });
+    expect(sortTransaction({ merchant: 'Chipotle', plaidCategory: 'FOOD_AND_DRINK' }, rules, buckets)).toMatchObject({ bucketId: 'dining', askAi: false });
+  });
+
+  it('asks the AI about vague or unknown purchases', () => {
+    expect(sortTransaction({ merchant: 'SQ *BLUE BOTTLE' }, rules, buckets).askAi).toBe(true);
+    expect(sortTransaction({ merchant: 'Amazon', plaidCategory: 'GENERAL_MERCHANDISE' }, rules, buckets).askAi).toBe(true);
+  });
+
+  it('remembers where a store went before, preferring what a person chose', () => {
+    const history = [
+      { merchant: 'sq *blue bottle', bucketId: 'dining', source: 'ai' as const, date: '2026-11-01' },
+      { merchant: 'SQ *BLUE BOTTLE', bucketId: 'groceries', source: 'user' as const, date: '2026-10-01' },
+      { merchant: 'Amazon', bucketId: 'old', source: 'user' as const, date: '2026-10-01' },
+    ];
+    expect(sortTransaction({ merchant: 'SQ *BLUE BOTTLE' }, rules, buckets, history)).toMatchObject({ bucketId: 'groceries', source: 'rule', askAi: false });
+    expect(sortTransaction({ merchant: 'SQ *Blue Bottle' }, rules, buckets, history.slice(0, 1))).toMatchObject({ bucketId: 'dining', source: 'ai', askAi: false });
+    // An archived bucket isn't reused.
+    expect(sortTransaction({ merchant: 'Amazon', plaidCategory: 'GENERAL_MERCHANDISE' }, rules, buckets, history).askAi).toBe(true);
+  });
+
+  it('sends only active buckets and drops answers that name anything else', () => {
+    const input = aiSortInput([{ id: 'x1', merchant: 'SQ *BLUE BOTTLE', amount: 675 }], buckets, []);
+    expect(input.buckets.map((b) => b.id)).toEqual(['groceries', 'dining', 'shopping', 'other']);
+    expect(input.purchases[0]).toMatchObject({ amount: '$6.75', plaid_category: null });
+    const ok = acceptAiChoices([
+      { id: 'x1', bucket_id: 'dining', reason: 'Coffee shop paid through Square' },
+      { id: 'x2', bucket_id: 'dining', reason: 'unknown purchase' },
+      { id: 'x1', bucket_id: 'old', reason: 'archived' },
+    ], ['x1'], buckets);
+    expect([...ok]).toEqual([['x1', { bucketId: 'dining', reason: 'Coffee shop paid through Square' }]]);
+  });
+});

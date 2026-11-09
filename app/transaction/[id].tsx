@@ -1,6 +1,6 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, Switch, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { Label, ListRow, Screen, Section, Tag, useTheme, AiMark } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { dayHeading, formatCents, splitLabel, splitShare, splitWays } from '@/src/domain';
@@ -8,7 +8,7 @@ import { dayHeading, formatCents, splitLabel, splitShare, splitWays } from '@/sr
 /** One purchase: amount, where it went, whose card, and the receipt split. */
 export default function TransactionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { transactions, allocations, buckets, accountLabel, setBillSplit } = useBudget();
+  const { transactions, allocations, buckets, accountLabel, setBillSplit, moveToBucket } = useBudget();
   const t = useTheme();
   const tx = transactions.find((x) => x.id === id);
   if (!tx) return <Screen><Label secondary>This purchase no longer exists.</Label></Screen>;
@@ -31,9 +31,15 @@ export default function TransactionScreen() {
       <Section title={parts.length > 1 ? 'Split across buckets' : 'Bucket'}>
         {parts.map((p, i) => (
           <ListRow key={i} title={name(p.bucketId)} figure={formatCents(p.amount)} last={i === parts.length - 1}
-            note={p.source === 'receipt' ? 'From receipt' : p.source === 'rule' ? 'Your rule' : null}
+            leading={p.source === 'ai' ? <AiMark size={15} /> : undefined}
+            note={p.source === 'receipt' ? 'From receipt' : p.source === 'ai' ? `Sorted by AI · ${p.reason ?? 'Best match'}`
+              : p.source === 'rule' ? p.reason ?? 'Your rule' : p.source === 'user' ? 'You chose this' : null}
             onPress={() => router.push({ pathname: '/bucket/[id]', params: { id: p.bucketId } })} />
         ))}
+        {tx.amount > 0 && (
+          <MoveBucket current={parts.length === 1 ? parts[0].bucketId : null} merchant={tx.merchant.trim()} split={parts.length > 1}
+            buckets={buckets.filter((b) => !b.archived)} onMove={(b, always) => moveToBucket(tx.id, b, always)} />
+        )}
       </Section>
 
       {tx.amount > 0 && (
@@ -58,6 +64,51 @@ export default function TransactionScreen() {
         </Pressable>
       )}
     </Screen>
+  );
+}
+
+/**
+ * "Move to another bucket": a list of buckets, plus whether the store should always go there.
+ * Always is on by default, since fixing one purchase usually means the store was misread.
+ */
+function MoveBucket({ current, merchant, split, buckets, onMove }: {
+  current: string | null; merchant: string; split: boolean;
+  buckets: { id: string; name: string }[]; onMove: (bucketId: string, always: boolean) => void;
+}) {
+  const t = useTheme();
+  const [open, setOpen] = useState(false);
+  const [always, setAlways] = useState(true);
+  const [moved, setMoved] = useState<string | null>(null);
+  const sep = { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.separator };
+  return (
+    <View>
+      <Pressable onPress={() => setOpen((o) => !o)} accessibilityRole="button" aria-expanded={open}
+        style={[{ paddingHorizontal: 16, paddingVertical: 13 }, sep]}>
+        <Label style={{ color: t.tint, fontSize: 17 }}>{open ? 'Done' : split ? 'Put it all in one bucket' : 'Move to another bucket'}</Label>
+        {moved && !open ? <Label secondary style={{ fontSize: 13, marginTop: 2 }}>{moved}</Label> : null}
+      </Pressable>
+      {open && (
+        <>
+          <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10 }, sep]}>
+            <View style={{ flex: 1 }}>
+              <Label style={{ fontSize: 15 }}>Always put {merchant} here</Label>
+              <Label secondary style={{ fontSize: 13 }}>Moves its other purchases too, and teaches auto sorting</Label>
+            </View>
+            <Switch value={always} onValueChange={setAlways} trackColor={{ true: t.tint }} thumbColor="#FFFFFF" accessibilityLabel={`Always put ${merchant} here`} />
+          </View>
+          {buckets.map((b) => (
+            <Pressable key={b.id} onPress={() => {
+              onMove(b.id, always); setOpen(false);
+              setMoved(always ? `Moved. ${merchant} will always go to ${b.name}.` : `Moved to ${b.name}.`);
+            }} accessibilityRole="radio" aria-checked={b.id === current}
+              style={[{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }, sep]}>
+              <Label style={{ flex: 1, fontSize: 16 }}>{b.name}</Label>
+              {b.id === current && <Label style={{ color: t.tint, fontSize: 16, fontWeight: '600' }}>✓</Label>}
+            </Pressable>
+          ))}
+        </>
+      )}
+    </View>
   );
 }
 

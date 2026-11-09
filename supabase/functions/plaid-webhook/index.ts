@@ -4,9 +4,10 @@ import { decodeProtectedHeader, importJWK, jwtVerify } from 'jose';
 import { admin, handle, json } from '../_shared/supabase.ts';
 import { plaid, toCents } from '../_shared/plaid.ts';
 import { pushToHousehold } from '../_shared/push.ts';
+import { aiSort } from '../_shared/aiSort.ts';
 import {
-  bucketStatuses, categorize, isBudgetSpending, transactionNotification,
-  type Allocation, type Bucket, type MerchantRule, type Transaction,
+  bucketStatuses, isBudgetSpending, sortTransaction, transactionNotification, vendorKey,
+  type Allocation, type Bucket, type MerchantRule, type PastChoice, type Transaction,
 } from '../_shared/domain/index.ts';
 
 Deno.serve(handle(async (req) => {
@@ -41,10 +42,14 @@ async function syncItem(plaidItemId: string) {
   const householdId: string = item.household_id;
   const { data: accessToken } = await admin.rpc('read_plaid_token', { secret_id: item.access_token_secret_id });
 
-  const [{ data: bucketRows }, { data: ruleRows }, { data: accountRows }] = await Promise.all([
+  const [{ data: bucketRows }, { data: ruleRows }, { data: accountRows }, { data: pastRows }, { data: hh }] = await Promise.all([
     admin.from('buckets').select('*').eq('household_id', householdId),
     admin.from('merchant_rules').select('*').eq('household_id', householdId),
     admin.from('accounts').select('id, plaid_account_id').eq('household_id', householdId),
+    // Where the family (or the AI) put stores before, so each store is only worked out once.
+    admin.from('allocations').select('bucket_id, source, transactions!inner(merchant, date)').eq('household_id', householdId)
+      .in('source', ['user', 'ai']).order('date', { referencedTable: 'transactions', ascending: false }).limit(1000),
+    admin.from('households').select('ai_sorting').eq('id', householdId).single(),
   ]);
   const buckets: Bucket[] = (bucketRows ?? []).map((b) => ({
     id: b.id, name: b.name, icon: b.icon, monthlyLimit: b.monthly_limit, isCustom: b.is_custom, archived: b.archived,
@@ -55,6 +60,11 @@ async function syncItem(plaidItemId: string) {
   const slugBuckets = buckets.map((b) => ({ ...b, id: idToSlug.get(b.id) ?? b.id }));
   const rules: MerchantRule[] = (ruleRows ?? []).map((r) => ({ match: r.match, bucketId: idToSlug.get(r.bucket_id) ?? r.bucket_id }));
   const accountId = new Map((accountRows ?? []).map((a) => [a.plaid_account_id, a.id]));
+  const history: PastChoice[] = (pastRows ?? []).map((a: any) => ({
+    merchant: a.transactions.merchant, date: a.transactions.date, source: a.source, bucketId: idToSlug.get(a.bucket_id) ?? a.bucket_id,
+  }));
+  // Purchases to ask Claude about after the sync, keyed by store so each store is asked once.
+  const vague = new Map<string, { id: string; merchant: string; amount: number; plaidCategory?: string; plaidDetailedCategory?: string; txIds: string[] }>();
 
   let cursor: string | undefined = item.sync_cursor ?? undefined;
   const fresh: string[] = [];
@@ -97,14 +107,21 @@ async function syncItem(plaidItemId: string) {
       // Card payments, transfers and income are stored for the activity list but not budgeted.
       if (!isBudgetSpending({ plaidCategory: row.plaid_category, plaidDetailedCategory: row.plaid_detailed_category })) continue;
 
-      const { bucketId, source } = categorize(
+      const sorted = sortTransaction(
         { merchant: row.merchant, plaidCategory: row.plaid_category, plaidDetailedCategory: row.plaid_detailed_category },
-        rules, slugBuckets,
+        rules, slugBuckets, history,
       );
       await admin.from('allocations').insert({
-        transaction_id: saved.id, household_id: householdId, amount: row.amount, source,
-        bucket_id: slugToId.get(bucketId) ?? bucketId,
+        transaction_id: saved.id, household_id: householdId, amount: row.amount, source: sorted.source,
+        reason: sorted.source === 'rule' || sorted.source === 'ai' ? sorted.reason : null,
+        bucket_id: slugToId.get(sorted.bucketId) ?? sorted.bucketId,
       });
+      if (sorted.askAi && row.amount > 0) {
+        const key = vendorKey(row.merchant);
+        const v = vague.get(key);
+        if (v) v.txIds.push(saved.id);
+        else vague.set(key, { id: saved.id, merchant: row.merchant, amount: row.amount, plaidCategory: row.plaid_category, plaidDetailedCategory: row.plaid_detailed_category, txIds: [saved.id] });
+      }
       if (!saved.notified_at && row.amount > 0) fresh.push(saved.id);
     }
 
@@ -115,6 +132,19 @@ async function syncItem(plaidItemId: string) {
     if (!page.has_more) break;
   }
   await admin.from('plaid_items').update({ sync_cursor: cursor, status: 'ok' }).eq('id', item.id);
+
+  // Let Claude place what the rules couldn't, before anyone is notified. Capped so a first
+  // sync with months of history stays quick; the rest keep their plain category.
+  if (hh?.ai_sorting !== false && vague.size) {
+    const stores = [...vague.values()].slice(0, 100);
+    const choices = await aiSort(stores, slugBuckets, history);
+    for (const s of stores) {
+      const c = choices.get(s.id);
+      if (!c) continue;
+      await admin.from('allocations').update({ bucket_id: slugToId.get(c.bucketId) ?? c.bucketId, source: 'ai', reason: c.reason })
+        .in('transaction_id', s.txIds).eq('source', 'auto');
+    }
+  }
 
   // Skip notifications on the very first sync (which back-fills 90 days of history).
   if (item.sync_cursor) await notify(householdId, buckets, fresh);
