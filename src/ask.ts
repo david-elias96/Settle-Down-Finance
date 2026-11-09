@@ -1,4 +1,4 @@
-import { answerToText, bucketPace, previousMonth, topStores, shortDate, daysInMonth, findSubscriptions, formatCents, type AskAnswer, type WeeklyRecap, type BucketStatus, type CutIdea, type Transaction } from '@/src/domain';
+import { answerToText, bucketPace, previousMonth, topStores, shortDate, daysInMonth, findSubscriptions, formatCents, type AskAnswer, type WeeklyRecap, type TuneUp, type Trend, trendNote, type BucketStatus, type CutIdea, type Transaction } from '@/src/domain';
 
 export interface ChatTurn {
   role: 'user' | 'assistant';
@@ -47,7 +47,7 @@ export async function ask(
   return { role: 'assistant', text: answerToText(answer), answer, preview: true };
 }
 
-type PreviewContext = { statuses: BucketStatus[]; cutIdeas: CutIdea[]; transactions: Transaction[]; month: string; today: number; recap: WeeklyRecap };
+type PreviewContext = { statuses: BucketStatus[]; cutIdeas: CutIdea[]; transactions: Transaction[]; month: string; today: number; recap: WeeklyRecap; tuneUps: TuneUp[]; trends: Trend[] };
 
 /**
  * Until the backend is connected, answer common questions on the phone with the same
@@ -59,6 +59,22 @@ function previewAnswer(q: string, ctx: PreviewContext): AskAnswer {
   const days = daysInMonth(ctx.month);
   const nameOf = (id?: string) => ctx.statuses.find((s) => s.bucket.id === id)?.bucket.name ?? null;
 
+  if (/pattern|tune|habit|trend|limit/.test(text)) {
+    const short$ = (c: number) => formatCents(c, { showCents: false });
+    const rows = [
+      ...ctx.trends.map((t) => ({ label: t.name, value: `${t.change > 0 ? 'Up' : 'Down'} ${short$(Math.abs(t.change))}`, detail: trendNote(t),
+        tone: (t.change > 0 ? 'warn' : 'good') as 'warn' | 'good', bucket: t.name })),
+      ...ctx.tuneUps.map((u) => ({ label: u.name, value: `${short$(u.limit)} → ${short$(u.suggested)}`, detail: u.reason, tone: 'neutral' as const, bucket: u.name })),
+    ].slice(0, 5);
+    const top = ctx.trends[0];
+    return {
+      headline: top ? `${top.name} changed the most last month: ${top.change > 0 ? 'up' : 'down'} ${short$(Math.abs(top.change))} from usual.`
+        : ctx.tuneUps.length ? `${ctx.tuneUps.length} of your limits don't match how you usually spend.` : 'Your spending is steady and your limits fit it.',
+      rowsTitle: rows.length ? 'What I noticed' : null,
+      rows,
+      tip: ctx.tuneUps.length ? 'Budget → Patterns & tune-ups can apply the new limits.' : null,
+    };
+  }
   if (/week/.test(text)) {
     const r = ctx.recap;
     const vs = r.typicalSpent !== null ? `${short(r.typicalSpent)} in a typical week` : `${short(r.prevSpent)} the week before`;

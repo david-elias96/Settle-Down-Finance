@@ -59,6 +59,7 @@ function RootLayoutNav() {
           <Stack.Screen name="invite" options={{ presentation: 'modal', title: 'Invite' }} />
           <Stack.Screen name="settings" options={{ title: 'Settings', headerBackTitle: 'Back' }} />
           <Stack.Screen name="transaction/[id]" options={{ title: 'Purchase', headerBackTitle: 'Back' }} />
+          <Stack.Screen name="patterns" options={{ title: 'Patterns & tune-ups', headerBackTitle: 'Back' }} />
           <Stack.Screen name="cancel" options={{ title: 'Cancel subscription', headerBackTitle: 'Back' }} />
           <Stack.Screen name="join/[code]" options={{ title: 'Join' }} />
         </Stack>

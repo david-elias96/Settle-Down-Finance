@@ -17,3 +17,4 @@ export * from './billSplit';
 export * from './recap';
 export * from './autoSort';
 export * from './bills';
+export * from './patterns';

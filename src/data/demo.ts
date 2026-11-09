@@ -68,18 +68,26 @@ const lastMonthTransactions: Transaction[] = lastMonthPlan
     plaidCategory: plaidPrimary[merchant], plaidDetailedCategory: detailed || undefined,
   }));
 
-// The month before: just the monthly bills, so bill forecasting has a pattern to go on.
-const prev2 = previousMonth(prev);
-const twoMonthsAgoPlan: [number, string, number][] = [
+// Two older months, so bills, trends and budget tune-ups have a pattern to go on. Dining out
+// was lighter back then, so last month shows up as a rise.
+const billsPlan: [number, string, number][] = [
   [1, 'Maple Court Apartments', 3000], [15, 'City Power & Light', 96.4], [22, 'Verizon Wireless', 85], [10, 'State Farm', 128],
   [4, 'Netflix', 22.99], [16, 'Adobe', 29.99], [3, 'Spotify', 10.99], [5, 'Planet Fitness', 24.99], [6, 'APPLE.COM/BILL', 2.99],
 ];
-const twoMonthsAgoTransactions: Transaction[] = twoMonthsAgoPlan.map(([day, merchant, amount], i) => ({
-  id: `q${i}`, accountId: merchant === 'Maple Court Apartments' ? 'chk' : 'cc', merchant, amount: dollars(amount), pending: false,
-  date: `${prev2}-${String(day).padStart(2, '0')}`, plaidCategory: plaidPrimary[merchant],
-}));
+const isBillName = new Set(billsPlan.map(([, m]) => m));
+const DINING = new Set(['Chipotle', 'Olive Garden', 'Jersey Mikes', 'DoorDash', 'Dunkin']);
+const olderTransactions: Transaction[] = [previousMonth(prev), previousMonth(previousMonth(prev))].flatMap((m, k) => {
+  const everyday = lastMonthPlan
+    .filter(([day, merchant]) => !isBillName.has(merchant) && day <= daysInMonth(m))
+    .map(([day, merchant, amount]) => [day, merchant, Math.round(amount * (DINING.has(merchant) ? 0.55 : k ? 1.04 : 0.93) * 100) / 100] as [number, string, number]);
+  return [...billsPlan, ...everyday].map(([day, merchant, amount], i) => ({
+    id: `q${k}-${i}`, accountId: merchant === 'Maple Court Apartments' ? 'chk' : 'cc', merchant, amount: dollars(amount), pending: false,
+    date: `${m}-${String(day).padStart(2, '0')}`, plaidCategory: plaidPrimary[merchant],
+    plaidDetailedCategory: lastMonthPlan.find(([, n, , d]) => n === merchant && d)?.[3] || undefined,
+  }));
+});
 
-export const demoTransactions: Transaction[] = [...thisMonthTransactions, ...lastMonthTransactions, ...twoMonthsAgoTransactions];
+export const demoTransactions: Transaction[] = [...thisMonthTransactions, ...lastMonthTransactions, ...olderTransactions];
 
 // The Target trip was receipt-scanned and split between groceries and kids.
 const targetSplit = splitByReceipt('t2', dollars(142.37), [
