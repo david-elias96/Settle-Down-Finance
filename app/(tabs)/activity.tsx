@@ -22,11 +22,11 @@ export default function ActivityScreen() {
   const [chipHeight, setChipHeight] = useState(36);
   // Where the filter row sits on screen, so the dropdown can open right under it.
   const chipRow = useRef<ComponentRef<typeof View>>(null);
-  const [anchor, setAnchor] = useState<{ x: number; y: number; width: number } | null>(null);
+  const [anchor, setAnchor] = useState<{ x: number; top: number; y: number; width: number } | null>(null);
   const { height: screenH } = useWindowDimensions();
   const toggle = (p: Exclude<Picker, null>) => {
     if (open === p) return setOpen(null);
-    chipRow.current?.measureInWindow((x: number, y: number, width: number, height: number) => { setAnchor({ x, y: y + height, width }); setOpen(p); });
+    chipRow.current?.measureInWindow((x: number, y: number, width: number, height: number) => { setAnchor({ x, top: y, y: y + height, width }); setOpen(p); });
   };
 
   const bucketName = (id: string) => buckets.find((b) => b.id === id)?.name ?? 'Unassigned';
@@ -40,7 +40,7 @@ export default function ActivityScreen() {
     return buckets.filter((b) => !b.archived).map((b) => {
       const parts = scoped.flatMap((i) => i.parts).filter((p) => p.bucketId === b.id);
       return { value: b.id, label: b.name, count: parts.length, total: parts.reduce((s, p) => s + p.amount, 0) };
-    }).filter((o) => o.count > 0);
+    }).filter((o) => o.count > 0).sort((a, b) => b.total - a.total);
   }, [transactions, allocations, buckets, filter]);
 
   const summary = useMemo<SummaryData>(() => {
@@ -70,14 +70,20 @@ export default function ActivityScreen() {
       }
     : null;
 
+  const chipButtons = (
+    <>
+      <Chip label={filter.month ? shortMonth(filter.month) : 'Months'} active={filter.month !== null} open={open === 'month'} onPress={() => toggle('month')} />
+      <Chip label={filter.bucketId ? bucketName(filter.bucketId) : 'Buckets'} active={filter.bucketId !== null} open={open === 'bucket'} onPress={() => toggle('bucket')} />
+      <Chip label={filter.vendor ? vendorLabel ?? 'Vendor' : 'Vendors'} active={filter.vendor !== null} open={open === 'vendor'} onPress={() => toggle('vendor')} />
+    </>
+  );
+
   return (
     <Screen>
       <ActivitySummary data={summary} />
       <View style={{ gap: 10 }}>
         <View ref={chipRow} collapsable={false} style={{ flexDirection: 'row', gap: 8 }} onLayout={(e) => setChipHeight(e.nativeEvent.layout.height)}>
-          <Chip label={filter.month ? shortMonth(filter.month) : 'Months'} active={filter.month !== null} open={open === 'month'} onPress={() => toggle('month')} />
-          <Chip label={filter.bucketId ? bucketName(filter.bucketId) : 'Buckets'} active={filter.bucketId !== null} open={open === 'bucket'} onPress={() => toggle('bucket')} />
-          <Chip label={filter.vendor ? vendorLabel ?? 'Vendor' : 'Vendors'} active={filter.vendor !== null} open={open === 'vendor'} onPress={() => toggle('vendor')} />
+          {chipButtons}
         </View>
         {active && (
           <Pressable onPress={() => setFilter(NO_FILTER)} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', marginLeft: chipHeight / 4 }}>
@@ -88,6 +94,12 @@ export default function ActivityScreen() {
 
       <Modal visible={!!options && !!anchor} transparent animationType="fade" onRequestClose={() => setOpen(null)}>
         <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: "#00000026" }]} onPress={() => setOpen(null)} accessibilityLabel="Close filter menu" />
+        {anchor && (
+          // The filter buttons again, above the dim layer, so tapping another one switches menus.
+          <View style={{ position: 'absolute', top: anchor.top, left: anchor.x, width: anchor.width, flexDirection: 'row', gap: 8 }}>
+            {chipButtons}
+          </View>
+        )}
         {options && anchor && (
           <View style={[styles.menu, { top: anchor.y + 6, left: anchor.x, width: anchor.width, maxHeight: screenH - anchor.y - 120, backgroundColor: t.card, borderColor: t.separator, borderRadius: chipHeight / 2, shadowColor: '#000' }]}>
             {open === 'vendor' && (
