@@ -8,3 +8,4 @@ export * from './savings';
 export * from './trend';
 export * from './pace';
 export * from './filters';
+export * from './insights';

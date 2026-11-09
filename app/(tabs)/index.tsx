@@ -1,12 +1,13 @@
 import { Link } from 'expo-router';
 import { Pressable, View } from 'react-native';
+import { InsightsCard } from '@/components/Insights';
 import { SpendingTrend } from '@/components/SpendingTrend';
 import { Label, ProgressBar, Row, Screen, Section, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { formatCents } from '@/src/domain';
 
 export default function BudgetScreen() {
-  const { statuses, impact, trend, month } = useBudget();
+  const { statuses, impact, trend, month, insights } = useBudget();
   const t = useTheme();
   const totalLimit = statuses.reduce((s, b) => s + b.bucket.monthlyLimit, 0);
   const totalSpent = statuses.reduce((s, b) => s + b.spent, 0);
@@ -18,6 +19,8 @@ export default function BudgetScreen() {
           <SpendingTrend trend={trend} month={month} />
         </View>
       </Section>
+
+      <InsightsCard insights={insights} />
 
       <Section title="This month">
         <Row title={`${formatCents(totalSpent, { showCents: false })} of ${formatCents(totalLimit, { showCents: false })}`}

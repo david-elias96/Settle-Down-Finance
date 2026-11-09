@@ -13,6 +13,7 @@ export default function TabLayout() {
     <Tabs screenOptions={{ tabBarActiveTintColor: t.tint, headerShown: useClientOnlyValue(false, true) }}>
       <Tabs.Screen name="index" options={{ title: 'Budget', tabBarIcon: icon({ ios: 'chart.pie.fill', android: 'pie_chart', web: 'pie_chart' }) }} />
       <Tabs.Screen name="activity" options={{ title: 'Activity', tabBarIcon: icon({ ios: 'list.bullet.rectangle.fill', android: 'list', web: 'list' }) }} />
+      <Tabs.Screen name="ask" options={{ title: 'Ask', tabBarIcon: icon({ ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' }) }} />
       <Tabs.Screen name="savings" options={{ title: 'Savings', tabBarIcon: icon({ ios: 'banknote.fill', android: 'savings', web: 'savings' }) }} />
       <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: icon({ ios: 'gearshape.fill', android: 'settings', web: 'settings' }) }} />
     </Tabs>

@@ -207,3 +207,45 @@ describe('transaction filters', () => {
     expect(monthOptions(txs).map((o) => o.value)).toEqual(['2026-11', '2026-10']);
   });
 });
+
+import { findInsights, findSubscriptions, waysToCut } from './index';
+
+describe('insights', () => {
+  const mk = (id: string, merchant: string, amount: number, date: string): Transaction =>
+    ({ id, merchant, amount: dollars(amount), date, accountId: 'a', pending: false });
+  const txs = [
+    mk('n1', 'Netflix', 22.99, '2026-10-07'), mk('n2', 'Netflix', 22.99, '2026-11-07'),
+    mk('a1', 'Adobe', 29.99, '2026-10-16'), mk('a2', 'Adobe', 32.99, '2026-11-08'),
+    mk('k1', 'Kroger', 100, '2026-10-02'), mk('k2', 'Kroger', 90, '2026-10-20'),
+    mk('d1', 'DoorDash', 38.6, '2026-10-25'), mk('d2', 'DoorDash', 141.3, '2026-11-08'),
+  ];
+  const allocs: Allocation[] = txs.map((t) => ({
+    transactionId: t.id, amount: t.amount, source: 'auto',
+    bucketId: t.merchant === 'DoorDash' ? 'dining' : t.merchant === 'Kroger' ? 'groceries' : 'entertainment',
+  }));
+  const status = (id: string, limit: number, spent: number) => {
+    const bucket = { id, name: id[0].toUpperCase() + id.slice(1), icon: '', monthlyLimit: dollars(limit), isCustom: false };
+    const remaining = bucket.monthlyLimit - dollars(spent);
+    return { bucket, spent: dollars(spent), remaining, ratio: spent / limit, overBy: Math.max(0, -remaining) };
+  };
+  const input = {
+    month: '2026-11', today: 9, daysInMonth: 30, transactions: txs, allocations: allocs,
+    statuses: [status('dining', 250, 141.3), status('entertainment', 120, 55.98), status('groceries', 700, 0)],
+  };
+
+  it('finds subscriptions but not repeat grocery runs', () => {
+    expect(findSubscriptions(txs).map((s) => s.vendor).sort()).toEqual(['Adobe', 'Netflix']);
+  });
+  it('flags overspend risk, unusual vendors and price increases', () => {
+    const kinds = findInsights(input).map((i) => `${i.kind}:${i.bucketId ?? i.vendor}`);
+    expect(kinds).toContain('overspend_risk:dining');
+    expect(kinds).toContain('unusual_vendor:DoorDash');
+    expect(kinds).toContain('subscription_change:Adobe');
+    expect(kinds).not.toContain('unusual_vendor:Netflix');
+  });
+  it('suggests ways to cut, biggest saving first', () => {
+    const ideas = waysToCut(input, (id) => id);
+    expect(ideas[0].title).toBe('Slow down on Dining');
+    expect(ideas.some((i) => i.title.startsWith('Review 2 subscriptions'))).toBe(true);
+  });
+});

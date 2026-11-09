@@ -19,6 +19,7 @@ const thisMonthTransactions: Transaction[] = [
   { id: 't5', accountId: 'cc', merchant: 'Costco', amount: dollars(286.55), date: d(6), pending: false, plaidCategory: 'GENERAL_MERCHANDISE' },
   { id: 't6', accountId: 'cc', merchant: 'Olive Garden', amount: dollars(96.2), date: d(7), pending: false, plaidCategory: 'FOOD_AND_DRINK' },
   { id: 't7', accountId: 'cc', merchant: 'Netflix', amount: dollars(22.99), date: d(7), pending: false, plaidCategory: 'ENTERTAINMENT' },
+  { id: 't9', accountId: 'cc', merchant: 'Adobe', amount: dollars(32.99), date: d(8), pending: false, plaidCategory: 'ENTERTAINMENT' },
   { id: 't8', accountId: 'cc', merchant: 'DoorDash', amount: dollars(141.3), date: d(8), pending: true, plaidCategory: 'FOOD_AND_DRINK' },
 ];
 
@@ -26,7 +27,7 @@ const thisMonthTransactions: Transaction[] = [
 const prev = previousMonth(month);
 const lastMonthPlan: [number, string, number, string][] = [
   [1, 'Kroger', 142.5, 'FOOD_AND_DRINK_GROCERIES'], [2, 'Shell', 48.2, ''], [3, 'Chipotle', 24.1, ''],
-  [4, 'Netflix', 22.99, ''], [5, 'Home Depot', 86.4, ''], [7, 'Smiths', 96.3, 'FOOD_AND_DRINK_GROCERIES'],
+  [4, 'Netflix', 22.99, ''], [16, 'Adobe', 29.99, ''], [5, 'Home Depot', 86.4, ''], [7, 'Smiths', 96.3, 'FOOD_AND_DRINK_GROCERIES'],
   [8, 'Jersey Mikes', 15.8, ''], [9, 'Maverik', 52.6, ''], [11, 'Target', 118.9, ''], [12, 'Olive Garden', 74.2, ''],
   [14, 'Kroger', 131.75, 'FOOD_AND_DRINK_GROCERIES'], [15, 'Topgolf', 64, ''], [16, 'Chevron', 45.3, ''],
   [18, 'Amazon', 59.99, ''], [19, 'Dunkin', 9.4, ''], [21, 'Costco', 212.4, ''], [22, 'Cinemark', 31.5, ''],
@@ -36,7 +37,7 @@ const lastMonthPlan: [number, string, number, string][] = [
 const plaidPrimary: Record<string, string> = {
   Shell: 'TRANSPORTATION', Maverik: 'TRANSPORTATION', Chevron: 'TRANSPORTATION', Chipotle: 'FOOD_AND_DRINK',
   'Jersey Mikes': 'FOOD_AND_DRINK', 'Olive Garden': 'FOOD_AND_DRINK', Dunkin: 'FOOD_AND_DRINK', DoorDash: 'FOOD_AND_DRINK',
-  Netflix: 'ENTERTAINMENT', Topgolf: 'ENTERTAINMENT', Cinemark: 'ENTERTAINMENT', 'Home Depot': 'GENERAL_MERCHANDISE',
+  Netflix: 'ENTERTAINMENT', Adobe: 'ENTERTAINMENT', Topgolf: 'ENTERTAINMENT', Cinemark: 'ENTERTAINMENT', 'Home Depot': 'GENERAL_MERCHANDISE',
   Target: 'GENERAL_MERCHANDISE', Amazon: 'GENERAL_MERCHANDISE', REI: 'GENERAL_MERCHANDISE', Costco: 'GENERAL_MERCHANDISE',
   Kroger: 'FOOD_AND_DRINK', Smiths: 'FOOD_AND_DRINK',
 };
