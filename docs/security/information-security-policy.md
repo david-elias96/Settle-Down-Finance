@@ -32,7 +32,7 @@ The founder, David Elias, is the Security Owner and is accountable for this poli
 
 **Risk management.** The Security Owner keeps a written risk register in the source repository. At each annual review, and before launching any feature that handles new kinds of consumer data, the Security Owner lists the risks to that data, rates their likelihood and impact, and records the control or accepted residual risk for each.
 
-**Security contact.** Security issues are reported to security@settledownfinance.com and privacy requests to privacy@settledownfinance.com, both monitored by the Security Owner.
+**Security contact.** Security issues and privacy requests are sent to admin@settledownfinance.com, which is monitored by the Security Owner.
 
 **Operations.** Recurring tasks in this policy (log reviews, device patch checks, access reviews, secret rotation, training, tabletop exercises) are listed with their frequency in `docs/security/operations.md`, and each completed task is logged there.
 
