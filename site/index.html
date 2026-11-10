@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settle Down · A calm family budget for iPhone</title>
+<meta name="description" content="Settle Down links your family's accounts, sorts every purchase into buckets, and tells you where you stand the moment you spend. Coming soon to iPhone.">
+<meta name="theme-color" content="#1F5B3F">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="canonical" href="https://settledownfinancial.com/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://settledownfinancial.com/">
+<meta property="og:title" content="Settle Down · A calm family budget for iPhone">
+<meta property="og:description" content="Know where you stand after every purchase. Buckets, savings goals, and a money assistant for the whole household.">
+<meta property="og:image" content="https://settledownfinancial.com/assets/og-icon.png">
+<meta name="twitter:card" content="summary">
+<link rel="preload" href="assets/fonts/fraunces.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face { font-family: "Fraunces"; src: url("assets/fonts/fraunces.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+
+:root {
+  --bg: #FBFAF7; --bg-2: #F1F4EE; --card: #FFFFFF; --text: #17221D; --muted: #55605A; --rule: #E3E1DA;
+  --brand: #1F5B3F; --brand-ink: #F3F7EF; --leaf: #8FD19E; --leaf-ink: #2F7A4D; --sun: #E9A92B;
+  --hero-bg: #1F5B3F; --hero-text: #F3F7EF; --hero-muted: #C9DCCF;
+  --shadow: 0 1px 2px rgba(23,34,29,.06), 0 12px 32px rgba(23,34,29,.10);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1712; --bg-2: #13211A; --card: #182820; --text: #E9EEEA; --muted: #A9B4AD; --rule: #24302A;
+    --brand: #8FD19E; --brand-ink: #0D1712; --leaf-ink: #8FD19E; --sun: #F6C04E;
+    --hero-bg: #13261C; --hero-text: #F3F7EF; --hero-muted: #A9C4B2;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1712; --bg-2: #13211A; --card: #182820; --text: #E9EEEA; --muted: #A9B4AD; --rule: #24302A;
+  --brand: #8FD19E; --brand-ink: #0D1712; --leaf-ink: #8FD19E; --sun: #F6C04E;
+  --hero-bg: #13261C; --hero-text: #F3F7EF; --hero-muted: #A9C4B2;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.35);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+img { max-width: 100%; display: block; }
+a { color: var(--leaf-ink); }
+h1, h2, h3 { font-family: "Fraunces", Georgia, serif; font-weight: 700; letter-spacing: -0.01em; line-height: 1.12; margin: 0; }
+h1 { font-size: clamp(40px, 6.4vw, 68px); }
+h2 { font-size: clamp(30px, 4.2vw, 44px); }
+h3 { font-size: 21px; line-height: 1.25; }
+p { margin: 0; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+.eyebrow { font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--leaf-ink); margin-bottom: 14px; }
+.lede { font-size: 19px; color: var(--muted); max-width: 34em; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Header */
+header.top { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--hero-bg) 92%, transparent); backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px); color: var(--hero-text); }
+header.top .wrap { display: flex; align-items: center; gap: 24px; height: 64px; }
+.brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; font-family: "Fraunces", Georgia, serif; font-weight: 700; font-size: 22px; letter-spacing: -0.01em; }
+.brand svg { width: 38px; height: auto; }
+header.top nav { margin-left: auto; display: flex; align-items: center; gap: 28px; }
+header.top nav a { color: var(--hero-muted); text-decoration: none; font-size: 15px; font-weight: 500; }
+header.top nav a:hover { color: var(--hero-text); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 999px; padding: 0 22px; height: 48px; font-family: inherit; font-size: 16px; font-weight: 600; line-height: 1; text-decoration: none; cursor: pointer; white-space: nowrap; transition: transform .15s ease, background .15s ease; }
+.btn:active { transform: scale(.97); }
+.btn-sun { background: #F6C04E; color: #1B2420; }
+.btn-sun:hover { background: #F8CC6A; }
+header.top .btn { height: 38px; padding: 0 16px; font-size: 14px; }
+header.top nav a.btn { color: #1B2420; }
+
+/* Hero */
+.hero { background: var(--hero-bg); color: var(--hero-text); position: relative; z-index: 2; }
+.hero .wrap { display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; padding-top: 72px; padding-bottom: 0; }
+.hero h1 { color: var(--hero-text); }
+.hero h1 em { font-style: italic; color: #8FD19E; font-weight: 600; }
+.hero .lede { color: var(--hero-muted); margin-top: 20px; }
+.hero .copy { padding-bottom: 88px; }
+.badge { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--hero-text); background: rgba(243,247,239,.1); border: 1px solid rgba(243,247,239,.18); border-radius: 999px; padding: 6px 14px 6px 10px; margin-bottom: 24px; }
+.badge i { width: 8px; height: 8px; border-radius: 50%; background: #F6C04E; box-shadow: 0 0 0 4px rgba(246,192,78,.25); }
+.waitlist { display: flex; gap: 10px; margin-top: 32px; max-width: 480px; }
+.waitlist input { flex: 1; min-width: 0; height: 48px; border-radius: 999px; border: 1px solid rgba(243,247,239,.25); background: rgba(243,247,239,.08); color: var(--hero-text); padding: 0 20px; font: inherit; font-size: 16px; }
+.waitlist input::placeholder { color: var(--hero-muted); opacity: .8; }
+.waitlist input:focus { outline: 2px solid #F6C04E; outline-offset: 2px; }
+.form-note { margin-top: 12px; font-size: 14px; color: var(--hero-muted); min-height: 1.6em; }
+.form-note.ok { color: #8FD19E; font-weight: 600; }
+.form-note.err { color: #F6C04E; }
+.form-note a { color: inherit; }
+
+.stage { position: relative; align-self: end; display: flex; justify-content: center; }
+.hills { position: absolute; left: -40%; right: -40%; bottom: -1px; height: 140px; pointer-events: none; }
+.phone { position: relative; width: 300px; border-radius: 50px; padding: 11px; background: #0E1512; box-shadow: 0 30px 80px rgba(0,0,0,.35), inset 0 0 0 1.5px #2A3530; }
+.phone img { border-radius: 39px; width: 100%; height: auto; aspect-ratio: 390 / 844; object-fit: cover; background: #fff; }
+.phone::after { content: ""; position: absolute; top: 19px; left: 50%; transform: translateX(-50%); width: 27%; height: 7.4%; max-height: 24px; border-radius: 999px; background: #0E1512; }
+.hero .phone { margin-bottom: -150px; }
+.notif { position: absolute; z-index: 3; width: 300px; top: 312px; left: -8px; background: rgba(255,255,255,.92); color: #17221D; border-radius: 22px; padding: 14px 16px; box-shadow: 0 16px 40px rgba(0,0,0,.28); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); font-size: 14px; line-height: 1.4; animation: drop .7s cubic-bezier(.2,.9,.3,1.2) .4s both; }
+.notif .row { display: flex; align-items: center; gap: 8px; color: #55605A; font-size: 12px; margin-bottom: 6px; }
+.notif .row img { width: 20px; height: 20px; border-radius: 5px; }
+.notif .row span:last-child { margin-left: auto; }
+.notif b { display: block; font-size: 15px; }
+.notif .bar { height: 6px; border-radius: 3px; background: #E5E5EA; margin-top: 10px; overflow: hidden; }
+.notif .bar i { display: block; height: 100%; width: 81%; background: #FF9500; border-radius: 3px; }
+@keyframes drop { from { opacity: 0; transform: translateY(-16px) scale(.96); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .notif { animation: none; } html { scroll-behavior: auto; } }
+
+/* Trust strip */
+.strip { background: var(--bg-2); border-bottom: 1px solid var(--rule); padding: 190px 0 36px; }
+.strip ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.strip li { display: flex; gap: 12px; align-items: flex-start; font-size: 15px; color: var(--muted); }
+.strip li strong { display: block; color: var(--text); font-size: 16px; }
+.ico { flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--card); display: grid; place-items: center; color: var(--leaf-ink); box-shadow: var(--shadow); }
+.ico svg { width: 20px; height: 20px; }
+
+/* Feature rows */
+section.features { padding: 112px 0 40px; }
+.section-head { text-align: center; max-width: 720px; margin: 0 auto 72px; }
+.section-head .lede { margin: 16px auto 0; }
+.feature { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center; margin-bottom: 112px; }
+.feature:nth-child(even) .shot { order: 2; }
+.feature .shot { display: flex; justify-content: center; position: relative; }
+.feature .shot::before { content: ""; position: absolute; inset: 8% 4%; border-radius: 40px; background: var(--bg-2); z-index: -1; }
+.feature .phone { width: 280px; }
+.feature h2 { margin-bottom: 16px; }
+.feature ul { list-style: none; padding: 0; margin: 24px 0 0; }
+.feature li { position: relative; padding-left: 32px; margin-bottom: 12px; color: var(--muted); }
+.feature li::before { content: ""; position: absolute; left: 0; top: calc((1.6em - 20px) / 2); width: 20px; height: 20px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='10' fill='%238FD19E'/%3E%3Cpath d='M6 10.2l2.7 2.7L14 7.6' fill='none' stroke='%231F5B3F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 20px 20px no-repeat; }
+.feature li strong { color: var(--text); font-weight: 600; }
+.ai { display: inline-flex; align-items: center; gap: 6px; }
+.ai svg { width: 18px; height: 18px; color: var(--sun); }
+
+/* Grid */
+section.more { padding: 40px 0 112px; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.tile { background: var(--card); border: 1px solid var(--rule); border-radius: 24px; padding: 28px; }
+.tile .ico { margin-bottom: 18px; background: var(--bg-2); box-shadow: none; }
+.tile h3 { margin-bottom: 8px; }
+.tile p { color: var(--muted); font-size: 16px; }
+
+/* Privacy */
+section.trust { background: var(--hero-bg); color: var(--hero-text); padding: 104px 0; }
+section.trust .wrap { display: grid; grid-template-columns: .9fr 1.1fr; gap: 64px; align-items: start; }
+section.trust .eyebrow { color: #8FD19E; }
+section.trust .lede { color: var(--hero-muted); margin-top: 16px; }
+section.trust a { color: #8FD19E; }
+.promises { display: grid; grid-template-columns: 1fr 1fr; gap: 28px 32px; }
+.promises h3 { font-family: inherit; font-size: 17px; font-weight: 700; margin-bottom: 6px; color: var(--hero-text); letter-spacing: 0; }
+.promises p { color: var(--hero-muted); font-size: 15px; }
+
+/* Pricing */
+section.pricing { padding: 112px 0; }
+.hl { color: var(--text); font-weight: 600; }
+.plans { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 760px; margin: 0 auto; }
+.plan { background: var(--card); border: 1px solid var(--rule); border-radius: 28px; padding: 32px; position: relative; }
+.plan.best { border: 2px solid var(--brand); }
+.plan .tag { position: absolute; top: -14px; left: 32px; background: var(--brand); color: var(--brand-ink); font-size: 13px; font-weight: 700; padding: 4px 12px; border-radius: 999px; }
+.plan h3 { font-family: inherit; font-size: 17px; letter-spacing: 0; color: var(--muted); font-weight: 600; }
+.price { font-family: "Fraunces", Georgia, serif; font-size: 52px; font-weight: 700; line-height: 1; margin: 14px 0 6px; letter-spacing: -0.02em; }
+.price small { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 17px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+.plan .sub { color: var(--muted); font-size: 15px; }
+.included { max-width: 760px; margin: 28px auto 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 24px; color: var(--muted); font-size: 15px; }
+.included span { display: inline-flex; align-items: center; gap: 8px; }
+.included span::before { content: ""; flex: none; width: 18px; height: 18px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='10' fill='%238FD19E'/%3E%3Cpath d='M6 10.2l2.7 2.7L14 7.6' fill='none' stroke='%231F5B3F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 18px 18px no-repeat; }
+
+/* Final CTA */
+section.cta { padding: 0 0 112px; }
+.cta-card { background: var(--hero-bg); color: var(--hero-text); border-radius: 36px; padding: 64px 48px; text-align: center; position: relative; overflow: hidden; }
+.cta-card svg.mark { width: 96px; margin: 0 auto 24px; }
+.cta-card .lede { color: var(--hero-muted); margin: 16px auto 0; }
+.cta-card .waitlist { margin: 32px auto 0; }
+.cta-card .form-note { text-align: center; }
+
+footer { border-top: 1px solid var(--rule); padding: 32px 0 48px; color: var(--muted); font-size: 14px; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
+footer nav { margin-left: auto; display: flex; gap: 20px; }
+footer a { color: var(--muted); }
+footer .brand { color: var(--text); font-size: 18px; }
+footer .brand svg { width: 30px; }
+
+/* Responsive */
+@media (max-width: 960px) {
+  .hero .wrap { grid-template-columns: 1fr; padding-top: 48px; gap: 0; }
+  .hero .copy { padding-bottom: 56px; text-align: center; }
+  .hero .lede, .waitlist { margin-left: auto; margin-right: auto; }
+  .notif { left: 50%; margin-left: -230px; }
+  .feature, section.trust .wrap { grid-template-columns: 1fr; gap: 40px; }
+  .feature:nth-child(even) .shot { order: 0; }
+  .feature { margin-bottom: 88px; }
+  .feature .text { max-width: 600px; }
+  .grid { grid-template-columns: 1fr 1fr; }
+  .strip ul { grid-template-columns: 1fr; gap: 16px; }
+}
+@media (max-width: 640px) {
+  .wrap { padding: 0 16px; }
+  header.top nav a:not(.btn) { display: none; }
+  .brand { font-size: 20px; }
+  .waitlist { flex-direction: column; }
+  .waitlist input { flex: none; }
+  .waitlist .btn { width: 100%; }
+  .phone { width: 260px; border-radius: 44px; padding: 10px; }
+  .phone img { border-radius: 34px; }
+  .hero .phone { margin-bottom: -130px; }
+  .notif { width: 270px; left: 50%; margin-left: -150px; top: 282px; }
+  .strip { padding-top: 160px; }
+  .feature .phone { width: 250px; }
+  .grid, .plans, .promises { grid-template-columns: 1fr; }
+  .plans { gap: 28px; }
+  section.features, section.pricing { padding: 80px 0 24px; }
+  section.pricing { padding-bottom: 80px; }
+  section.more { padding-bottom: 80px; }
+  section.trust { padding: 80px 0; }
+  .section-head { margin-bottom: 48px; }
+  .cta-card { padding: 48px 20px; border-radius: 28px; }
+  footer nav { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="mark" viewBox="100 190 820 610">
+      <g transform="translate(-18,-60)">
+        <g fill="none" stroke="currentColor" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"><path d="M232 800V540L420 372L608 540V800"/><path d="M180 800H880"/><path d="M374 684Q420 724 466 684" stroke-width="26"/><path d="M338 604Q370 634 402 604" stroke-width="26"/><path d="M438 604Q470 634 502 604" stroke-width="26"/></g>
+        <circle cx="338" cy="662" r="18" fill="#F6C04E"/><circle cx="502" cy="662" r="18" fill="#F6C04E"/>
+        <g transform="translate(36,0)"><path d="M720 560V800" stroke="currentColor" stroke-width="52" stroke-linecap="round"/><g fill="#8FD19E"><circle cx="720" cy="350" r="72"/><circle cx="660" cy="418" r="72"/><circle cx="782" cy="418" r="72"/><circle cx="634" cy="500" r="62"/><circle cx="806" cy="500" r="62"/><circle cx="720" cy="486" r="88"/></g></g>
+      </g>
+    </symbol>
+    <symbol id="sparkle" viewBox="0 0 24 24"><path fill="currentColor" d="M10 3l1.6 4.4L16 9l-4.4 1.6L10 15l-1.6-4.4L4 9l4.4-1.6zM18 13l.9 2.1L21 16l-2.1.9L18 19l-.9-2.1L15 16l2.1-.9z"/></symbol>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="Settle Down home"><svg aria-hidden="true"><use href="#mark"/></svg>Settle Down</a>
+    <nav aria-label="Main">
+      <a href="#features">Features</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#pricing">Pricing</a>
+      <a class="btn btn-sun" href="#join">Join the waitlist</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="copy">
+        <div class="badge"><i></i>Coming soon to iPhone</div>
+        <h1>Money, <em>settled.</em><br>For the whole household.</h1>
+        <p class="lede">Settle Down links your family's accounts, sorts every purchase into buckets, and tells you where you stand the moment you spend. No spreadsheets, no end-of-month surprises.</p>
+        <form class="waitlist" data-waitlist novalidate>
+          <label class="sr" for="email-top">Email address</label>
+          <input id="email-top" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+          <button class="btn btn-sun" type="submit">Join the waitlist</button>
+        </form>
+        <p class="form-note" aria-live="polite">Be first in line for the beta. One email when it's ready, nothing else.</p>
+      </div>
+      <div class="stage">
+        <div class="phone">
+          <img src="assets/screens/bucket.webp" width="780" height="1688" alt="The Groceries bucket: 81% used, $569 of $700, heading over, with this month's grocery purchases.">
+        </div>
+        <div class="notif" aria-hidden="true">
+          <div class="row"><img src="apple-touch-icon.png" alt=""><span>SETTLE DOWN</span><span>now</span></div>
+          <b>Costco · $286.55 → Groceries</b>
+          $569 of $700 used · $130 left, heading over
+          <div class="bar"><i></i></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="strip">
+    <div class="wrap">
+      <ul>
+        <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><span><strong>Bank connections through Plaid</strong>Your bank login never touches our servers.</span></li>
+        <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg></span><span><strong>Built for households</strong>Everyone links their own cards. One shared picture.</span></li>
+        <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span><span><strong>No ads. Never sold.</strong>You pay for the app, so your data isn't the product.</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <section class="features" id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">What it does</p>
+        <h2>A budget that keeps up with you</h2>
+        <p class="lede">Most budgeting apps tell you what went wrong last month. Settle Down tells you while there's still time to do something about it.</p>
+      </div>
+
+      <div class="feature">
+        <div class="shot"><div class="phone"><img src="assets/screens/activity.webp" width="780" height="1688" loading="lazy" alt="The Activity screen: November purchases grouped by day, each sorted into a bucket like Dining Out, Entertainment or Groceries."></div></div>
+        <div class="text">
+          <p class="eyebrow">Buckets and alerts</p>
+          <h2>Know where you stand after every purchase</h2>
+          <p class="lede">Every card swipe lands in a bucket like Groceries, Dining Out or Gas, and your phone tells you right away how much of that bucket is left.</p>
+          <ul>
+            <li><strong>Instant alerts</strong> with the bucket and your month-to-date total</li>
+            <li><strong>Start with sensible buckets</strong>, then add your own</li>
+            <li><strong>Pace markers</strong> show if you're ahead or behind for today, not just the month</li>
+            <li><strong>Split shared bills</strong> like rent so only your share counts</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature">
+        <div class="shot"><div class="phone"><img src="assets/screens/budget.webp" width="780" height="1688" loading="lazy" alt="Spending trend chart comparing this month to last month, with a projected month-end total."></div></div>
+        <div class="text">
+          <p class="eyebrow">Trends and projections</p>
+          <h2>See the month before it happens</h2>
+          <p class="lede">Settle Down compares this month to last, then runs your spending forward to show where you're likely to land, with an honest range instead of a single guess.</p>
+          <ul>
+            <li><strong>Month-end outlook</strong> from thousands of simulated months</li>
+            <li><strong>Bill forecasts</strong> so rent and utilities never sneak up on you</li>
+            <li><strong>Budget tune-ups</strong> that suggest limits based on how you really spend</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature">
+        <div class="shot"><div class="phone"><img src="assets/screens/ask.webp" width="780" height="1688" loading="lazy" alt="Asking 'How can I cut my spending this month?' and getting a card listing the biggest savings opportunities by bucket."></div></div>
+        <div class="text">
+          <p class="eyebrow ai"><svg aria-hidden="true"><use href="#sparkle"/></svg>SettleDown, your money assistant</p>
+          <h2>Ask your budget anything</h2>
+          <p class="lede">"How can I cut back this month?" "What did we spend at Target since summer?" SettleDown answers from your real numbers, in plain English, with the math to back it up.</p>
+          <ul>
+            <li><strong>Insights</strong> that flag what changed before it becomes a problem</li>
+            <li><strong>A weekly recap</strong> of how your week compared to a typical one</li>
+            <li><strong>Automatic sorting</strong> for purchases that don't fit an obvious bucket</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature">
+        <div class="shot"><div class="phone"><img src="assets/screens/savings.webp" width="780" height="1688" loading="lazy" alt="The Savings screen: $5,650 saved across goals, with Emergency Fund, Summer Vacation and Christmas progress bars."></div></div>
+        <div class="text">
+          <p class="eyebrow">Savings goals</p>
+          <h2>Savings that stay put</h2>
+          <p class="lede">Set aside money for the emergency fund, the vacation or the holidays in their own envelopes, separate from everyday spending. If a bucket runs over, you'll see exactly which goal it's coming out of.</p>
+          <ul>
+            <li><strong>Monthly targets</strong> with a finish date for every goal</li>
+            <li><strong>Overspending made visible</strong>, before it eats your savings</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="more">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">And a few things you'll love</p>
+        <h2>The busywork, handled</h2>
+      </div>
+      <div class="grid">
+        <div class="tile">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></span>
+          <h3>Scan a receipt, split the purchase</h3>
+          <p>A Target run is groceries, household and a birthday gift. Snap the receipt and each line goes to the right bucket.</p>
+        </div>
+        <div class="tile">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.9.4 5 2.8 5 5.8"/></svg></span>
+          <h3>One budget for the household</h3>
+          <p>Invite your partner. Each of you links your own banks, and you both see the same buckets and goals.</p>
+        </div>
+        <div class="tile">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/><path d="M9 12l2 2 4-4"/></svg></span>
+          <h3>Cancel subscriptions for you</h3>
+          <p>Settle Down finds what renews each month. Tap Cancel and SettleDown works through the cancel page while you sign in and approve the final click.</p>
+        </div>
+        <div class="tile">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>
+          <h3>Bills on the calendar</h3>
+          <p>Recurring bills are spotted automatically and forecast ahead, so you know what's still coming this month.</p>
+        </div>
+        <div class="tile">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
+          <h3>Spending patterns</h3>
+          <p>See which days, stores and habits drive your spending, with lumpy one-off months kept out of the averages.</p>
+        </div>
+        <div class="tile">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18" cy="16" r="3"/><path d="M20.2 18.2L22 20"/></svg></span>
+          <h3>Find any purchase fast</h3>
+          <p>Filter activity by month, bucket or store and see the total for exactly what you're looking at.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="trust" id="privacy">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow">Privacy and security</p>
+        <h2>Your money is personal. We keep it that way.</h2>
+        <p class="lede">We built Settle Down for our own family first, so we hold it to the standard we'd want. Read the details in our <a href="/privacy">privacy policy</a>.</p>
+      </div>
+      <div class="promises">
+        <div><h3>We never see your bank password</h3><p>You sign in to your bank inside Plaid. We get read-only access to balances and transactions, and nothing that can move money.</p></div>
+        <div><h3>No ads, no selling</h3><p>We don't sell your data or use it for advertising. Ever.</p></div>
+        <div><h3>Encrypted and locked down</h3><p>Data is encrypted in transit and at rest, and protected by two-step sign-in.</p></div>
+        <div><h3>Leave whenever you like</h3><p>Unlink a bank or delete your account from Settings, and your data is gone within 30 days.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pricing" id="pricing">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Our mission</p>
+        <h2>A budget app should fit in everyone's budget.</h2>
+        <p class="lede"><strong class="hl">Settle Down does that.</strong> One plan covers your whole household with every feature included. No tiers, no upsells.</p>
+      </div>
+      <div class="plans">
+        <div class="plan">
+          <h3>Monthly</h3>
+          <p class="price">$5.99<small> / month</small></p>
+          <p class="sub">Cancel anytime.</p>
+        </div>
+        <div class="plan best">
+          <span class="tag">Save 30%</span>
+          <h3>Yearly</h3>
+          <p class="price">$49.99<small> / year</small></p>
+          <p class="sub">About $4.17 a month.</p>
+        </div>
+      </div>
+      <div class="included">
+                <span>Household sharing</span>
+        <span>Every feature included</span>
+        <span>40 AI credits a month for Ask, receipt scans and the cancel assistant</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta" id="join">
+    <div class="wrap">
+      <div class="cta-card">
+        <svg class="mark" aria-hidden="true" style="color:#F3F7EF"><use href="#mark"/></svg>
+        <h2>Ready to settle down?</h2>
+        <p class="lede">We're putting the finishing touches on the iPhone app. Join the waitlist and we'll let you know the moment the beta opens.</p>
+        <form class="waitlist" data-waitlist novalidate>
+          <label class="sr" for="email-bottom">Email address</label>
+          <input id="email-bottom" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+          <button class="btn btn-sun" type="submit">Join the waitlist</button>
+        </form>
+        <p class="form-note" aria-live="polite">One email when it's ready. Nothing else.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="/"><svg aria-hidden="true" style="color:var(--brand)"><use href="#mark"/></svg>Settle Down</a>
+    <span>© 2026 Settle Down Finance</span>
+    <nav aria-label="Footer">
+      <a href="/privacy">Privacy Policy</a>
+      <a href="mailto:admin@settledownfinancial.com">Contact</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  document.querySelectorAll('[data-waitlist]').forEach(function (form) {
+    var note = form.nextElementSibling;
+    var input = form.querySelector('input');
+    var button = form.querySelector('button');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = input.value.trim();
+      note.className = 'form-note';
+      if (!EMAIL_RE.test(email)) {
+        note.classList.add('err');
+        note.textContent = 'Please enter a valid email address.';
+        input.focus();
+        return;
+      }
+      button.disabled = true;
+      button.textContent = 'Joining…';
+      fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email })
+      }).then(function (r) {
+        if (!r.ok) throw new Error('bad status');
+        note.classList.add('ok');
+        note.textContent = "You're on the list. We'll email you when the beta opens.";
+        input.value = '';
+        button.textContent = 'Joined';
+      }).catch(function () {
+        note.classList.add('err');
+        note.innerHTML = 'Something went wrong. Email <a href="mailto:admin@settledownfinancial.com?subject=Waitlist">admin@settledownfinancial.com</a> and we\'ll add you.';
+        button.disabled = false;
+        button.textContent = 'Join the waitlist';
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>
