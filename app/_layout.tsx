@@ -56,6 +56,8 @@ function RootLayoutNav() {
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="new-bucket" options={{ presentation: 'modal', title: 'New Bucket' }} />
+          <Stack.Screen name="goal-order" options={{ title: 'Goal Order', headerBackTitle: 'Back' }} />
+          <Stack.Screen name="goal" options={{ presentation: 'modal', title: 'New Goal' }} />
           <Stack.Screen name="scan-receipt" options={{ presentation: 'modal', title: 'Scan Receipt' }} />
           <Stack.Screen name="bucket/[id]" options={{ title: 'Bucket', headerBackTitle: 'Back' }} />
           <Stack.Screen name="invite" options={{ presentation: 'modal', title: 'Invite' }} />

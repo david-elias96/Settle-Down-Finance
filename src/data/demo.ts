@@ -108,8 +108,6 @@ export const demoAllocations: Allocation[] = demoTransactions.flatMap((t) =>
 
 export const demoGoals: SavingsGoal[] = [
   { id: 'emergency', name: 'Emergency Fund', target: dollars(10000), balance: dollars(4200), monthlyContribution: dollars(300), priority: 1 },
-  { id: 'vacation', name: 'Summer Vacation', target: dollars(3000), balance: dollars(850), monthlyContribution: dollars(250), priority: 2, targetDate: '2027-06-01' },
-  { id: 'christmas', name: 'Christmas', target: dollars(1200), balance: dollars(600), monthlyContribution: dollars(100), priority: 3, targetDate: '2026-12-15' },
 ];
 
 // Rent is shared three ways with roommates outside the app, so only a third counts.
