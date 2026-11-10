@@ -6,6 +6,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { admin, handle, HttpError, json } from '../_shared/supabase.ts';
 import { loadHousehold } from '../_shared/household.ts';
 import { pushToHousehold } from '../_shared/push.ts';
+import { requireCronSecret } from '../_shared/security.ts';
 import { findInsights, recapFacts, weeklyRecap } from '../_shared/domain/index.ts';
 
 const client = new Anthropic();
@@ -57,7 +58,7 @@ function inQuietHours(tz: string, start: number, end: number) {
 }
 
 Deno.serve(handle(async (req) => {
-  if (req.headers.get('Authorization') !== `Bearer ${Deno.env.get('CRON_SECRET')}`) throw new HttpError(401, 'Unauthorized');
+  requireCronSecret(req); // fails closed if CRON_SECRET is unset
 
   const { data: households } = await admin.from('households').select('*').eq('smart_alerts', true);
   const results: Record<string, string> = {};

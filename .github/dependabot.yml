@@ -1,0 +1,13 @@
+# Dependency vulnerability alerts and update PRs (security policy section 6).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    groups:
+      expo:
+        patterns: ["expo", "expo-*", "react-native", "react-native-*", "react", "react-dom"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }

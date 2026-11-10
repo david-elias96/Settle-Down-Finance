@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { AuthProvider } from '@/src/auth/AuthProvider';
 import { BudgetProvider } from '@/src/data/BudgetStore';
 import { useNotificationRouting } from '@/src/notifications';
 
@@ -50,6 +51,7 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <AuthProvider>
       <BudgetProvider>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -64,8 +66,12 @@ function RootLayoutNav() {
           <Stack.Screen name="patterns" options={{ title: 'Patterns & tune-ups', headerBackTitle: 'Back' }} />
           <Stack.Screen name="cancel" options={{ title: 'Cancel subscription', headerBackTitle: 'Back' }} />
           <Stack.Screen name="join/[code]" options={{ title: 'Join' }} />
+          <Stack.Screen name="sign-in" options={{ presentation: 'modal', title: 'Sign in' }} />
+          <Stack.Screen name="two-step" options={{ title: 'Two-step verification', headerBackTitle: 'Back' }} />
+          <Stack.Screen name="connect-bank" options={{ title: 'Link a bank', headerBackTitle: 'Back' }} />
         </Stack>
       </BudgetProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

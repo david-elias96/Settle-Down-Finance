@@ -1,13 +1,16 @@
 // Exchanges the public token from Plaid Link for a long-lived access token, stores it in
 // Vault, and records the item's accounts. The first sync happens when Plaid sends its
 // SYNC_UPDATES_AVAILABLE webhook.
-import { admin, handle, json, requireMember } from '../_shared/supabase.ts';
+import { admin, handle, HttpError, json, requireMember } from '../_shared/supabase.ts';
 import { plaid, toCents } from '../_shared/plaid.ts';
+import { requirePlaidLinkAllowed } from '../_shared/security.ts';
 
 Deno.serve(handle(async (req) => {
   const { householdId, publicToken, institutionName } = await req.json();
   // Each family member links their own banks; record who, so the app can show it.
   const { userId } = await requireMember(req, householdId);
+  await requirePlaidLinkAllowed(req, userId);
+  if (typeof publicToken !== 'string' || !publicToken.startsWith('public-')) throw new HttpError(400, 'Invalid public token');
 
   const { access_token, item_id } = await plaid('/item/public_token/exchange', { public_token: publicToken });
   const { data: secretId, error: vaultErr } = await admin.rpc('store_plaid_token', { token: access_token, label: `plaid:${item_id}` });

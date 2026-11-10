@@ -1,6 +1,6 @@
 # Settle Down Finance
 
-iPhone-first budget tracker ([settledownfinance.com](https://settledownfinance.com)), used by our family today and built to grow into a commercial app.
+iPhone-first budget tracker ([settledownfinancial.com](https://settledownfinancial.com)), used by our family today and built to grow into a commercial app.
 
 - **App:** Expo (React Native + TypeScript), Expo Router. Builds for iOS in the cloud with EAS, so no Mac is needed.
 - **Backend:** Supabase (Postgres with row-level security per household, auth, Vault for Plaid tokens, Deno edge functions).
@@ -31,12 +31,17 @@ npx expo start      # scan the QR code with Expo Go on your iPhone
 
 ## Backend secrets (Supabase → Edge Functions → Secrets)
 
-`PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV` (`sandbox` | `production`), `ANTHROPIC_API_KEY`, optional `EXPO_ACCESS_TOKEN`, `PLAID_REDIRECT_URI`.
+`PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV` (`sandbox` | `production`), `ANTHROPIC_API_KEY`, `CRON_SECRET` (required by `daily-insights`), optional `EXPO_ACCESS_TOKEN`, `PLAID_REDIRECT_URI`.
+
+## Security
+
+App config (EAS environment variables, safe to ship): `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`. Nothing else goes in `EXPO_PUBLIC_*`. Scheduled functions: `retention` (daily) and `daily-insights` (evening), both called with `Authorization: Bearer $CRON_SECRET`.
+
+We follow the [information security policy](docs/security/information-security-policy.md) submitted to Plaid. Coding rules are in `CLAUDE.md`; open gaps are tracked in [docs/security/gaps.md](docs/security/gaps.md).
 
 ## Not built yet
 
-- Sign-in and connecting the app screens to Supabase (currently sample data)
-- Plaid Link screen in the app (needs a development build, not Expo Go)
+- Connecting the budget screens to Supabase (they use sample data; sign-in, two-step verification, bank linking, unlinking and account deletion use the backend when `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` are set, in a development or TestFlight build)
 - Registering the phone's push token
 - Receipt camera screen and the confirm-split UI
 - Editing buckets, goals and merchant rules

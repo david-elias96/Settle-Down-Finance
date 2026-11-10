@@ -3,7 +3,7 @@
  * It has the usual obstacles: a login wall, a buried cancel link, a discount offer,
  * and an exit survey.
  */
-export const PRACTICE_SITE_URL = 'https://practice.settledownfinance.com/';
+export const PRACTICE_SITE_URL = 'https://practice.settledownfinancial.com/';
 
 export const PRACTICE_SITE_HTML = `<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
