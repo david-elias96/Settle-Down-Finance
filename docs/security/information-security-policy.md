@@ -1,6 +1,6 @@
 # Settle Down Finance Information Security Policy
 
-Version 1.2 · Effective 2026-11-10 · Owner: Security Owner (founder)
+Version 1.3 · Effective 2026-11-10 · Owner: Security Owner (founder)
 
 > This is the repository copy of the policy submitted to Plaid. Engineering rules that follow from it are summarized in `CLAUDE.md`, and known gaps between this policy and the current code are tracked in [`gaps.md`](gaps.md). Change this file only through a reviewed pull request, and add a row to the revision history.
 
@@ -120,7 +120,7 @@ Every change to the app or backend goes through a reviewed pull request with pas
 - Production assets are managed services (Supabase-hosted database and edge functions, Expo and Apple build infrastructure); their providers scan and patch the underlying servers. We scan what we deploy: GitHub Dependabot alerts and update pull requests, a weekly automated `npm audit` and secret scan in CI, and the Supabase Security Advisor before each release.
 - Computers used to administer production run built-in vulnerability and malware protection (Microsoft Defender on Windows, XProtect on macOS) with automatic OS updates. Each month the Security Owner confirms on every such device that updates are current and the protection reports no threats, and logs it.
 - Patch deadlines from the time a fix is available: critical within 7 days, high within 30 days, medium and low at the next planned release.
-- The Security Owner keeps the Expo SDK, React Native and backend libraries on supported versions.
+- End-of-life software: the Security Owner keeps the Expo SDK, React Native, Node.js, the Deno runtime, backend libraries and the operating systems on admin computers on versions their makers still support. Each quarter they check what is in use against vendor end-of-life dates and log it; anything within 90 days of end of life is scheduled for upgrade, and nothing past end of life stays in use.
 
 ## 7. Vendors, logging and incident response
 
@@ -197,6 +197,7 @@ People with access use secured devices, know this policy, and may depart from it
 
 | Version | Date | Change | Approved by |
 | --- | --- | --- | --- |
+| 1.3 | 2026-11-10 | Quarterly end-of-life software check | David Elias, Security Owner |
 | 1.2 | 2026-11-10 | Passkeys (phishing-resistant MFA) added as the default second factor before Plaid Link | David Elias, Security Owner |
 | 1.1 | 2026-11-10 | Second factor required for every user before Plaid Link and enforced by the backend; consent recorded; vulnerability scanning detail; operations log | David Elias, Security Owner |
 | 1.0 | 2026-11-10 | First version | David Elias, Security Owner |

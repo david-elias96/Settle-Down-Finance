@@ -1,6 +1,6 @@
 # Plaid security questionnaire answers
 
-Answers for the Plaid production access questionnaire, based on [the information security policy](information-security-policy.md) v1.2. Every answer is true only once the "Before submitting to Plaid" list in [gaps.md](gaps.md) is done. Keep these in step with the policy.
+Answers for the Plaid production access questionnaire, based on [the information security policy](information-security-policy.md) v1.3. Every answer is true only once the "Before submitting to Plaid" list in [gaps.md](gaps.md) is done. Keep these in step with the policy.
 
 **1. What access controls does your organization have in place to limit access to production assets (physical or virtual) and sensitive data?**
 
@@ -24,7 +24,7 @@ Yes. All consumer data is stored in Supabase Postgres, which encrypts data and b
 
 **6. Do you actively perform vulnerability scans against your employee and contractor machines (e.g., laptops) and production assets (e.g., server instances) to detect and patch vulnerabilities?**
 
-Yes. Production runs on managed services (Supabase, Expo/Apple), whose providers scan and patch the underlying servers. For the code and dependencies we deploy, we run GitHub Dependabot alerts and update PRs, automated CI checks on every change plus a weekly `npm audit` and secret scan, and the Supabase Security Advisor before each release. Critical findings are patched within 7 days and high within 30 days. Employee machines run built-in endpoint protection (Microsoft Defender) with automatic OS updates and full-disk encryption; patch and scan status is checked and logged monthly.
+Yes. Production runs on managed services (Supabase, Expo/Apple), whose providers scan and patch the underlying servers. For the code and dependencies we deploy, we run GitHub Dependabot alerts and update PRs, automated CI checks on every change plus a weekly `npm audit` and secret scan, and the Supabase Security Advisor before each release. Critical findings are patched within 7 days and high within 30 days. Each quarter we check the frameworks, runtimes and operating systems we use against vendor end-of-life dates and upgrade anything nearing end of life. Employee machines run built-in endpoint protection (Microsoft Defender) with automatic OS updates and full-disk encryption; patch and scan status is checked and logged monthly.
 
 **7. Does your organization have a privacy policy for the application where Plaid Link will be deployed?**
 

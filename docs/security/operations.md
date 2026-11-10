@@ -7,6 +7,7 @@ Recurring tasks from the [information security policy](information-security-poli
 | Review Supabase auth and function logs, Plaid Dashboard item errors, and API/AI usage for anything unexpected | Weekly | 7 |
 | Check GitHub Dependabot and CI vulnerability results; patch critical within 7 days, high within 30 | Weekly | 6 |
 | On each admin computer: Windows Update (or macOS Software Update) current, Microsoft Defender on with no open threats, BitLocker/FileVault on | Monthly | 6, 9 |
+| Check Expo SDK, React Native, Node.js, Deno, backend libraries and admin computer OS versions against vendor end-of-life dates; schedule upgrades for anything within 90 days of end of life | Quarterly | 6 |
 | Supabase Security Advisor clean (or findings recorded as accepted risks) | Before each release | 6 |
 | Review every account with access to GitHub, Supabase, Plaid, Anthropic, Expo, Apple, domain/DNS and email; remove what isn't needed; confirm MFA is on | Quarterly | 4 |
 | Review open policy exceptions and the [gaps list](gaps.md) | Quarterly | 9 |
