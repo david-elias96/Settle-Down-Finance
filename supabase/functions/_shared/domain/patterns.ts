@@ -1,6 +1,6 @@
-import { formatCents, monthOf } from './money';
-import { previousMonth } from './trend';
-import type { Allocation, Bucket, Cents, Month, Transaction } from './types';
+import { formatCents, monthOf } from './money.ts';
+import { previousMonth } from './trend.ts';
+import type { Allocation, Bucket, Cents, Month, Transaction } from './types.ts';
 
 /**
  * Spending patterns and budget tune-ups, worked out from whole past months.

@@ -1,5 +1,5 @@
-import type { Bucket, MerchantRule, Transaction } from './types';
-import { DEFAULT_BUCKETS, FALLBACK_BUCKET_ID, PLAID_DETAILED_OVERRIDES } from './defaultBuckets';
+import type { Bucket, MerchantRule, Transaction } from './types.ts';
+import { DEFAULT_BUCKETS, FALLBACK_BUCKET_ID, PLAID_DETAILED_OVERRIDES } from './defaultBuckets.ts';
 
 export interface CategorizeResult {
   bucketId: string;

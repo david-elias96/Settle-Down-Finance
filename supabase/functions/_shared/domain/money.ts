@@ -1,4 +1,4 @@
-import type { Cents } from './types';
+import type { Cents } from './types.ts';
 
 export const dollars = (d: number): Cents => Math.round(d * 100);
 

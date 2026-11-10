@@ -1,6 +1,6 @@
-import type { Allocation, Bucket, Cents, Month, Transaction } from './types';
-import { formatCents, monthOf } from './money';
-import { bucketPace, paceTag, weeklyAllowance } from './pace';
+import type { Allocation, Bucket, Cents, Month, Transaction } from './types.ts';
+import { formatCents, monthOf } from './money.ts';
+import { bucketPace, paceTag, weeklyAllowance } from './pace.ts';
 
 export interface BucketStatus {
   bucket: Bucket;

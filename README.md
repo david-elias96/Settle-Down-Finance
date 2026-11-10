@@ -29,6 +29,16 @@ npm run typecheck
 npx expo start      # scan the QR code with Expo Go on your iPhone
 ```
 
+## Deploying the backend
+
+```bash
+npx supabase link --project-ref <your project ref>
+npx supabase db push --remote       # runs supabase/migrations
+npx supabase functions deploy       # all functions; settings in supabase/config.toml
+```
+
+`supabase/config.toml` points every function at `supabase/functions/deno.json` for its packages and turns off the Supabase JWT check only for `plaid-webhook`, `retention` and `daily-insights`, which verify Plaid's signature or `CRON_SECRET` themselves.
+
 ## Backend secrets (Supabase → Edge Functions → Secrets)
 
 `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV` (`sandbox` | `production`), `ANTHROPIC_API_KEY`, `CRON_SECRET` (required by `daily-insights`), optional `EXPO_ACCESS_TOKEN`, `PLAID_REDIRECT_URI`.

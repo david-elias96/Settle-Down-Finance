@@ -1,4 +1,4 @@
-import type { Allocation, Cents, Month, Transaction } from './types';
+import type { Allocation, Cents, Month, Transaction } from './types.ts';
 
 export interface TrendPoint {
   /** Day of month, 1-based. */

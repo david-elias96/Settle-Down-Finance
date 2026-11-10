@@ -1,5 +1,5 @@
-import type { BucketStatus } from './budget';
-import type { Cents, SavingsGoal } from './types';
+import type { BucketStatus } from './budget.ts';
+import type { Cents, SavingsGoal } from './types.ts';
 
 export interface GoalImpact {
   goal: SavingsGoal;

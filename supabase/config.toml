@@ -1,0 +1,47 @@
+# Supabase CLI settings for this project. Secrets are NOT kept here: they live only in
+# Supabase edge-function secrets (see README).
+
+project_id = "settle-down-finance"
+
+[functions.ask]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.cancel-agent]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.daily-insights]
+# Called by Supabase Cron; checks CRON_SECRET itself.
+verify_jwt = false
+import_map = "./functions/deno.json"
+
+[functions.delete-account]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.plaid-exchange]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.plaid-link-token]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.plaid-unlink]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.plaid-webhook]
+# Called by Plaid; verifies the Plaid-Verification JWT and body hash itself.
+verify_jwt = false
+import_map = "./functions/deno.json"
+
+[functions.receipt-scan]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.retention]
+# Called by Supabase Cron; checks CRON_SECRET itself.
+verify_jwt = false
+import_map = "./functions/deno.json"

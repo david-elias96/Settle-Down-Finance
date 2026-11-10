@@ -1,4 +1,4 @@
-import type { Allocation, Cents } from './types';
+import type { Allocation, Cents } from './types.ts';
 
 export interface ReceiptLine {
   description: string;
