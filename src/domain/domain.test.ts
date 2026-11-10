@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   bucketStatuses, topStores, shortDate, dayHeading, cancelRoute, categorize, forecastMonth, isAllowedUrl, isSensitiveField, redactText, projectionInsight, creditsLeft, creditsResetLabel, spendCredits, type CreditState, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
-  transactionNotification, type Allocation, type Bucket, type SavingsGoal, type Transaction,
+  transactionNotification, goalForecast, monthInputValue, monthlyNeeded, parseGoalDraft, parseMonth, type Allocation, type Bucket, type SavingsGoal, type Transaction,
 } from './index';
 
 const buckets: Bucket[] = DEFAULT_BUCKETS.map(({ plaidPrimary, ...b }) => b);
@@ -656,5 +656,32 @@ describe('patterns and tune-ups', () => {
 
   it('flags last month when it is well off the usual', () => {
     expect(bucketTrends(buckets, txs, allocs, '2026-11').map((t) => [t.bucketId, t.change])).toEqual([['dining', 14000]]);
+  });
+});
+
+describe('custom savings goals', () => {
+  const draft = { name: '  New   Car ', target: '$12,000', saved: '500', monthly: '250.50', targetMonth: '' };
+  it('turns the form into goal fields', () => {
+    expect(parseGoalDraft(draft, '2026-11')).toEqual({ ok: true, goal: { name: 'New Car', target: dollars(12000), balance: dollars(500), monthlyContribution: dollars(250.5), targetDate: undefined } });
+  });
+  it('explains the first problem', () => {
+    expect(parseGoalDraft({ ...draft, name: ' ' }, '2026-11')).toMatchObject({ ok: false, error: 'Give the goal a name.' });
+    expect(parseGoalDraft({ ...draft, target: '0' }, '2026-11')).toMatchObject({ ok: false });
+    expect(parseGoalDraft({ ...draft, monthly: '12.345' }, '2026-11')).toMatchObject({ ok: false });
+    expect(parseGoalDraft({ ...draft, targetMonth: '13/2027' }, '2026-11')).toMatchObject({ ok: false });
+    expect(parseGoalDraft({ ...draft, targetMonth: '10/2026' }, '2026-11')).toMatchObject({ ok: false, error: 'The target date has already passed.' });
+  });
+  it('reads target months in the ways people type them', () => {
+    for (const s of ['6/2027', '06/27', 'Jun 2027', 'june 2027', '2027-06']) expect(parseMonth(s)).toBe('2027-06');
+    expect(parseMonth('ju 2027')).toBeNull();
+    expect(parseGoalDraft({ ...draft, targetMonth: '6/27' }, '2026-11')).toMatchObject({ ok: true, goal: { targetDate: '2027-06-01' } });
+    expect(monthInputValue('2027-06-01')).toBe('06/2027');
+  });
+  it('suggests a monthly amount that the forecast agrees finishes on time', () => {
+    const needed = monthlyNeeded(dollars(3000), dollars(850), '2027-06', '2026-11');
+    expect(needed).toBe(dollars(308));
+    const goal: SavingsGoal = { id: 'g', name: 'Trip', target: dollars(3000), balance: dollars(850), monthlyContribution: needed, priority: 1, targetDate: '2027-06-01' };
+    expect(goalForecast(goal, goal.balance, '2026-11')).toMatchObject({ finish: '2027-06', onTime: true });
+    expect(monthlyNeeded(dollars(100), dollars(200), '2027-06', '2026-11')).toBe(0);
   });
 });

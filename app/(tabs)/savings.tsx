@@ -1,4 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { Link, router } from 'expo-router';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Label, ListRow, PaceBar, Screen, Section, toneColor, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { formatCents, goalForecast } from '@/src/domain';
@@ -46,6 +47,9 @@ export default function SavingsScreen() {
       </Section>
 
       <Section title="Goals">
+        {impact.goals.length === 0 && (
+          <ListRow title="No savings goals yet" note="Add one for a trip, a car, or a rainy day." last />
+        )}
         {impact.goals.map(({ goal, drawn, balanceAfter, monthsDelayed }, i) => {
           const f = goalForecast(goal, balanceAfter, month);
           const tag = drawn > 0 ? { tone: 'warn' as const, text: `Pushed back ${monthsDelayed} mo` }
@@ -54,10 +58,15 @@ export default function SavingsScreen() {
           return (
             <ListRow key={goal.id} title={goal.name} figure={`${$(balanceAfter)} / ${$(goal.target)}`}
               note={`+${$(goal.monthlyContribution)}/mo · ${f.finishLabel === 'Reached' ? 'goal reached' : `done ${f.finishLabel}`}${drawn > 0 ? ` · −${$(drawn)} this month` : ''}`}
-              tag={tag} bar={<PaceBar ratio={balanceAfter / goal.target} tone={tag.tone} />} last={i === impact.goals.length - 1} />
+              tag={tag} bar={<PaceBar ratio={balanceAfter / goal.target} tone={tag.tone} />} last={i === impact.goals.length - 1}
+              onPress={() => router.push({ pathname: '/goal', params: { id: goal.id } })} />
           );
         })}
       </Section>
+
+      <Link href="/goal" asChild>
+        <Pressable accessibilityRole="button"><Label style={{ color: t.tint, fontSize: 17, textAlign: 'center' }}>Add savings goal</Label></Pressable>
+      </Link>
     </Screen>
   );
 }
