@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   bucketStatuses, topStores, shortDate, dayHeading, cancelRoute, categorize, forecastMonth, isAllowedUrl, isSensitiveField, redactText, projectionInsight, creditsLeft, creditsResetLabel, spendCredits, type CreditState, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
-  transactionNotification, type Allocation, type Bucket, type SavingsGoal, type Transaction,
+  transactionNotification, goalForecast, monthInputValue, monthlyNeeded, parseGoalDraft, parseMonth, reorderGoals, moveItem, goalIdeas, ideaTargetMonth, type Allocation, type Bucket, type SavingsGoal, type Transaction,
 } from './index';
 
 const buckets: Bucket[] = DEFAULT_BUCKETS.map(({ plaidPrimary, ...b }) => b);
@@ -656,5 +656,66 @@ describe('patterns and tune-ups', () => {
 
   it('flags last month when it is well off the usual', () => {
     expect(bucketTrends(buckets, txs, allocs, '2026-11').map((t) => [t.bucketId, t.change])).toEqual([['dining', 14000]]);
+  });
+});
+
+describe('custom savings goals', () => {
+  const draft = { name: '  New   Car ', target: '$12,000', saved: '500', monthly: '250.50', targetMonth: '' };
+  it('turns the form into goal fields', () => {
+    expect(parseGoalDraft(draft, '2026-11')).toEqual({ ok: true, goal: { name: 'New Car', target: dollars(12000), balance: dollars(500), monthlyContribution: dollars(250.5), targetDate: undefined } });
+  });
+  it('explains the first problem', () => {
+    expect(parseGoalDraft({ ...draft, name: ' ' }, '2026-11')).toMatchObject({ ok: false, error: 'Give the goal a name.' });
+    expect(parseGoalDraft({ ...draft, target: '0' }, '2026-11')).toMatchObject({ ok: false });
+    expect(parseGoalDraft({ ...draft, monthly: '12.345' }, '2026-11')).toMatchObject({ ok: false });
+    expect(parseGoalDraft({ ...draft, targetMonth: '13/2027' }, '2026-11')).toMatchObject({ ok: false });
+    expect(parseGoalDraft({ ...draft, targetMonth: '10/2026' }, '2026-11')).toMatchObject({ ok: false, error: 'The target date has already passed.' });
+  });
+  it('reads target months in the ways people type them', () => {
+    for (const s of ['6/2027', '06/27', 'Jun 2027', 'june 2027', '2027-06']) expect(parseMonth(s)).toBe('2027-06');
+    expect(parseMonth('ju 2027')).toBeNull();
+    expect(parseGoalDraft({ ...draft, targetMonth: '6/27' }, '2026-11')).toMatchObject({ ok: true, goal: { targetDate: '2027-06-01' } });
+    expect(monthInputValue('2027-06-01')).toBe('06/2027');
+  });
+  it('suggests a monthly amount that the forecast agrees finishes on time', () => {
+    const needed = monthlyNeeded(dollars(3000), dollars(850), '2027-06', '2026-11');
+    expect(needed).toBe(dollars(308));
+    const goal: SavingsGoal = { id: 'g', name: 'Trip', target: dollars(3000), balance: dollars(850), monthlyContribution: needed, priority: 1, targetDate: '2027-06-01' };
+    expect(goalForecast(goal, goal.balance, '2026-11')).toMatchObject({ finish: '2027-06', onTime: true });
+    expect(monthlyNeeded(dollars(100), dollars(200), '2027-06', '2026-11')).toBe(0);
+  });
+});
+
+describe('goal protection order', () => {
+  const g = (id: string, priority: number): SavingsGoal => ({ id, name: id, target: 100, balance: 50, monthlyContribution: 10, priority });
+  it('renumbers priorities to match the new order', () => {
+    const out = reorderGoals([g('a', 1), g('b', 2), g('c', 3)], ['c', 'a', 'b']);
+    expect(out.map((x) => [x.id, x.priority])).toEqual([['a', 2], ['b', 3], ['c', 1]]);
+  });
+  it('makes overspending draw from the goal moved to the bottom', () => {
+    const goals = reorderGoals([g('a', 1), g('b', 2)], ['b', 'a']);
+    const status = { overBy: 30, remaining: 0 } as Parameters<typeof overspendImpact>[0][number];
+    const hit = overspendImpact([status], goals, { useOtherBucketSlack: false }).goals.find((x) => x.drawn > 0);
+    expect(hit?.goal.id).toBe('a');
+  });
+  it('moves an item', () => {
+    expect(moveItem(['a', 'b', 'c'], 0, 2)).toEqual(['b', 'c', 'a']);
+    expect(moveItem(['a', 'b', 'c'], 2, 0)).toEqual(['c', 'a', 'b']);
+  });
+});
+
+describe('goal ideas', () => {
+  it('leaves out goals the household already has', () => {
+    const have: SavingsGoal[] = [{ id: 'v', name: ' vacation ', target: 1, balance: 0, monthlyContribution: 0, priority: 1 }];
+    expect(goalIdeas(have).map((i) => i.name)).not.toContain('Vacation');
+  });
+  it('offers the Emergency Fund back first after it is deleted', () => {
+    expect(goalIdeas([])[0].name).toBe('Emergency Fund');
+    const ef: SavingsGoal = { id: 'e', name: 'Emergency Fund', target: 1, balance: 0, monthlyContribution: 0, priority: 1 };
+    expect(goalIdeas([ef]).map((i) => i.name)).not.toContain('Emergency Fund');
+  });
+  it('targets the next December for holiday gifts', () => {
+    expect(ideaTargetMonth(12, '2026-11')).toBe('12/2026');
+    expect(ideaTargetMonth(6, '2026-11')).toBe('06/2027');
   });
 });
