@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { bucketStatuses, compareToLastMonth, forecastMonth, projectionInsight, previousMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type GoalFields, type Transaction, applySplits, vendorKey, type BillSplit, type MerchantRule, type SplitSettings, weeklyRecap, findBills, billsByBucket, billsOutlook, withBills, budgetTuneUps, bucketTrends, smallPurchases } from '@/src/domain';
+import { bucketStatuses, compareToLastMonth, forecastMonth, projectionInsight, previousMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type GoalFields, reorderGoals, type Transaction, applySplits, vendorKey, type BillSplit, type MerchantRule, type SplitSettings, weeklyRecap, findBills, billsByBucket, billsOutlook, withBills, budgetTuneUps, bucketTrends, smallPurchases } from '@/src/domain';
 import { demoAccounts, demoAllocations, demoBuckets, demoGoals, demoMembers, demoRules, demoSplits, demoTransactions } from './demo';
 
 /**
@@ -54,6 +54,8 @@ function useBudgetState() {
   const updateGoal = (id: string, fields: GoalFields) =>
     setGoals((gs) => gs.map((g) => (g.id === id ? { ...g, ...fields } : g)));
   const deleteGoal = (id: string) => setGoals((gs) => gs.filter((g) => g.id !== id));
+  /** `ids` from most protected to least. Overspending draws from the end of the list first. */
+  const setGoalOrder = (ids: string[]) => setGoals((gs) => reorderGoals(gs, ids));
   const month = new Date().toISOString().slice(0, 7);
 
   const today = new Date().getDate();
@@ -126,7 +128,7 @@ function useBudgetState() {
   const addBucket = (name: string, monthlyLimit: number) =>
     setBuckets((bs) => [...bs, { id: `custom-${Date.now()}`, name, icon: 'star.fill', monthlyLimit, isCustom: true }]);
 
-  return { month, today, buckets, transactions, allocations, setBillSplit, rules, moveToBucket, goals, addGoal, updateGoal, deleteGoal, statuses, impact, trend, forecast, insights, recap, bills, cutIdeas, tuneUps, trends, small, setBucketLimit, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack, members, accounts, meId, accountLabel };
+  return { month, today, buckets, transactions, allocations, setBillSplit, rules, moveToBucket, goals, addGoal, updateGoal, deleteGoal, setGoalOrder, statuses, impact, trend, forecast, insights, recap, bills, cutIdeas, tuneUps, trends, small, setBucketLimit, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack, members, accounts, meId, accountLabel };
 }
 
 type BudgetState = ReturnType<typeof useBudgetState>;

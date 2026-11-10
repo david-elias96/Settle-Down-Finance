@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   bucketStatuses, topStores, shortDate, dayHeading, cancelRoute, categorize, forecastMonth, isAllowedUrl, isSensitiveField, redactText, projectionInsight, creditsLeft, creditsResetLabel, spendCredits, type CreditState, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
-  transactionNotification, goalForecast, monthInputValue, monthlyNeeded, parseGoalDraft, parseMonth, type Allocation, type Bucket, type SavingsGoal, type Transaction,
+  transactionNotification, goalForecast, monthInputValue, monthlyNeeded, parseGoalDraft, parseMonth, reorderGoals, moveItem, type Allocation, type Bucket, type SavingsGoal, type Transaction,
 } from './index';
 
 const buckets: Bucket[] = DEFAULT_BUCKETS.map(({ plaidPrimary, ...b }) => b);
@@ -683,5 +683,23 @@ describe('custom savings goals', () => {
     const goal: SavingsGoal = { id: 'g', name: 'Trip', target: dollars(3000), balance: dollars(850), monthlyContribution: needed, priority: 1, targetDate: '2027-06-01' };
     expect(goalForecast(goal, goal.balance, '2026-11')).toMatchObject({ finish: '2027-06', onTime: true });
     expect(monthlyNeeded(dollars(100), dollars(200), '2027-06', '2026-11')).toBe(0);
+  });
+});
+
+describe('goal protection order', () => {
+  const g = (id: string, priority: number): SavingsGoal => ({ id, name: id, target: 100, balance: 50, monthlyContribution: 10, priority });
+  it('renumbers priorities to match the new order', () => {
+    const out = reorderGoals([g('a', 1), g('b', 2), g('c', 3)], ['c', 'a', 'b']);
+    expect(out.map((x) => [x.id, x.priority])).toEqual([['a', 2], ['b', 3], ['c', 1]]);
+  });
+  it('makes overspending draw from the goal moved to the bottom', () => {
+    const goals = reorderGoals([g('a', 1), g('b', 2)], ['b', 'a']);
+    const status = { overBy: 30, remaining: 0 } as Parameters<typeof overspendImpact>[0][number];
+    const hit = overspendImpact([status], goals, { useOtherBucketSlack: false }).goals.find((x) => x.drawn > 0);
+    expect(hit?.goal.id).toBe('a');
+  });
+  it('moves an item', () => {
+    expect(moveItem(['a', 'b', 'c'], 0, 2)).toEqual(['b', 'c', 'a']);
+    expect(moveItem(['a', 'b', 'c'], 2, 0)).toEqual(['c', 'a', 'b']);
   });
 });

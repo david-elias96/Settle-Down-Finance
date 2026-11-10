@@ -156,3 +156,18 @@ export function parseGoalDraft(d: GoalDraft, thisMonth: string): { ok: true; goa
   }
   return { ok: true, goal: { name, target, balance, monthlyContribution: monthly, targetDate } };
 }
+
+/** Gives goals priorities 1..n in the order of `ids` (first = protected first). Unlisted goals keep their place after them. */
+export function reorderGoals(goals: SavingsGoal[], ids: string[]): SavingsGoal[] {
+  const rank = new Map(ids.map((id, i) => [id, i]));
+  const ordered = [...goals].sort((a, b) => (rank.get(a.id) ?? ids.length + a.priority) - (rank.get(b.id) ?? ids.length + b.priority));
+  return goals.map((g) => ({ ...g, priority: ordered.indexOf(g) + 1 }));
+}
+
+/** Moves one item in a list to a new index. */
+export function moveItem<T>(list: T[], from: number, to: number): T[] {
+  const next = [...list];
+  const [item] = next.splice(from, 1);
+  next.splice(Math.max(0, Math.min(next.length, to)), 0, item);
+  return next;
+}

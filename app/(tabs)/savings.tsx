@@ -1,6 +1,6 @@
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Label, ListRow, PaceBar, Screen, Section, toneColor, useTheme } from '@/components/ui';
+import { Label, ListRow, PaceBar, Row, Screen, Section, toneColor, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { formatCents, goalForecast } from '@/src/domain';
 
@@ -64,9 +64,16 @@ export default function SavingsScreen() {
         })}
       </Section>
 
-      <Link href="/goal" asChild>
-        <Pressable accessibilityRole="button"><Label style={{ color: t.tint, fontSize: 17, textAlign: 'center' }}>Add savings goal</Label></Pressable>
-      </Link>
+      <Section>
+        <Pressable accessibilityRole="button" onPress={() => router.push('/goal')}>
+          <Row icon={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }} title="Add savings goal" last={impact.goals.length < 2} />
+        </Pressable>
+        {impact.goals.length > 1 && (
+          <Pressable accessibilityRole="button" onPress={() => router.push('/goal-order')}>
+            <Row icon={{ ios: 'arrow.up.arrow.down', android: 'swap_vert', web: 'swap_vert' }} title="Change goal order" subtitle="Pick which goal is protected first" last />
+          </Pressable>
+        )}
+      </Section>
     </Screen>
   );
 }
