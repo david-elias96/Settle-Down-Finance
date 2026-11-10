@@ -54,5 +54,5 @@ export async function callFunction<T = unknown>(name: string, body: Record<strin
   return data as T;
 }
 
-export const PRIVACY_POLICY_URL = 'https://settledownfinance.com/privacy';
+export const PRIVACY_POLICY_URL = 'https://settledownfinancial.com/privacy';
 export const PLAID_PRIVACY_URL = 'https://plaid.com/legal/#end-user-privacy-policy';

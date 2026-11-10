@@ -8,7 +8,7 @@ Version 1.1 · Effective 2026-11-10 · Owner: Security Owner (founder)
 
 Settle Down Finance protects the consumer financial data it receives from Plaid and from its users with the controls in this policy, and every person and system that touches that data must follow it.
 
-**Company.** Settle Down Finance (settledownfinance.com) is an iPhone budgeting app for households. It is operated by a small team and is currently used by the founders' own household, with a commercial launch planned.
+**Company.** Settle Down Finance (settledownfinancial.com) is an iPhone budgeting app for households. It is operated by a small team and is currently used by the founders' own household, with a commercial launch planned.
 
 **In scope.**
 
@@ -32,7 +32,7 @@ The founder, David Elias, is the Security Owner and is accountable for this poli
 
 **Risk management.** The Security Owner keeps a written risk register in the source repository. At each annual review, and before launching any feature that handles new kinds of consumer data, the Security Owner lists the risks to that data, rates their likelihood and impact, and records the control or accepted residual risk for each.
 
-**Security contact.** Security issues and privacy requests are sent to admin@settledownfinance.com, which is monitored by the Security Owner.
+**Security contact.** Security issues and privacy requests are sent to admin@settledownfinancial.com, which is monitored by the Security Owner.
 
 **Operations.** Recurring tasks in this policy (log reviews, device patch checks, access reviews, secret rotation, training, tabletop exercises) are listed with their frequency in `docs/security/operations.md`, and each completed task is logged there.
 
@@ -161,7 +161,7 @@ We keep consumer data only while the user has an account, delete it on request, 
 
 **Consent and privacy.**
 
-- A privacy policy at settledownfinance.com/privacy explains what data we collect, why, which vendors receive it, how long we keep it and how to delete it. It links to Plaid's End User Privacy Policy.
+- A privacy policy at settledownfinancial.com/privacy explains what data we collect, why, which vendors receive it, how long we keep it and how to delete it. It links to Plaid's End User Privacy Policy.
 - Before Plaid Link opens, the app shows a data-use notice: that Plaid is used, what data is collected, how it is used and shared, that it is never sold, and how to unlink or delete it, with links to our privacy policy and Plaid's. The user must tap "Agree and continue". The backend records the notice version and time of agreement and will not create a Plaid Link token without it. If the notice changes materially, users agree again before linking more accounts.
 - The user starts every bank connection themselves; accounts are never linked on their behalf.
 - We do not sell consumer data, share it for advertising, or use it for any purpose other than providing the app's features to that user and their household.

@@ -1,6 +1,6 @@
 # Settle Down Finance
 
-iPhone-first budget tracker ([settledownfinance.com](https://settledownfinance.com)), used by our family today and built to grow into a commercial app.
+iPhone-first budget tracker ([settledownfinancial.com](https://settledownfinancial.com)), used by our family today and built to grow into a commercial app.
 
 - **App:** Expo (React Native + TypeScript), Expo Router. Builds for iOS in the cloud with EAS, so no Mac is needed.
 - **Backend:** Supabase (Postgres with row-level security per household, auth, Vault for Plaid tokens, Deno edge functions).

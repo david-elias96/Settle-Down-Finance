@@ -20,8 +20,8 @@ run('cancel agent on the practice site', () => {
     const page = await browser.newPage();
     page.on('dialog', (d: { dismiss: () => void }) => d.dismiss());
     await page.setContent(PRACTICE_SITE_HTML);
-    const domains = ['practice.settledownfinance.com'];
-    const snap = async (): Promise<PageSnapshot> => ({ ...JSON.parse(await page.evaluate(SNAPSHOT_JS)), url: 'https://practice.settledownfinance.com/' });
+    const domains = ['practice.settledownfinancial.com'];
+    const snap = async (): Promise<PageSnapshot> => ({ ...JSON.parse(await page.evaluate(SNAPSHOT_JS)), url: 'https://practice.settledownfinancial.com/' });
 
     // Snapshot of the login page: password is marked sensitive and nothing typed is read.
     await page.fill('#email', 'someone@example.com');

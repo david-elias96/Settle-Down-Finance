@@ -20,7 +20,7 @@ export default function CancelScreen() {
   const route = useMemo(() => (isPractice ? null : cancelRoute(vendor, website || undefined)), [vendor, website, isPractice]);
   const name = isPractice ? 'StreamCo (practice)' : route?.via === 'agent' ? route.guide.name : vendor;
 
-  const practice = () => setRun({ demo: true, name: 'StreamCo', source: { html: PRACTICE_SITE_HTML, baseUrl: PRACTICE_SITE_URL }, domains: ['practice.settledownfinance.com'] });
+  const practice = () => setRun({ demo: true, name: 'StreamCo', source: { html: PRACTICE_SITE_HTML, baseUrl: PRACTICE_SITE_URL }, domains: ['practice.settledownfinancial.com'] });
 
   async function start() {
     if (isPractice) return practice();

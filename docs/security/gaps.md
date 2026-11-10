@@ -9,8 +9,8 @@ Last reviewed: 2026-11-10.
 | To do | Why (questionnaire item) | Policy section |
 | --- | --- | --- |
 | Turn on MFA (authenticator app or passkey) for GitHub, Supabase, Plaid Dashboard, Anthropic Console, Expo, Apple Developer, domain registrar/DNS and email; keep passwords in a password manager | MFA for critical systems; access controls | 4 |
-| Publish `site/privacy/index.html` at https://settledownfinance.com/privacy | Privacy policy | 8 |
-| Create the `admin@settledownfinance.com` mailbox (or a forward to your inbox) | Privacy policy contact; incident reporting | 2, 8 |
+| Publish `site/privacy/index.html` at https://settledownfinancial.com/privacy | Privacy policy | 8 |
+| Create the `admin@settledownfinancial.com` mailbox (or a forward to your inbox) | Privacy policy contact; incident reporting | 2, 8 |
 | Supabase: run migration `0007`, deploy the new functions (`plaid-unlink`, `delete-account`, `retention`), enable MFA (TOTP) and Apple + email OTP providers in Auth, turn on leaked-password protection | Consumer MFA; deletion | 4, 8 |
 | Supabase: set `CRON_SECRET`, and schedule `retention` daily and `daily-insights` each evening (Supabase Cron, sending `Authorization: Bearer <CRON_SECRET>`) | Retention policy enforced | 8 |
 | Move the Supabase project to the Pro plan before production (daily backups, no pausing) | Backups, availability | 7 |

@@ -28,7 +28,7 @@ Yes. Production runs on managed services (Supabase, Expo/Apple), whose providers
 
 **7. Does your organization have a privacy policy for the application where Plaid Link will be deployed?**
 
-Yes: https://settledownfinance.com/privacy. It is linked in the app's Settings and on the screen shown before Plaid Link, and it links to Plaid's End User Privacy Policy.
+Yes: https://settledownfinancial.com/privacy. It is linked in the app's Settings and on the screen shown before Plaid Link, and it links to Plaid's End User Privacy Policy.
 
 **8. Does your organization obtain consent from consumers for the collection, processing, and storage of their data?**
 
