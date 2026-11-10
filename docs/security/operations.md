@@ -20,3 +20,4 @@ Recurring tasks from the [information security policy](information-security-poli
 | Date | Task | Who | Result |
 | --- | --- | --- | --- |
 | 2026-11-10 | Policy v1.1 adopted | David | Approved |
+| 2026-11-10 | Risk register created (13 risks; 6 open items tied to gaps.md) | David |

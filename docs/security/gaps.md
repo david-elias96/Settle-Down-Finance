@@ -16,7 +16,6 @@ Last reviewed: 2026-11-10.
 | Move the Supabase project to the Pro plan before production (daily backups, no pausing) | Backups, availability | 7 |
 | GitHub: protect `main` (require pull request and the CI checks, block force-push); turn on Dependabot alerts, secret scanning and push protection | Vulnerability scanning; change management | 5, 6 |
 | On your Windows PC: confirm BitLocker, Microsoft Defender and automatic Windows Update are on; log it in [operations.md](operations.md) | Vulnerability scans on employee machines | 6, 9 |
-| Start `docs/security/risk-register.md` (a short table of risks, rating and control) | Governance | 2 |
 
 ## Code still to build
 
@@ -38,3 +37,4 @@ Last reviewed: 2026-11-10.
 | Invite codes used `random()` | PR #12: `gen_random_bytes` with rejection sampling |
 | Household members could read the cancel assistant's raw page text | PR #12: column grants hide `messages` |
 | No CI or dependency scanning | PR #12: GitHub Actions (typecheck, tests, Deno check, weekly `npm audit` and gitleaks), Dependabot |
+| No risk register | PR #12: `docs/security/risk-register.md` (13 risks, rated, with controls and open items) |
