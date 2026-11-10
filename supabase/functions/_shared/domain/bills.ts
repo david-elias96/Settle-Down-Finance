@@ -1,7 +1,7 @@
-import { vendorKey } from './filters';
-import { formatCents, shortDate } from './money';
-import { daysInMonth } from './trend';
-import type { Allocation, Cents, Month, Transaction } from './types';
+import { vendorKey } from './filters.ts';
+import { formatCents, shortDate } from './money.ts';
+import { daysInMonth } from './trend.ts';
+import type { Allocation, Cents, Month, Transaction } from './types.ts';
 
 /**
  * Bill forecasting: finds charges that come once a month (rent, utilities, phone, insurance,

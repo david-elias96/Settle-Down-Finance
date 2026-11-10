@@ -1,4 +1,4 @@
-import type { Allocation, Cents, Month, Transaction } from './types';
+import type { Allocation, Cents, Month, Transaction } from './types.ts';
 
 export interface TransactionFilter {
   /** "YYYY-MM", or null for all months. */

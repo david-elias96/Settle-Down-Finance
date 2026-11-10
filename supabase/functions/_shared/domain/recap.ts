@@ -1,7 +1,7 @@
-import { vendorKey } from './filters';
-import { formatCents, shortDate } from './money';
-import type { Tone } from './pace';
-import type { Allocation, Bucket, Cents, Transaction } from './types';
+import { vendorKey } from './filters.ts';
+import { formatCents, shortDate } from './money.ts';
+import type { Tone } from './pace.ts';
+import type { Allocation, Bucket, Cents, Transaction } from './types.ts';
 
 /**
  * The weekly money recap: the last 7 days compared with the 7 before. Every number is

@@ -1,9 +1,9 @@
-import { findBills } from './bills';
-import type { Insight } from './insights';
-import { formatCents } from './money';
-import { vendorKey } from './filters';
-import { daysInMonth, previousMonth } from './trend';
-import type { Allocation, Cents, Month, Transaction } from './types';
+import { findBills } from './bills.ts';
+import type { Insight } from './insights.ts';
+import { formatCents } from './money.ts';
+import { vendorKey } from './filters.ts';
+import { daysInMonth, previousMonth } from './trend.ts';
+import type { Allocation, Cents, Month, Transaction } from './types.ts';
 
 export interface ForecastPoint {
   day: number;

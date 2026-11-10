@@ -1,6 +1,6 @@
-import type { BucketStatus } from './budget';
-import type { Cents } from './types';
-import { formatCents } from './money';
+import type { BucketStatus } from './budget.ts';
+import type { Cents } from './types.ts';
+import { formatCents } from './money.ts';
 
 export type PaceStatus = 'under' | 'on_track' | 'over';
 

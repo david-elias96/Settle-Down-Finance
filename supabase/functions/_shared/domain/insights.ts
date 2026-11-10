@@ -1,9 +1,9 @@
-import type { BucketStatus } from './budget';
-import { cancelRoute } from './cancelAgent';
-import { vendorKey } from './filters';
-import { formatCents } from './money';
-import { bucketPace, weeklyAllowance } from './pace';
-import type { Allocation, Cents, Month, Transaction } from './types';
+import type { BucketStatus } from './budget.ts';
+import { cancelRoute } from './cancelAgent.ts';
+import { vendorKey } from './filters.ts';
+import { formatCents } from './money.ts';
+import { bucketPace, weeklyAllowance } from './pace.ts';
+import type { Allocation, Cents, Month, Transaction } from './types.ts';
 
 /**
  * Spending insights are found by plain code so the numbers are always exact.

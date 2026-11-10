@@ -1,5 +1,5 @@
-import type { Bucket } from './types';
-import { dollars } from './money';
+import type { Bucket } from './types.ts';
+import { dollars } from './money.ts';
 
 /**
  * Starter buckets. Limits are placeholders until the family's real budget is loaded.

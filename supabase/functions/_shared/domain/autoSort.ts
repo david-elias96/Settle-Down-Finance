@@ -1,8 +1,8 @@
-import { categorize, type CategorizeResult } from './categorize';
-import { FALLBACK_BUCKET_ID } from './defaultBuckets';
-import { vendorKey } from './filters';
-import { formatCents } from './money';
-import type { Allocation, Bucket, MerchantRule, Transaction } from './types';
+import { categorize, type CategorizeResult } from './categorize.ts';
+import { FALLBACK_BUCKET_ID } from './defaultBuckets.ts';
+import { vendorKey } from './filters.ts';
+import { formatCents } from './money.ts';
+import type { Allocation, Bucket, MerchantRule, Transaction } from './types.ts';
 
 /**
  * Automatic bucket sorting. Plain rules go first (the family's own rules, then what they or

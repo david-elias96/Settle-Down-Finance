@@ -7,7 +7,7 @@
  * themselves, so passwords and card numbers never leave the phone, and the phone
  * enforces the rules below whatever the model or the web page says.
  */
-import { vendorKey } from './filters';
+import { vendorKey } from './filters.ts';
 
 export interface PageElement {
   /** Short id the page script stamps on the element (data-sdf). */

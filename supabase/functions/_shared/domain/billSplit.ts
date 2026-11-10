@@ -1,6 +1,6 @@
-import { formatCents } from './money';
-import { vendorKey } from './filters';
-import type { Allocation, Cents, Transaction } from './types';
+import { formatCents } from './money.ts';
+import { vendorKey } from './filters.ts';
+import type { Allocation, Cents, Transaction } from './types.ts';
 
 /**
  * Splitting a shared bill, such as rent paid in full and split three ways.
