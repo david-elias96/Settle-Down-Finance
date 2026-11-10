@@ -128,6 +128,10 @@ section.features { padding: 112px 0 40px; }
 .feature li strong { color: var(--text); font-weight: 600; }
 .ai { display: inline-flex; align-items: center; gap: 6px; }
 .ai svg { width: 18px; height: 18px; color: var(--sun); }
+.asks { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 24px; }
+.asks span { background: #007AFF; color: #fff; font-size: 15px; font-weight: 500; line-height: 1.35; padding: 9px 16px; border-radius: 20px 20px 20px 6px; max-width: 100%; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .asks span { background: #0A84FF; } }
+:root[data-theme="dark"] .asks span { background: #0A84FF; }
 
 /* Grid */
 section.more { padding: 40px 0 112px; }
@@ -322,7 +326,12 @@ footer .brand svg { width: 30px; }
         <div class="text">
           <p class="eyebrow ai"><svg aria-hidden="true"><use href="#sparkle"/></svg>SettleDown, your money assistant</p>
           <h2>Ask your budget anything</h2>
-          <p class="lede">"How can I cut back this month?" "What did we spend at Target since summer?" SettleDown answers from your real numbers, in plain English, with the math to back it up.</p>
+          <p class="lede">Ask in plain English. SettleDown answers from your real buckets and purchases, and shows the math behind every number.</p>
+          <div class="asks" aria-label="Example questions">
+            <span>How can I cut back this month?</span>
+            <span>What did we spend at Target since summer?</span>
+            <span>Are we on track for Christmas?</span>
+          </div>
           <ul>
             <li><strong>Insights</strong> that flag what changed before it becomes a problem</li>
             <li><strong>A weekly recap</strong> of how your week compared to a typical one</li>
