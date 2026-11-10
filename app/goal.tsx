@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Label, Row, Screen, Section, Tag, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
-import { formatCents, GOAL_NAME_MAX, goalForecast, goalIdeas, ideaTargetMonth, monthInputValue, monthlyNeeded, parseGoalDraft, type GoalDraft } from '@/src/domain';
+import { formatCents, GOAL_NAME_MAX, goalForecast, goalIdeas, ideaTargetMonth, isEmergencyFund, monthInputValue, monthlyNeeded, parseGoalDraft, type GoalDraft } from '@/src/domain';
 
 /** "2027-06-01" → "Jun 2027", matching the finish dates on the Savings tab. */
 const shortMonth = (date: string) => new Date(`${date.slice(0, 7)}-15T12:00:00Z`).toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
@@ -50,11 +50,14 @@ export default function GoalScreen() {
   };
   const remove = () => {
     if (!existing) return;
-    const note = existing.balance > 0 ? ` The ${$(existing.balance)} set aside stays in your savings account; it just won't be earmarked for this goal.` : '';
+    const kept = existing.balance > 0 ? `The ${$(existing.balance)} set aside stays in your savings account; it just won't be earmarked for this goal.` : '';
+    const why = isEmergencyFund(existing) ? "This is your cushion for surprises like a job loss or a car repair. You can add it back anytime from Ideas." : '';
+    const note = [why, kept].filter(Boolean).join(' ');
+    const title = isEmergencyFund(existing) ? 'Delete your Emergency Fund?' : `Delete ${existing.name}?`;
     const go = () => { deleteGoal(existing.id); router.back(); };
-    if (Platform.OS === 'web') { if (globalThis.confirm?.(`Delete ${existing.name}?${note}`)) go(); return; }
-    Alert.alert(`Delete ${existing.name}?`, note.trim() || undefined, [
-      { text: 'Cancel', style: 'cancel' },
+    if (Platform.OS === 'web') { if (globalThis.confirm?.(`${title}${note ? `\n\n${note}` : ''}`)) go(); return; }
+    Alert.alert(title, note || undefined, [
+      { text: isEmergencyFund(existing) ? 'Keep It' : 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: go },
     ]);
   };

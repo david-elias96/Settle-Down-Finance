@@ -174,6 +174,7 @@ export function moveItem<T>(list: T[], from: number, to: number): T[] {
 
 /** Common things families save for, offered when adding a goal. */
 export const GOAL_IDEAS: { name: string; /** SF Symbol on iOS. */ icon: string; /** Material icon on Android and web. */ material: string; /** Month (1-12) the goal usually lands on, for yearly ones. */ month?: number }[] = [
+  { name: 'Emergency Fund', icon: 'cross.case.fill', material: 'health_and_safety' },
   { name: 'Vacation', icon: 'airplane', material: 'flight' },
   { name: 'Holiday Gifts', icon: 'gift.fill', material: 'redeem', month: 12 },
   { name: 'New Car', icon: 'car.fill', material: 'directions_car' },
@@ -188,7 +189,11 @@ export const GOAL_IDEAS: { name: string; /** SF Symbol on iOS. */ icon: string; 
   { name: 'Medical Bills', icon: 'cross.case.fill', material: 'medical_services' },
 ];
 
-/** Ideas the household doesn't already have a goal for. */
+/** The goal every household starts with. Deleting it gets an extra warning. */
+export const EMERGENCY_FUND = 'Emergency Fund';
+export const isEmergencyFund = (g: Pick<SavingsGoal, 'name'>) => g.name.trim().toLowerCase() === EMERGENCY_FUND.toLowerCase();
+
+/** Ideas the household doesn't already have a goal for. Emergency Fund comes first when it's missing. */
 export const goalIdeas = (goals: SavingsGoal[]) => {
   const have = new Set(goals.map((g) => g.name.trim().toLowerCase()));
   return GOAL_IDEAS.filter((i) => !have.has(i.name.toLowerCase()));

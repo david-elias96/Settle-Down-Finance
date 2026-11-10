@@ -709,6 +709,11 @@ describe('goal ideas', () => {
     const have: SavingsGoal[] = [{ id: 'v', name: ' vacation ', target: 1, balance: 0, monthlyContribution: 0, priority: 1 }];
     expect(goalIdeas(have).map((i) => i.name)).not.toContain('Vacation');
   });
+  it('offers the Emergency Fund back first after it is deleted', () => {
+    expect(goalIdeas([])[0].name).toBe('Emergency Fund');
+    const ef: SavingsGoal = { id: 'e', name: 'Emergency Fund', target: 1, balance: 0, monthlyContribution: 0, priority: 1 };
+    expect(goalIdeas([ef]).map((i) => i.name)).not.toContain('Emergency Fund');
+  });
   it('targets the next December for holiday gifts', () => {
     expect(ideaTargetMonth(12, '2026-11')).toBe('12/2026');
     expect(ideaTargetMonth(6, '2026-11')).toBe('06/2027');
