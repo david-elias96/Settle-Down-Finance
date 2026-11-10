@@ -1,6 +1,6 @@
 # Settle Down Finance Information Security Policy
 
-Version 1.3 · Effective 2026-11-10 · Owner: Security Owner (founder)
+Version 1.4 · Effective 2026-11-10 · Owner: Security Owner (founder)
 
 > This is the repository copy of the policy submitted to Plaid. Engineering rules that follow from it are summarized in `CLAUDE.md`, and known gaps between this policy and the current code are tracked in [`gaps.md`](gaps.md). Change this file only through a reviewed pull request, and add a row to the revision history.
 
@@ -135,6 +135,7 @@ Consumer data goes only to the vendors listed below and only for the purpose sho
 | Anthropic (Claude API) | AI features: answers to questions, insights, bucket sorting, receipt reading, subscription-cancel assistant | Merchant names, amounts, dates and budget categories needed for the feature; receipt images; page text from the cancel assistant with typed values, emails and long numbers removed. Never Plaid tokens, account numbers or passwords. Under Anthropic's commercial terms, API data is not used to train models |
 | Expo | App builds and push delivery | Push token and notification text (merchant, amount, budget status) |
 | Apple | App distribution and push notifications | Push token and notification text |
+| Resend | Sending sign-in code emails from settledownfinancial.com | Email address and the one-time sign-in code. No financial data |
 | GitHub | Source code hosting | No consumer data |
 
 A new vendor may receive consumer data only after the Security Owner reviews its security (a SOC 2 Type II or ISO 27001 report where available), confirms it will not sell or train on the data, records it in this table, and updates the privacy policy. Vendor reports are reviewed again each year.
@@ -197,6 +198,7 @@ People with access use secured devices, know this policy, and may depart from it
 
 | Version | Date | Change | Approved by |
 | --- | --- | --- | --- |
+| 1.4 | 2026-11-10 | Resend added as the email provider for sign-in codes | David Elias, Security Owner |
 | 1.3 | 2026-11-10 | Quarterly end-of-life software check | David Elias, Security Owner |
 | 1.2 | 2026-11-10 | Passkeys (phishing-resistant MFA) added as the default second factor before Plaid Link | David Elias, Security Owner |
 | 1.1 | 2026-11-10 | Second factor required for every user before Plaid Link and enforced by the backend; consent recorded; vulnerability scanning detail; operations log | David Elias, Security Owner |
