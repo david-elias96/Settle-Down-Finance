@@ -1,0 +1,123 @@
+import type { Session } from '@supabase/supabase-js';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { backend } from '@/src/lib/backend';
+import { CONSENT_NOTICE_VERSION, plaidLinkGate } from '@/src/domain';
+
+type Aal = 'aal1' | 'aal2' | null;
+
+function useAuthState() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [aal, setAal] = useState<Aal>(null);
+  const [hasFactor, setHasFactor] = useState(false);
+  const [consents, setConsents] = useState<string[]>([]);
+  const [householdId, setHouseholdId] = useState<string | null>(null);
+  const [ready, setReady] = useState(!backend);
+
+  const refresh = useCallback(async () => {
+    if (!backend) return;
+    const { data } = await backend.auth.getSession();
+    setSession(data.session);
+    if (!data.session) { setAal(null); setHasFactor(false); setConsents([]); setHouseholdId(null); return; }
+    const [{ data: level }, { data: factors }, { data: rows }, { data: membership }] = await Promise.all([
+      backend.auth.mfa.getAuthenticatorAssuranceLevel(),
+      backend.auth.mfa.listFactors(),
+      backend.from('plaid_consents').select('notice_version'),
+      backend.from('household_members').select('household_id').eq('user_id', data.session.user.id).order('joined_at').limit(1).maybeSingle(),
+    ]);
+    setHouseholdId(membership?.household_id ?? null);
+    setAal((level?.currentLevel as Aal) ?? 'aal1');
+    setHasFactor(!!factors?.totp.some((f) => f.status === 'verified'));
+    setConsents((rows ?? []).map((r) => r.notice_version));
+  }, []);
+
+  useEffect(() => {
+    if (!backend) return;
+    refresh().finally(() => setReady(true));
+    const { data } = backend.auth.onAuthStateChange(() => { refresh(); });
+    return () => data.subscription.unsubscribe();
+  }, [refresh]);
+
+  /** Sign in with Apple (first factor). Needs a development or TestFlight build. */
+  const signInWithApple = async () => {
+    if (!backend) throw new Error('Not connected');
+    // Loaded lazily so Expo Go previews, which lack the native module, still start.
+    const Apple = await import('expo-apple-authentication');
+    const cred = await Apple.signInAsync({ requestedScopes: [Apple.AppleAuthenticationScope.EMAIL] });
+    if (!cred.identityToken) throw new Error('Apple did not return a sign-in token');
+    const { error } = await backend.auth.signInWithIdToken({ provider: 'apple', token: cred.identityToken });
+    if (error) throw error;
+  };
+
+  /** Email sign-in: sends a 6-digit code (first factor). */
+  const sendEmailCode = async (email: string) => {
+    if (!backend) throw new Error('Not connected');
+    const { error } = await backend.auth.signInWithOtp({ email: email.trim() });
+    if (error) throw error;
+  };
+  const verifyEmailCode = async (email: string, code: string) => {
+    if (!backend) throw new Error('Not connected');
+    const { error } = await backend.auth.verifyOtp({ email: email.trim(), token: code.trim(), type: 'email' });
+    if (error) throw error;
+  };
+
+  /** Starts authenticator-app setup. Returns the secret and an otpauth:// link for the authenticator. */
+  const startAuthenticatorSetup = async () => {
+    if (!backend) throw new Error('Not connected');
+    // Drop any half-finished setup first, so the user can retry.
+    const { data: existing } = await backend.auth.mfa.listFactors();
+    for (const f of existing?.all ?? []) if (f.status === 'unverified') await backend.auth.mfa.unenroll({ factorId: f.id });
+    const { data, error } = await backend.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Authenticator app' });
+    if (error) throw error;
+    return { factorId: data.id, secret: data.totp.secret, uri: data.totp.uri };
+  };
+
+  /** Verifies a code from the authenticator app: finishes setup, or steps an existing session up to AAL2. */
+  const verifyAuthenticatorCode = async (code: string, factorId?: string) => {
+    if (!backend) throw new Error('Not connected');
+    const id = factorId ?? (await backend.auth.mfa.listFactors()).data?.totp.find((f) => f.status === 'verified')?.id;
+    if (!id) throw new Error('Set up two-step verification first');
+    const { error } = await backend.auth.mfa.challengeAndVerify({ factorId: id, code: code.trim() });
+    if (error) throw error;
+    await refresh();
+  };
+
+  /** Records that the user accepted the current data-use notice shown before Plaid Link. */
+  const acceptConsent = async () => {
+    if (!backend) throw new Error('Not connected');
+    const { error } = await backend.from('plaid_consents').upsert({ user_id: session!.user.id, notice_version: CONSENT_NOTICE_VERSION }, { ignoreDuplicates: true });
+    if (error) throw error;
+    await refresh();
+  };
+
+  /** The user's household, created (with the default buckets) on first use. */
+  const ensureHousehold = async () => {
+    if (!backend) throw new Error('Not connected');
+    if (householdId) return householdId;
+    const { data, error } = await backend.rpc('create_household', { household_name: 'Our budget' });
+    if (error) throw error;
+    setHouseholdId(data as string);
+    return data as string;
+  };
+
+  const signOut = async () => { await backend?.auth.signOut(); await refresh(); };
+
+  const linkGate = plaidLinkGate({ signedIn: !!session, aal, consents });
+
+  return {
+    connected: !!backend, ready, session, householdId, ensureHousehold, email: session?.user.email ?? null, aal, hasFactor, consents, linkGate,
+    signInWithApple, sendEmailCode, verifyEmailCode, startAuthenticatorSetup, verifyAuthenticatorCode, acceptConsent, signOut, refresh,
+  };
+}
+
+type AuthState = ReturnType<typeof useAuthState>;
+const Ctx = createContext<AuthState | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  return <Ctx.Provider value={useAuthState()}>{children}</Ctx.Provider>;
+}
+
+export function useAuth() {
+  const v = useContext(Ctx);
+  if (!v) throw new Error('useAuth must be used inside AuthProvider');
+  return v;
+}

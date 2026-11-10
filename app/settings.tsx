@@ -1,7 +1,11 @@
 import * as Notifications from 'expo-notifications';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable } from 'react-native';
 import { Label, Row, Screen, Section, useTheme } from '@/components/ui';
+import { useAuth } from '@/src/auth/AuthProvider';
+import { backend, callFunction, PRIVACY_POLICY_URL } from '@/src/lib/backend';
 import { useBudget } from '@/src/data/BudgetStore';
 import { creditsResetLabel, daysInMonth, PLANS, transactionNotification } from '@/src/domain';
 import { TRANSACTION_CATEGORY } from '@/src/notifications';
@@ -9,6 +13,38 @@ import { TRANSACTION_CATEGORY } from '@/src/notifications';
 export default function SettingsScreen() {
   const { transactions, allocations, statuses, month, credits, creditBalance, members, accounts, meId } = useBudget();
   const t = useTheme();
+  const auth = useAuth();
+
+  // Banks linked to the household (display fields only; tokens never reach the phone).
+  type LinkedBank = { id: string; institution_name: string | null; status: string; linked_by: string | null };
+  const [banks, setBanks] = useState<LinkedBank[]>([]);
+  const loadBanks = useCallback(async () => {
+    if (!backend || !auth.householdId) return setBanks([]);
+    const { data } = await backend.from('linked_institutions').select('id, institution_name, status, linked_by').eq('household_id', auth.householdId);
+    setBanks(data ?? []);
+  }, [auth.householdId]);
+  useEffect(() => { loadBanks(); }, [loadBanks]);
+
+  const unlink = (bank: LinkedBank) => Alert.alert(`Unlink ${bank.institution_name ?? 'this bank'}?`,
+    'Settle Down will stop receiving its transactions, end its access at Plaid, and delete its accounts and transactions from your budget.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Unlink', style: 'destructive', onPress: async () => {
+        try { await callFunction('plaid-unlink', { householdId: auth.householdId, itemId: bank.id }); await loadBanks(); }
+        catch (e) { Alert.alert('Could not unlink', (e as Error).message); }
+      } },
+    ]);
+
+  const deleteAccount = () => {
+    if (!auth.session) return Alert.alert('Preview', 'Account deletion turns on once sign-in is connected.');
+    Alert.alert('Delete your account?',
+      'This removes your linked banks at Plaid and permanently deletes your data. Shared household data stays for the other members. This cannot be undone.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: async () => {
+          try { await callFunction('delete-account', { confirm: 'DELETE' }); await auth.signOut(); Alert.alert('Account deleted', 'Your data has been deleted.'); }
+          catch (e) { Alert.alert('Could not delete account', (e as Error).message); }
+        } },
+      ]);
+  };
 
   // Preview of the push the backend will send when Plaid reports a new transaction.
   async function sendPreview() {
@@ -49,7 +85,42 @@ export default function SettingsScreen() {
               title={`${a.institution} ${a.name}`} subtitle={`··${a.mask} · ${a.ownerId === meId ? 'You' : owner?.name ?? 'Family'}`} />
           );
         })}
-        <Row icon={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }} title="Link a bank account" subtitle="Coming with the TestFlight build" last />
+        {banks.map((b) => (
+          <Pressable key={b.id} onPress={() => (b.linked_by === auth.session?.user.id ? unlink(b) : Alert.alert('Linked by someone else', 'Only the person who linked this bank can unlink it.'))} accessibilityRole="button">
+            <Row icon={{ ios: 'building.columns', android: 'account_balance', web: 'account_balance' }} title={b.institution_name ?? 'Bank'}
+              subtitle={b.status === 'ok' ? 'Connected' : 'Needs reconnecting'} right={b.linked_by === auth.session?.user.id ? <Label style={{ color: t.tint }}>Unlink</Label> : undefined} />
+          </Pressable>
+        ))}
+        <Pressable onPress={() => router.push('/connect-bank')} accessibilityRole="button">
+          <Row icon={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }} title="Link a bank account"
+            subtitle={auth.connected ? 'Through Plaid, after two-step verification' : 'Coming with the TestFlight build'} last />
+        </Pressable>
+      </Section>
+      <Section title="Account and privacy" footer="Deleting your account removes your banks at Plaid and deletes your data within 30 days.">
+        {auth.session ? (
+          <>
+            <Row icon={{ ios: 'person.crop.circle', android: 'person', web: 'person' }} title={auth.email ?? 'Signed in'} subtitle="Signed in" />
+            <Pressable onPress={() => router.push(auth.hasFactor ? '/two-step' : '/two-step?setup=1')} accessibilityRole="button">
+              <Row icon={{ ios: 'lock.shield.fill', android: 'security', web: 'security' }} title="Two-step verification"
+                right={<Label secondary>{auth.hasFactor ? 'On' : 'Set up'}</Label>} />
+            </Pressable>
+          </>
+        ) : auth.connected ? (
+          <Pressable onPress={() => router.push('/sign-in')} accessibilityRole="button">
+            <Row icon={{ ios: 'person.crop.circle', android: 'person', web: 'person' }} title="Sign in" right={<Label style={{ color: t.tint }}>Sign in</Label>} />
+          </Pressable>
+        ) : null}
+        <Pressable onPress={() => WebBrowser.openBrowserAsync(PRIVACY_POLICY_URL)} accessibilityRole="link">
+          <Row icon={{ ios: 'doc.text.fill', android: 'description', web: 'description' }} title="Privacy policy" right={<Label style={{ color: t.tint }}>Read</Label>} />
+        </Pressable>
+        {auth.session && (
+          <Pressable onPress={() => auth.signOut()} accessibilityRole="button">
+            <Row icon={{ ios: 'rectangle.portrait.and.arrow.right', android: 'logout', web: 'logout' }} title="Sign out" />
+          </Pressable>
+        )}
+        <Pressable onPress={deleteAccount} accessibilityRole="button">
+          <Row icon={{ ios: 'trash.fill', android: 'delete', web: 'delete' }} title="Delete my account" right={<Label style={{ color: t.redText }}>Delete</Label>} last />
+        </Pressable>
       </Section>
       <Section title="Plan" footer={`Ask and receipt scans use 1 credit each. Resets ${creditsResetLabel(month)}.`}>
         <Row icon={{ ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' }} title="Settle Down" subtitle={`${PLANS.monthly.price} or ${PLANS.yearly.price}`} />

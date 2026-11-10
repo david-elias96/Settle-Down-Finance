@@ -35,12 +35,13 @@ npx expo start      # scan the QR code with Expo Go on your iPhone
 
 ## Security
 
+App config (EAS environment variables, safe to ship): `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`. Nothing else goes in `EXPO_PUBLIC_*`. Scheduled functions: `retention` (daily) and `daily-insights` (evening), both called with `Authorization: Bearer $CRON_SECRET`.
+
 We follow the [information security policy](docs/security/information-security-policy.md) submitted to Plaid. Coding rules are in `CLAUDE.md`; open gaps are tracked in [docs/security/gaps.md](docs/security/gaps.md).
 
 ## Not built yet
 
-- Sign-in and connecting the app screens to Supabase (currently sample data)
-- Plaid Link screen in the app (needs a development build, not Expo Go)
+- Connecting the budget screens to Supabase (they use sample data; sign-in, two-step verification, bank linking, unlinking and account deletion use the backend when `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` are set, in a development or TestFlight build)
 - Registering the phone's push token
 - Receipt camera screen and the confirm-split UI
 - Editing buckets, goals and merchant rules

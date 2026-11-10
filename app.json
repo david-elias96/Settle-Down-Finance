@@ -14,7 +14,8 @@
         "light": "./assets/images/icon.png",
         "dark": "./assets/images/icon-dark.png",
         "tinted": "./assets/images/icon-tinted.png"
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
@@ -45,7 +46,9 @@
             "backgroundColor": "#0D1712"
           }
         }
-      ]
+      ],
+      "expo-secure-store",
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true

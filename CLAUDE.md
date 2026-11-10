@@ -17,19 +17,21 @@ This app handles consumer bank data from Plaid. Every change must follow [docs/s
 
 ## Edge functions
 - Functions the app calls must call `requireMember(req, householdId)` before using the `admin` (service-role) client.
-- `plaid-webhook` must keep verifying the `Plaid-Verification` JWT and body hash. Scheduled functions must check their secret and fail closed if it is unset.
+- `plaid-webhook` must keep verifying the `Plaid-Verification` JWT and body hash. Scheduled functions call `requireCronSecret(req)` first.
 - Validate input, return generic errors to the app, and never log tokens, secrets, account numbers or full request bodies with consumer data.
 
 ## Data handling
 - Request only the Plaid products and history the feature needs (today: Transactions, 90 days, US). Adding a product or vendor means updating the policy first.
 - Send Claude only the fields a feature needs (merchant, amount, date, bucket). Never Plaid tokens, account numbers, passwords or other secrets. The cancel agent keeps stripping typed values, emails and long numbers, and the user approves the final click.
-- Unlinking a bank or deleting an account must call Plaid `/item/remove` and delete the Vault secret.
+- Unlinking a bank or deleting an account goes through `removePlaidItem` / `deleteUserData` in `_shared/plaidItems.ts` (Plaid `/item/remove` + Vault delete). New tables with user data must be deleted by that path (cascade from `households`, `auth.users` or `plaid_items`).
+- New data with a retention limit gets a rule in the `retention` function and the policy's retention table.
 - Never put real transaction data, statements or personal names in the repo, tests, fixtures or screenshots. Use the sample data in `src/data/demo.ts` or Plaid Sandbox.
 
 ## App
 - Store auth sessions with `expo-secure-store` (Keychain), never AsyncStorage.
 - Keep App Transport Security on; HTTPS only.
-- Plaid Link opens only for a signed-in user with a second factor (Sign in with Apple, or email plus authenticator MFA), after the consent screen.
+- Plaid Link opens only for a signed-in user at AAL2 (authenticator-app second factor) who accepted the current `CONSENT_NOTICE_VERSION`. `plaid-link-token` and `plaid-exchange` enforce this with `requirePlaidLinkAllowed`; never remove or bypass it. Gate logic lives in `src/domain/security.ts`.
+- If the data-use notice in `app/connect-bank.tsx` or the privacy policy (`site/privacy/`) changes what we collect or share, bump `CONSENT_NOTICE_VERSION`.
 
 ## Process
 - All changes go through a pull request with typecheck and tests passing (`npm run typecheck`, `npm test`, `deno test` for functions).

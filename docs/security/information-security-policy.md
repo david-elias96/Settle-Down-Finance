@@ -1,6 +1,6 @@
 # Settle Down Finance Information Security Policy
 
-Version 1.0 · Effective 2026-11-10 · Owner: Security Owner (founder)
+Version 1.1 · Effective 2026-11-10 · Owner: Security Owner (founder)
 
 > This is the repository copy of the policy submitted to Plaid. Engineering rules that follow from it are summarized in `CLAUDE.md`, and known gaps between this policy and the current code are tracked in [`gaps.md`](gaps.md). Change this file only through a reviewed pull request, and add a row to the revision history.
 
@@ -32,7 +32,9 @@ The founder, David Elias, is the Security Owner and is accountable for this poli
 
 **Risk management.** The Security Owner keeps a written risk register in the source repository. At each annual review, and before launching any feature that handles new kinds of consumer data, the Security Owner lists the risks to that data, rates their likelihood and impact, and records the control or accepted residual risk for each.
 
-**Security contact.** Security issues are reported to security@settledownfinance.com, which is monitored by the Security Owner.
+**Security contact.** Security issues are reported to security@settledownfinance.com and privacy requests to privacy@settledownfinance.com, both monitored by the Security Owner.
+
+**Operations.** Recurring tasks in this policy (log reviews, device patch checks, access reviews, secret rotation, training, tabletop exercises) are listed with their frequency in `docs/security/operations.md`, and each completed task is logged there.
 
 **Personnel.** Before anyone is given access to production systems or consumer data, the Security Owner confirms their identity, has them read and accept this policy, and records the access granted. Access is removed on the same day a person leaves or no longer needs it.
 
@@ -64,7 +66,7 @@ Access to production systems and consumer data is granted on least privilege, re
 
 **Application access (consumers).**
 
-- Users sign in through Supabase Auth. Before Plaid Link can be opened, the user must be signed in with a second factor: Sign in with Apple (which requires two-factor authentication on the Apple Account) or email sign-in plus an authenticator-app code (Supabase Auth MFA).
+- Users sign in through Supabase Auth with Sign in with Apple or a one-time code sent to their email. Before Plaid Link is surfaced, every user must also complete a second factor in that session: a code from an authenticator app (Supabase Auth MFA, TOTP), which raises the session to assurance level AAL2. The backend enforces this: it refuses to create a Plaid Link token or exchange a public token for a session below AAL2.
 - Sessions are short-lived JSON Web Tokens with refresh tokens. On the phone they are stored only in the iOS Keychain (Expo SecureStore), never in plain storage.
 - Postgres row-level security is enabled on every table that holds household data, so a signed-in user can read and write only their own household's rows. New tables must enable row-level security in the same migration that creates them.
 - Plaid items and access-token references are not readable from the app at all. The app sees only display fields (institution name and link status) through a restricted view.
@@ -86,7 +88,7 @@ Consumer data is encrypted in transit with TLS 1.2 or higher and at rest with AE
 - The Supabase Postgres database, its backups and Supabase Storage are encrypted at rest with AES-256 by the hosting provider.
 - Plaid access tokens are additionally encrypted in Supabase Vault (authenticated encryption, key held outside the database). The application tables store only the Vault secret id. The functions that store and read tokens are callable only by the service role, not by app users.
 - On the phone, session tokens are kept in the iOS Keychain, and the device's data protection encrypts app storage.
-- Receipt photos are sent to the backend for reading and are not kept after the scan unless the user chooses to attach them to a transaction.
+- Receipt photos are sent to the backend for reading and are not stored after the scan.
 
 **Secrets.**
 
@@ -103,7 +105,7 @@ Every change to the app or backend goes through a reviewed pull request with pas
 
 - Source code is in a private GitHub repository. The `main` branch is protected: changes land only through pull requests, and force-pushes to `main` are blocked.
 - Each pull request is reviewed before merge, including code written with AI coding assistants, which is reviewed by a person like any other change. The reviewer checks access control, row-level security and secret handling in addition to correctness.
-- Typecheck and automated tests must pass before merge.
+- Typecheck and automated tests run in GitHub Actions on every pull request and must pass before merge.
 - Database changes are made only through versioned migration files in the repository, never by hand in production. A new table must enable row-level security in the same migration.
 - App releases go through EAS builds and TestFlight before the App Store. Backend deploys are made from the reviewed `main` branch.
 
@@ -115,9 +117,9 @@ Every change to the app or backend goes through a reviewed pull request with pas
 
 **Vulnerability management.**
 
-- Dependency alerts (GitHub Dependabot) and secret scanning are turned on for the repository, and `npm audit` is run before each release.
+- Production assets are managed services (Supabase-hosted database and edge functions, Expo and Apple build infrastructure); their providers scan and patch the underlying servers. We scan what we deploy: GitHub Dependabot alerts and update pull requests, a weekly automated `npm audit` and secret scan in CI, and the Supabase Security Advisor before each release.
+- Computers used to administer production run built-in vulnerability and malware protection (Microsoft Defender on Windows, XProtect on macOS) with automatic OS updates. Each month the Security Owner confirms on every such device that updates are current and the protection reports no threats, and logs it.
 - Patch deadlines from the time a fix is available: critical within 7 days, high within 30 days, medium and low at the next planned release.
-- Supabase's security advisor is checked before each release and its findings are fixed or recorded as accepted risks.
 - The Security Owner keeps the Expo SDK, React Native and backend libraries on supported versions.
 
 ## 7. Vendors, logging and incident response
@@ -160,7 +162,8 @@ We keep consumer data only while the user has an account, delete it on request, 
 **Consent and privacy.**
 
 - A privacy policy at settledownfinance.com/privacy explains what data we collect, why, which vendors receive it, how long we keep it and how to delete it. It links to Plaid's End User Privacy Policy.
-- Before Plaid Link opens, the app tells the user that Plaid will be used to connect their accounts and what the app will do with the data. The user starts the connection themselves; accounts are never linked on their behalf.
+- Before Plaid Link opens, the app shows a data-use notice: that Plaid is used, what data is collected, how it is used and shared, that it is never sold, and how to unlink or delete it, with links to our privacy policy and Plaid's. The user must tap "Agree and continue". The backend records the notice version and time of agreement and will not create a Plaid Link token without it. If the notice changes materially, users agree again before linking more accounts.
+- The user starts every bank connection themselves; accounts are never linked on their behalf.
 - We do not sell consumer data, share it for advertising, or use it for any purpose other than providing the app's features to that user and their household.
 - Each household member links and controls their own bank logins. Only the person who linked a bank can unlink it.
 
@@ -170,8 +173,8 @@ We keep consumer data only while the user has an account, delete it on request, 
 | --- | --- | --- |
 | Linked bank (Plaid item, access token, its accounts and transactions) | While linked | When the user unlinks it: the item is removed with Plaid's `/item/remove`, the Vault secret is deleted, and its accounts and transactions are deleted at once |
 | All of a user's data | While the account is active | Within 30 days after the user deletes their account in the app or by email request; all their Plaid items are removed with Plaid |
-| Inactive accounts | Up to 24 months without sign-in | After a 30-day email notice |
-| Receipt images | Only while being read | Right after the scan, unless the user attaches the image to a transaction |
+| Inactive accounts | Up to 24 months without sign-in | After a notice to the user (push notification) 30 days before deletion |
+| Receipt images | Only while being read | Not stored after the scan |
 | Subscription-cancel conversations | 30 days | The page text is cleared after 30 days; the outcome (service, date, confirmation) stays as the user's record |
 | Logs | Provider default | Rolled off on the provider's schedule |
 | Backups | Provider default (no more than 30 days) | Rolled off on the provider's schedule; deleted data leaves backups when they expire |
@@ -195,3 +198,4 @@ People with access use secured devices, know this policy, and may depart from it
 | Version | Date | Change | Approved by |
 | --- | --- | --- | --- |
 | 1.0 | 2026-11-10 | First version | David Elias, Security Owner |
+| 1.1 | 2026-11-10 | Second factor required for every user before Plaid Link and enforced by the backend; consent recorded; vulnerability scanning detail; operations log | David Elias, Security Owner |

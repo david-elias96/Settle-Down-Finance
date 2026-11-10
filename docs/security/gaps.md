@@ -1,39 +1,40 @@
 # Security policy gaps
 
-Where the code or our practice does not yet meet [the information security policy](information-security-policy.md). Everything here must be closed before real users (beyond our own household) connect banks through Plaid Production. Remove a row in the pull request that closes it.
+Where the code or our practice does not yet meet [the information security policy](information-security-policy.md). Close every row before submitting the Plaid production questionnaire, and remove a row in the change that closes it.
 
 Last reviewed: 2026-11-10.
 
-## Code to build
+## Before submitting to Plaid (David)
 
-| Gap | Policy section | What "done" looks like |
+| To do | Why (questionnaire item) | Policy section |
 | --- | --- | --- |
-| No sign-in yet; the app runs on sample data | 4 | Supabase Auth with Sign in with Apple, or email plus authenticator-app MFA, required before Plaid Link opens |
-| Session storage | 4, 5 | Supabase client on the phone uses `expo-secure-store` (Keychain) as its auth storage, not AsyncStorage |
-| No unlink flow | 8 | An edge function, callable only by the member who linked the bank, that calls Plaid `/item/remove`, deletes the Vault secret, and deletes the `plaid_items` row (accounts and transactions cascade) |
-| No account deletion | 8 | In-app "Delete my account" that removes the user's Plaid items, Vault secrets, household membership and data (household deleted when its last member leaves), then the auth user. Also required by the App Store |
-| Vault secrets are not deleted when an item goes away | 5, 8 | A `delete_plaid_token(secret_id)` helper (service role only) used by unlink, account deletion and incident containment |
-| No retention jobs | 8 | Scheduled job that clears `cancel_sessions.messages` after 30 days and handles 24-month inactive accounts |
-| Consent screen before Plaid Link | 8 | A short screen explaining Plaid and how the data is used, with links to our privacy policy and Plaid's, before Link opens |
-| Invite codes use `random()` | 4 | Generate codes from `gen_random_bytes` (pgcrypto) so they are not predictable |
-| Household members can read the cancel assistant's raw conversation through RLS | 3 | Expose only outcome fields to the app (a view, or move `messages` to a table with no app policy) |
-| No CI | 6 | GitHub Actions running typecheck, `npm test` and `deno test` on every pull request, required to merge |
+| Turn on MFA (authenticator app or passkey) for GitHub, Supabase, Plaid Dashboard, Anthropic Console, Expo, Apple Developer, domain registrar/DNS and email; keep passwords in a password manager | MFA for critical systems; access controls | 4 |
+| Publish `site/privacy/index.html` at https://settledownfinance.com/privacy | Privacy policy | 8 |
+| Create the `security@` and `privacy@settledownfinance.com` mailboxes (or forwards to your inbox) | Privacy policy contact; incident reporting | 2, 8 |
+| Supabase: run migration `0007`, deploy the new functions (`plaid-unlink`, `delete-account`, `retention`), enable MFA (TOTP) and Apple + email OTP providers in Auth, turn on leaked-password protection | Consumer MFA; deletion | 4, 8 |
+| Supabase: set `CRON_SECRET`, and schedule `retention` daily and `daily-insights` each evening (Supabase Cron, sending `Authorization: Bearer <CRON_SECRET>`) | Retention policy enforced | 8 |
+| Move the Supabase project to the Pro plan before production (daily backups, no pausing) | Backups, availability | 7 |
+| GitHub: protect `main` (require pull request and the CI checks, block force-push); turn on Dependabot alerts, secret scanning and push protection | Vulnerability scanning; change management | 5, 6 |
+| On your Windows PC: confirm BitLocker, Microsoft Defender and automatic Windows Update are on; log it in [operations.md](operations.md) | Vulnerability scans on employee machines | 6, 9 |
+| Start `docs/security/risk-register.md` (a short table of risks, rating and control) | Governance | 2 |
 
-## Account and process settings (David)
+## Code still to build
 
 | Gap | Policy section |
 | --- | --- |
-| Turn on MFA (authenticator app or passkey) for GitHub, Supabase, Plaid, Anthropic, Expo, Apple, domain registrar and email; store passwords in a password manager | 4 |
-| Protect `main` on GitHub (require pull request, block force-push) and turn on Dependabot alerts, secret scanning and push protection | 5, 6 |
-| Create `security@settledownfinance.com` | 2 |
-| Publish a privacy policy at settledownfinance.com/privacy | 8 |
-| Move the Supabase project to a paid plan before production (daily backups, no pausing) and enable leaked-password protection and MFA in Supabase Auth | 4, 7 |
-| Turn on BitLocker, Defender and automatic updates on the Windows PC used for admin work | 9 |
-| Set `CRON_SECRET` in Supabase secrets and use it in the scheduler that calls `daily-insights` | 4 |
-| Start the risk register (`docs/security/risk-register.md`) and the access review log | 2, 4 |
+| Screens still read sample data; wiring Budget/Activity to Supabase queries is the next backend task. Sign-in, two-step verification, consent, bank linking, unlinking and account deletion already use the real backend when `EXPO_PUBLIC_SUPABASE_URL` is set | — |
+| Register the phone's push token after sign-in (needed for retention notices and alerts) | 8 |
 
 ## Closed
 
 | Gap | Closed in |
 | --- | --- |
-| `daily-insights` accepted `Bearer undefined` when `CRON_SECRET` was not set | This policy's pull request (now fails closed) |
+| `daily-insights` accepted `Bearer undefined` when `CRON_SECRET` was not set | PR #12 (fails closed, constant-time compare) |
+| No sign-in; no MFA before Plaid Link | PR #12: Sign in with Apple / email code, authenticator-app MFA; backend requires AAL2 for Link tokens and token exchange |
+| Session tokens storage | PR #12: Keychain via `expo-secure-store` (this device only, when unlocked) |
+| No consent before Plaid Link | PR #12: data-use notice screen; consent recorded in `plaid_consents` and required by the backend |
+| No unlink or account deletion | PR #12: `plaid-unlink` and `delete-account` call Plaid `/item/remove`, delete Vault secrets and data |
+| No retention jobs | PR #12: `retention` function (cancel-assistant text after 30 days; inactive accounts after 24 months with notice) |
+| Invite codes used `random()` | PR #12: `gen_random_bytes` with rejection sampling |
+| Household members could read the cancel assistant's raw page text | PR #12: column grants hide `messages` |
+| No CI or dependency scanning | PR #12: GitHub Actions (typecheck, tests, Deno check, weekly `npm audit` and gitleaks), Dependabot |
