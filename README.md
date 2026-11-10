@@ -31,7 +31,11 @@ npx expo start      # scan the QR code with Expo Go on your iPhone
 
 ## Backend secrets (Supabase → Edge Functions → Secrets)
 
-`PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV` (`sandbox` | `production`), `ANTHROPIC_API_KEY`, optional `EXPO_ACCESS_TOKEN`, `PLAID_REDIRECT_URI`.
+`PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV` (`sandbox` | `production`), `ANTHROPIC_API_KEY`, `CRON_SECRET` (required by `daily-insights`), optional `EXPO_ACCESS_TOKEN`, `PLAID_REDIRECT_URI`.
+
+## Security
+
+We follow the [information security policy](docs/security/information-security-policy.md) submitted to Plaid. Coding rules are in `CLAUDE.md`; open gaps are tracked in [docs/security/gaps.md](docs/security/gaps.md).
 
 ## Not built yet
 

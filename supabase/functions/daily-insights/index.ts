@@ -57,7 +57,9 @@ function inQuietHours(tz: string, start: number, end: number) {
 }
 
 Deno.serve(handle(async (req) => {
-  if (req.headers.get('Authorization') !== `Bearer ${Deno.env.get('CRON_SECRET')}`) throw new HttpError(401, 'Unauthorized');
+  // Fail closed: if CRON_SECRET is not set, nobody can call this (not even with "Bearer undefined").
+  const cronSecret = Deno.env.get('CRON_SECRET');
+  if (!cronSecret || req.headers.get('Authorization') !== `Bearer ${cronSecret}`) throw new HttpError(401, 'Unauthorized');
 
   const { data: households } = await admin.from('households').select('*').eq('smart_alerts', true);
   const results: Record<string, string> = {};
