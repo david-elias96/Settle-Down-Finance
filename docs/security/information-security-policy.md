@@ -197,6 +197,6 @@ People with access use secured devices, know this policy, and may depart from it
 
 | Version | Date | Change | Approved by |
 | --- | --- | --- | --- |
-| 1.0 | 2026-11-10 | First version | David Elias, Security Owner |
 | 1.2 | 2026-11-10 | Passkeys (phishing-resistant MFA) added as the default second factor before Plaid Link | David Elias, Security Owner |
 | 1.1 | 2026-11-10 | Second factor required for every user before Plaid Link and enforced by the backend; consent recorded; vulnerability scanning detail; operations log | David Elias, Security Owner |
+| 1.0 | 2026-11-10 | First version | David Elias, Security Owner |
