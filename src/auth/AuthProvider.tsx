@@ -1,6 +1,6 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { backend } from '@/src/lib/backend';
+import { authRequest, backend, PASSKEY_ORIGINS, PASSKEY_RP_ID } from '@/src/lib/backend';
 import { CONSENT_NOTICE_VERSION, plaidLinkGate } from '@/src/domain';
 
 type Aal = 'aal1' | 'aal2' | null;
@@ -9,6 +9,8 @@ function useAuthState() {
   const [session, setSession] = useState<Session | null>(null);
   const [aal, setAal] = useState<Aal>(null);
   const [hasFactor, setHasFactor] = useState(false);
+  const [hasPasskey, setHasPasskey] = useState(false);
+  const [hasAuthenticatorApp, setHasAuthenticatorApp] = useState(false);
   const [consents, setConsents] = useState<string[]>([]);
   const [householdId, setHouseholdId] = useState<string | null>(null);
   const [ready, setReady] = useState(!backend);
@@ -17,7 +19,7 @@ function useAuthState() {
     if (!backend) return;
     const { data } = await backend.auth.getSession();
     setSession(data.session);
-    if (!data.session) { setAal(null); setHasFactor(false); setConsents([]); setHouseholdId(null); return; }
+    if (!data.session) { setAal(null); setHasFactor(false); setHasPasskey(false); setHasAuthenticatorApp(false); setConsents([]); setHouseholdId(null); return; }
     const [{ data: level }, { data: factors }, { data: rows }, { data: membership }] = await Promise.all([
       backend.auth.mfa.getAuthenticatorAssuranceLevel(),
       backend.auth.mfa.listFactors(),
@@ -26,7 +28,11 @@ function useAuthState() {
     ]);
     setHouseholdId(membership?.household_id ?? null);
     setAal((level?.currentLevel as Aal) ?? 'aal1');
-    setHasFactor(!!factors?.totp.some((f) => f.status === 'verified'));
+    const passkey = !!factors?.webauthn?.some((f) => f.status === 'verified');
+    const totp = !!factors?.totp.some((f) => f.status === 'verified');
+    setHasPasskey(passkey);
+    setHasAuthenticatorApp(totp);
+    setHasFactor(passkey || totp);
     setConsents((rows ?? []).map((r) => r.notice_version));
   }, []);
 
@@ -81,6 +87,49 @@ function useAuthState() {
     await refresh();
   };
 
+  /**
+   * Passkeys (WebAuthn): the phishing-resistant second factor (policy section 4). The passkey is
+   * bound to settledownfinancial.com, so a look-alike site can't use it.
+   */
+  const runPasskey = async (factorId: string) => {
+    if (!backend) throw new Error('Not connected');
+    // Loaded lazily: the native passkey module exists only in development and TestFlight builds.
+    const { Passkey } = await import('react-native-passkey');
+    if (!Passkey.isSupported()) throw new Error('Passkeys need iOS 16 or later.');
+    const challenge = await authRequest<{
+      id: string;
+      webauthn: { type: 'create' | 'request'; credential_options: { publicKey: any } };
+    }>(`/factors/${factorId}/challenge`, { webauthn: { rpId: PASSKEY_RP_ID, rpOrigins: PASSKEY_ORIGINS } });
+    const { type, credential_options } = challenge.webauthn;
+    const result = type === 'create' ? await Passkey.create(credential_options.publicKey) : await Passkey.get(credential_options.publicKey);
+    // supabase-js serializes the credential with toJSON(); the native module already returns JSON.
+    const { error } = await backend.auth.mfa.verify({
+      factorId, challengeId: challenge.id,
+      webauthn: { rpId: PASSKEY_RP_ID, rpOrigins: PASSKEY_ORIGINS, type, credential_response: { toJSON: () => result } as any },
+    } as any);
+    if (error) throw error;
+    await refresh();
+  };
+
+  /** Creates a passkey as this account's second factor and verifies it (session becomes AAL2). */
+  const addPasskey = async () => {
+    if (!backend) throw new Error('Not connected');
+    const { data: existing } = await backend.auth.mfa.listFactors();
+    for (const f of existing?.all ?? []) if (f.status === 'unverified') await backend.auth.mfa.unenroll({ factorId: f.id });
+    const { data, error } = await backend.auth.mfa.enroll({ factorType: 'webauthn', friendlyName: 'Passkey' } as any);
+    if (error) throw error;
+    await runPasskey(data.id);
+  };
+
+  /** Steps this session up to AAL2 with the existing passkey. */
+  const verifyWithPasskey = async () => {
+    if (!backend) throw new Error('Not connected');
+    const { data } = await backend.auth.mfa.listFactors();
+    const factor = data?.webauthn?.find((f) => f.status === 'verified');
+    if (!factor) throw new Error('No passkey set up yet');
+    await runPasskey(factor.id);
+  };
+
   /** Records that the user accepted the current data-use notice shown before Plaid Link. */
   const acceptConsent = async () => {
     if (!backend) throw new Error('Not connected');
@@ -104,8 +153,8 @@ function useAuthState() {
   const linkGate = plaidLinkGate({ signedIn: !!session, aal, consents });
 
   return {
-    connected: !!backend, ready, session, householdId, ensureHousehold, email: session?.user.email ?? null, aal, hasFactor, consents, linkGate,
-    signInWithApple, sendEmailCode, verifyEmailCode, startAuthenticatorSetup, verifyAuthenticatorCode, acceptConsent, signOut, refresh,
+    connected: !!backend, ready, session, householdId, ensureHousehold, email: session?.user.email ?? null, aal, hasFactor, hasPasskey, hasAuthenticatorApp, consents, linkGate,
+    signInWithApple, sendEmailCode, verifyEmailCode, startAuthenticatorSetup, verifyAuthenticatorCode, addPasskey, verifyWithPasskey, acceptConsent, signOut, refresh,
   };
 }
 

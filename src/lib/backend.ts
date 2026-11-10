@@ -54,5 +54,24 @@ export async function callFunction<T = unknown>(name: string, body: Record<strin
   return data as T;
 }
 
+/** Passkeys are bound to our website's domain (relying party). The iOS app is linked to it
+ *  through the associated domain in app.json and site/.well-known/apple-app-site-association. */
+export const PASSKEY_RP_ID = 'settledownfinancial.com';
+export const PASSKEY_ORIGINS = ['https://settledownfinancial.com'];
+
+/** Calls a Supabase Auth endpoint directly, returning plain JSON (passkey options stay base64url strings). */
+export async function authRequest<T>(path: string, body: unknown): Promise<T> {
+  if (!backend || !url || !anonKey) throw new Error('The app is not connected to the backend yet.');
+  const { data } = await backend.auth.getSession();
+  const res = await fetch(`${url}/auth/v1${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: anonKey, Authorization: `Bearer ${data.session?.access_token ?? anonKey}` },
+    body: JSON.stringify(body),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.msg ?? json.message ?? json.error_description ?? 'Request failed');
+  return json as T;
+}
+
 export const PRIVACY_POLICY_URL = 'https://settledownfinancial.com/privacy';
 export const PLAID_PRIVACY_URL = 'https://plaid.com/legal/#end-user-privacy-policy';

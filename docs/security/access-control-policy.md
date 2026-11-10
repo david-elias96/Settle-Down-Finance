@@ -1,6 +1,6 @@
 # Settle Down Finance Access Control Policy
 
-Version 1.0 · Effective 2026-11-10 · Owner: Security Owner (founder)
+Version 1.1 · Effective 2026-11-10 · Owner: Security Owner (founder)
 
 ## 1. Purpose and scope
 
@@ -56,7 +56,7 @@ Only the Security Owner may hold owner or admin roles. Adding a second admin req
 **Consumers.**
 
 - Users sign in with Sign in with Apple or a one-time email code.
-- Before Plaid Link is shown, every user must also complete a second factor with an authenticator app (TOTP), raising the session to MFA assurance level 2. The backend refuses to create a Plaid Link token or exchange a public token for any session below that level.
+- Before Plaid Link is shown, every user must also complete a second factor, raising the session to MFA assurance level 2. The default is a passkey (WebAuthn/FIDO2 with Face ID or device passcode), which is phishing-resistant because it only works with settledownfinancial.com. An authenticator app (TOTP) is available as a fallback. The backend refuses to create a Plaid Link token or exchange a public token for any session below that level.
 - App sessions are short-lived JSON Web Tokens stored only in the iOS Keychain (this device only, available when unlocked).
 
 **Non-human (service) identities.**
@@ -99,4 +99,5 @@ An exception needs a written reason, compensating controls and an end date, appr
 
 | Version | Date | Change | Approved by |
 | --- | --- | --- | --- |
+| 1.1 | 2026-11-10 | Passkeys added as the default consumer second factor | David Elias, Security Owner |
 | 1.0 | 2026-11-10 | First version | David Elias, Security Owner |

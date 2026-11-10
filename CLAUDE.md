@@ -30,7 +30,7 @@ This app handles consumer bank data from Plaid. Every change must follow [docs/s
 ## App
 - Store auth sessions with `expo-secure-store` (Keychain), never AsyncStorage.
 - Keep App Transport Security on; HTTPS only.
-- Plaid Link opens only for a signed-in user at AAL2 (authenticator-app second factor) who accepted the current `CONSENT_NOTICE_VERSION`. `plaid-link-token` and `plaid-exchange` enforce this with `requirePlaidLinkAllowed`; never remove or bypass it. Gate logic lives in `src/domain/security.ts`.
+- Plaid Link opens only for a signed-in user at AAL2 (passkey by default, authenticator app as fallback) who accepted the current `CONSENT_NOTICE_VERSION`. `plaid-link-token` and `plaid-exchange` enforce this with `requirePlaidLinkAllowed`; never remove or bypass it. Gate logic lives in `src/domain/security.ts`.
 - If the data-use notice in `app/connect-bank.tsx` or the privacy policy (`site/privacy/`) changes what we collect or share, bump `CONSENT_NOTICE_VERSION`.
 
 ## Process

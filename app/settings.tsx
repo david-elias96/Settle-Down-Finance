@@ -102,8 +102,14 @@ export default function SettingsScreen() {
             <Row icon={{ ios: 'person.crop.circle', android: 'person', web: 'person' }} title={auth.email ?? 'Signed in'} subtitle="Signed in" />
             <Pressable onPress={() => router.push(auth.hasFactor ? '/two-step' : '/two-step?setup=1')} accessibilityRole="button">
               <Row icon={{ ios: 'lock.shield.fill', android: 'security', web: 'security' }} title="Two-step verification"
-                right={<Label secondary>{auth.hasFactor ? 'On' : 'Set up'}</Label>} />
+                right={<Label secondary>{auth.hasPasskey ? 'Passkey' : auth.hasFactor ? 'Authenticator app' : 'Set up'}</Label>} />
             </Pressable>
+            {auth.hasFactor && !auth.hasPasskey && (
+              <Pressable onPress={() => router.push('/two-step?setup=passkey')} accessibilityRole="button">
+                <Row icon={{ ios: 'person.badge.key.fill', android: 'key', web: 'key' }} title="Add a passkey"
+                  subtitle="Face ID sign-in check that can't be phished" right={<Label style={{ color: t.tint }}>Add</Label>} />
+              </Pressable>
+            )}
           </>
         ) : auth.connected ? (
           <Pressable onPress={() => router.push('/sign-in')} accessibilityRole="button">

@@ -1,6 +1,6 @@
 # Plaid security questionnaire answers
 
-Answers for the Plaid production access questionnaire, based on [the information security policy](information-security-policy.md) v1.1. Every answer is true only once the "Before submitting to Plaid" list in [gaps.md](gaps.md) is done. Keep these in step with the policy.
+Answers for the Plaid production access questionnaire, based on [the information security policy](information-security-policy.md) v1.2. Every answer is true only once the "Before submitting to Plaid" list in [gaps.md](gaps.md) is done. Keep these in step with the policy.
 
 **1. What access controls does your organization have in place to limit access to production assets (physical or virtual) and sensitive data?**
 
@@ -8,7 +8,7 @@ We have no physical production assets; production runs on managed cloud services
 
 **2. Does your organization provide multi-factor authentication (MFA) for consumers on the mobile and/or web applications before Plaid Link is surfaced?**
 
-Yes. Users sign in with Sign in with Apple or a one-time email code, and must then complete a second factor with an authenticator app (TOTP) before Plaid Link is shown. This is enforced server-side: our backend creates a Plaid Link token, and exchanges a public token, only for sessions at MFA assurance level 2.
+Yes, including phishing-resistant MFA. Users sign in with Sign in with Apple or a one-time email code, and must then complete a second factor before Plaid Link is shown. The default second factor is a passkey (WebAuthn/FIDO2, unlocked with Face ID or the device passcode), which is phishing-resistant because it is bound to our domain; an authenticator app (TOTP) is offered as a fallback. This is enforced server-side: our backend creates a Plaid Link token, and exchanges a public token, only for sessions at MFA assurance level 2.
 
 **3. Is multi-factor authentication (MFA) in place for access to critical systems that store or process consumer financial data?**
 

@@ -15,7 +15,10 @@
         "dark": "./assets/images/icon-dark.png",
         "tinted": "./assets/images/icon-tinted.png"
       },
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "associatedDomains": [
+        "webcredentials:settledownfinancial.com"
+      ]
     },
     "android": {
       "adaptiveIcon": {
