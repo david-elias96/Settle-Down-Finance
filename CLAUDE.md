@@ -24,7 +24,7 @@ This app handles consumer bank data from Plaid. Every change must follow [docs/s
 - Request only the Plaid products and history the feature needs (today: Transactions, 90 days, US). Adding a product or vendor means updating the policy first.
 - Send Claude only the fields a feature needs (merchant, amount, date, bucket). Never Plaid tokens, account numbers, passwords or other secrets. The cancel agent keeps stripping typed values, emails and long numbers, and the user approves the final click.
 - Unlinking a bank or deleting an account goes through `removePlaidItem` / `deleteUserData` in `_shared/plaidItems.ts` (Plaid `/item/remove` + Vault delete). New tables with user data must be deleted by that path (cascade from `households`, `auth.users` or `plaid_items`).
-- New data with a retention limit gets a rule in the `retention` function and the policy's retention table.
+- New data with a retention limit gets a rule in the `retention` function, the policy's retention table and [docs/security/data-retention-policy.md](docs/security/data-retention-policy.md).
 - Never put real transaction data, statements or personal names in the repo, tests, fixtures or screenshots. Use the sample data in `src/data/demo.ts` or Plaid Sandbox.
 
 ## App
