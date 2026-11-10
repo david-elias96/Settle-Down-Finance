@@ -32,7 +32,7 @@ export default function SignInScreen() {
       <View style={{ gap: 8, paddingHorizontal: 4 }}>
         <Label style={{ fontSize: 22, fontWeight: '700' }}>Sign in</Label>
         <Label secondary style={{ fontSize: 15, lineHeight: 21 }}>
-          Your budget is tied to your account. Next you'll set up two-step verification with an authenticator app.
+          Your budget is tied to your account. Next you'll confirm it's you with a passkey (Face ID) before any bank is connected.
         </Label>
       </View>
       {Platform.OS === 'ios' && (
