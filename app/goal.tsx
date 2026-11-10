@@ -1,7 +1,7 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Platform, Pressable, TextInput, View } from 'react-native';
-import { Label, Row, Screen, Section, useTheme } from '@/components/ui';
+import { Alert, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Label, Row, Screen, Section, Tag, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { formatCents, GOAL_NAME_MAX, goalForecast, monthInputValue, monthlyNeeded, parseGoalDraft, type GoalDraft } from '@/src/domain';
 
@@ -73,39 +73,53 @@ export default function GoalScreen() {
       </Section>
 
       {(needed !== null || forecast) && (
-        <View style={{ gap: 6, paddingHorizontal: 4 }}>
+        <Section title="Plan">
+          {forecast && forecast.finishLabel !== 'Reached' && (
+            <Row title={`At ${$(g!.monthlyContribution)} a month`}
+              right={(
+                <View style={styles.right}>
+                  <Label style={styles.figure}>{forecast.finishLabel}</Label>
+                  {forecast.onTime !== null && <Tag tone={forecast.onTime ? 'good' : 'warn'}>{forecast.onTime ? 'On time' : 'Late'}</Tag>}
+                </View>
+              )}
+              last={needed === null} />
+          )}
           {needed !== null && g?.targetDate && (
             needed === 0
-              ? <Label secondary style={{ fontSize: 15 }}>You've already saved enough for this goal.</Label>
+              ? <Row title="Already saved enough" right={<Tag tone="good">Reached</Tag>} last />
               : (
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                  <Label secondary style={{ fontSize: 15, flex: 1 }}>To reach it by {shortMonth(g.targetDate)}, set aside {$(needed)} a month.</Label>
-                  {g.monthlyContribution !== needed && (
-                    <Pressable accessibilityRole="button" accessibilityLabel={`Use ${$(needed)} a month`} hitSlop={8} onPress={() => set('monthly')(String(needed / 100))}>
+                <Row title={`To finish by ${shortMonth(g.targetDate)}`} subtitle={`${$(needed)} a month`}
+                  right={g.monthlyContribution === needed ? <Tag tone="good">Using this</Tag> : (
+                    <Pressable accessibilityRole="button" accessibilityLabel={`Use ${$(needed)} a month`} hitSlop={8}
+                      onPress={() => set('monthly')(String(needed / 100))} style={[styles.pill, { backgroundColor: `${t.tint}1A` }]}>
                       <Label style={{ color: t.tint, fontSize: 15, fontWeight: '600' }}>Use {$(needed)}</Label>
                     </Pressable>
                   )}
-                </View>
+                  last />
               )
           )}
-          {forecast && forecast.finishLabel !== 'Reached' && (
-            <Label secondary style={{ fontSize: 15 }}>
-              At {$(g!.monthlyContribution)} a month you'll reach it in {forecast.finishLabel}{forecast.onTime === false ? ', after your target date' : ''}.
-            </Label>
-          )}
-        </View>
+        </Section>
       )}
 
       {tried && !parsed.ok && <Label style={{ color: t.red, fontSize: 15, textAlign: 'center' }}>{parsed.error}</Label>}
 
-      <Pressable accessibilityRole="button" onPress={save}>
-        <Label style={{ color: t.tint, fontSize: 17, fontWeight: '600', textAlign: 'center' }}>{existing ? 'Save changes' : 'Add goal'}</Label>
+      <Pressable accessibilityRole="button" onPress={save} style={[styles.primary, { backgroundColor: t.tint }]}>
+        <Label style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '600' }}>{existing ? 'Save changes' : 'Add goal'}</Label>
       </Pressable>
       {existing && (
-        <Pressable accessibilityRole="button" onPress={remove}>
-          <Label style={{ color: t.red, fontSize: 17, textAlign: 'center' }}>Delete goal</Label>
-        </Pressable>
+        <Section>
+          <Pressable accessibilityRole="button" onPress={remove} style={{ padding: 14, alignItems: 'center' }}>
+            <Label style={{ color: t.red, fontSize: 17 }}>Delete goal</Label>
+          </Pressable>
+        </Section>
       )}
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  right: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  figure: { fontSize: 17, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  pill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14 },
+  primary: { padding: 14, borderRadius: 12, alignItems: 'center' },
+});
