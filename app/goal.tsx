@@ -1,9 +1,10 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Label, Row, Screen, Section, Tag, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
-import { formatCents, GOAL_NAME_MAX, goalForecast, monthInputValue, monthlyNeeded, parseGoalDraft, type GoalDraft } from '@/src/domain';
+import { formatCents, GOAL_NAME_MAX, goalForecast, goalIdeas, ideaTargetMonth, monthInputValue, monthlyNeeded, parseGoalDraft, type GoalDraft } from '@/src/domain';
 
 /** "2027-06-01" → "Jun 2027", matching the finish dates on the Savings tab. */
 const shortMonth = (date: string) => new Date(`${date.slice(0, 7)}-15T12:00:00Z`).toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
@@ -12,6 +13,7 @@ const shortMonth = (date: string) => new Date(`${date.slice(0, 7)}-15T12:00:00Z`
 export default function GoalScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { goals, addGoal, updateGoal, deleteGoal, month } = useBudget();
+  const ideas = goalIdeas(goals);
   const existing = id ? goals.find((g) => g.id === id) : undefined;
   const t = useTheme();
   const $ = (c: number) => formatCents(c, { showCents: c % 100 !== 0 });
@@ -72,6 +74,21 @@ export default function GoalScreen() {
         <Row title="Target date" subtitle="Optional" right={field('targetMonth', 'Target date, month and year', 'MM/YYYY')} last />
       </Section>
 
+      {!existing && !draft.name.trim() && ideas.length > 0 && (
+        <Section title="Ideas">
+          <View style={styles.ideas}>
+            {ideas.map((idea) => (
+              <Pressable key={idea.name} accessibilityRole="button" accessibilityLabel={`Use idea: ${idea.name}`}
+                onPress={() => setDraft((d) => ({ ...d, name: idea.name, targetMonth: idea.month && !d.targetMonth ? ideaTargetMonth(idea.month, month) : d.targetMonth }))}
+                style={[styles.idea, { backgroundColor: `${t.tint}14` }]}>
+                <SymbolView name={{ ios: idea.icon, android: idea.material, web: idea.material } as SymbolViewProps['name']} size={16} tintColor={t.tint} />
+                <Label style={{ color: t.tint, fontSize: 15, fontWeight: '500' }}>{idea.name}</Label>
+              </Pressable>
+            ))}
+          </View>
+        </Section>
+      )}
+
       {(needed !== null || forecast) && (
         <Section title="Plan">
           {forecast && forecast.finishLabel !== 'Reached' && (
@@ -122,4 +139,6 @@ const styles = StyleSheet.create({
   figure: { fontSize: 17, fontWeight: '600', fontVariant: ['tabular-nums'] },
   pill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14 },
   primary: { padding: 14, borderRadius: 12, alignItems: 'center' },
+  ideas: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 12 },
+  idea: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16 },
 });

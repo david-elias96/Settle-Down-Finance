@@ -11,3 +11,13 @@ alter table savings_goals
 
 -- Goals are listed per household in priority order.
 create index if not exists savings_goals_household_priority on savings_goals (household_id, priority);
+
+-- Every new household starts with one goal, an Emergency Fund, which it can edit or delete.
+-- Other goals are added by the household (the app suggests ideas).
+create or replace function seed_emergency_fund() returns trigger language plpgsql as $$
+begin
+  insert into savings_goals (household_id, name, target, priority) values (new.id, 'Emergency Fund', 1000000, 1);
+  return new;
+end $$;
+create trigger households_seed_emergency_fund after insert on households
+  for each row execute function seed_emergency_fund();

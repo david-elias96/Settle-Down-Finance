@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   bucketStatuses, topStores, shortDate, dayHeading, cancelRoute, categorize, forecastMonth, isAllowedUrl, isSensitiveField, redactText, projectionInsight, creditsLeft, creditsResetLabel, spendCredits, type CreditState, DEFAULT_BUCKETS, dollars, overspendImpact, splitByReceipt,
-  transactionNotification, goalForecast, monthInputValue, monthlyNeeded, parseGoalDraft, parseMonth, reorderGoals, moveItem, type Allocation, type Bucket, type SavingsGoal, type Transaction,
+  transactionNotification, goalForecast, monthInputValue, monthlyNeeded, parseGoalDraft, parseMonth, reorderGoals, moveItem, goalIdeas, ideaTargetMonth, type Allocation, type Bucket, type SavingsGoal, type Transaction,
 } from './index';
 
 const buckets: Bucket[] = DEFAULT_BUCKETS.map(({ plaidPrimary, ...b }) => b);
@@ -701,5 +701,16 @@ describe('goal protection order', () => {
   it('moves an item', () => {
     expect(moveItem(['a', 'b', 'c'], 0, 2)).toEqual(['b', 'c', 'a']);
     expect(moveItem(['a', 'b', 'c'], 2, 0)).toEqual(['c', 'a', 'b']);
+  });
+});
+
+describe('goal ideas', () => {
+  it('leaves out goals the household already has', () => {
+    const have: SavingsGoal[] = [{ id: 'v', name: ' vacation ', target: 1, balance: 0, monthlyContribution: 0, priority: 1 }];
+    expect(goalIdeas(have).map((i) => i.name)).not.toContain('Vacation');
+  });
+  it('targets the next December for holiday gifts', () => {
+    expect(ideaTargetMonth(12, '2026-11')).toBe('12/2026');
+    expect(ideaTargetMonth(6, '2026-11')).toBe('06/2027');
   });
 });

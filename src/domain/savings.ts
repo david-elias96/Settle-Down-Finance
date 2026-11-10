@@ -171,3 +171,32 @@ export function moveItem<T>(list: T[], from: number, to: number): T[] {
   next.splice(Math.max(0, Math.min(next.length, to)), 0, item);
   return next;
 }
+
+/** Common things families save for, offered when adding a goal. */
+export const GOAL_IDEAS: { name: string; /** SF Symbol on iOS. */ icon: string; /** Material icon on Android and web. */ material: string; /** Month (1-12) the goal usually lands on, for yearly ones. */ month?: number }[] = [
+  { name: 'Vacation', icon: 'airplane', material: 'flight' },
+  { name: 'Holiday Gifts', icon: 'gift.fill', material: 'redeem', month: 12 },
+  { name: 'New Car', icon: 'car.fill', material: 'directions_car' },
+  { name: 'Car Repairs', icon: 'wrench.and.screwdriver.fill', material: 'build' },
+  { name: 'Home Down Payment', icon: 'house.fill', material: 'home' },
+  { name: 'Home Repairs', icon: 'hammer.fill', material: 'handyman' },
+  { name: 'Wedding', icon: 'heart.fill', material: 'favorite' },
+  { name: 'New Baby', icon: 'figure.and.child.holdinghands', material: 'child_friendly' },
+  { name: 'College', icon: 'graduationcap.fill', material: 'school' },
+  { name: 'Pet Care', icon: 'pawprint.fill', material: 'pets' },
+  { name: 'Furniture', icon: 'sofa.fill', material: 'chair' },
+  { name: 'Medical Bills', icon: 'cross.case.fill', material: 'medical_services' },
+];
+
+/** Ideas the household doesn't already have a goal for. */
+export const goalIdeas = (goals: SavingsGoal[]) => {
+  const have = new Set(goals.map((g) => g.name.trim().toLowerCase()));
+  return GOAL_IDEAS.filter((i) => !have.has(i.name.toLowerCase()));
+};
+
+/** "06/2027"-style target for a yearly idea: this year's month if it's still ahead, else next year's. */
+export function ideaTargetMonth(month: number, thisMonth: string): string {
+  const y = Number(thisMonth.slice(0, 4));
+  const year = month >= Number(thisMonth.slice(5, 7)) ? y : y + 1;
+  return `${String(month).padStart(2, '0')}/${year}`;
+}
