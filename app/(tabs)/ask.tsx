@@ -1,14 +1,20 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState, type ComponentRef } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { BottomTabBarHeightContext } from 'expo-router/tabs';
+import { SymbolView } from 'expo-symbols';
+import { useContext, useEffect, useRef, useState, type ComponentRef } from 'react';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnswerCard } from '@/components/AnswerCard';
-import { Label, useTheme } from '@/components/ui';
+import { AiMark, Card, Label, SettingsButton, useTheme } from '@/components/ui';
+import { Fonts } from '@/constants/Colors';
 import { ask, OutOfCreditsError, SUGGESTED_QUESTIONS, type ChatTurn } from '@/src/ask';
 import { CREDIT_PACK, creditsResetLabel } from '@/src/domain';
 import { useBudget } from '@/src/data/BudgetStore';
 
 export default function AskScreen() {
   const t = useTheme();
+  const insets = useSafeAreaInsets();
+  const tabBar = useContext(BottomTabBarHeightContext) ?? 0;
   const { statuses, cutIdeas, transactions, buckets, month, today, recap, tuneUps, trends, creditBalance, credits, useCredits, syncCredits, addCreditPack } = useBudget();
   const outOfCredits = creditBalance.total === 0;
   const { q } = useLocalSearchParams<{ q?: string }>();
@@ -52,27 +58,41 @@ export default function AskScreen() {
     );
   }
 
-  // Opened from the Insights card with a question ready to go.
+  // Opened from the home screen with a question ready to go.
   useEffect(() => { if (q) send(q); }, [q]);
 
+  const canSend = !!draft.trim() && !busy && !outOfCredits;
+
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: t.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
-      <ScrollView ref={scroll} contentContainerStyle={{ padding: 16, gap: 12 }} onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: t.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 16, paddingTop: insets.top + 16, paddingBottom: 16, gap: 12 }}
+        onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}>
+        <View style={styles.titleRow}>
+          <Text accessibilityRole="header" style={[styles.title, { color: t.text }]}>Ask</Text>
+          <SettingsButton />
+        </View>
+
         {turns.length === 0 && (
-          <View style={{ gap: 12 }}>
-            <Label style={{ fontSize: 22, fontWeight: '700' }}>Ask about your spending</Label>
-            <Label secondary style={{ fontSize: 15 }}>Answers use your real buckets and transactions. Try one of these:</Label>
-            {SUGGESTED_QUESTIONS.map((s) => (
-              <Pressable key={s} onPress={() => send(s)} accessibilityRole="button"
-                style={[styles.suggestion, { backgroundColor: t.card, borderColor: t.separator }]}>
-                <Label style={{ fontSize: 16, color: t.tint }}>{s}</Label>
-              </Pressable>
-            ))}
+          <View style={{ gap: 12, marginTop: 8 }}>
+            <Label secondary style={{ fontSize: 15, lineHeight: 21, paddingHorizontal: 4 }}>
+              Ask anything about your spending. Answers use your own buckets and purchases.
+            </Label>
+            <Card>
+              {SUGGESTED_QUESTIONS.map((s, i) => (
+                <Pressable key={s} onPress={() => send(s)} accessibilityRole="button"
+                  style={({ pressed }) => [styles.suggestion, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.separator }, pressed && { backgroundColor: t.track }]}>
+                  <AiMark size={16} />
+                  <Label style={{ fontSize: 16, flex: 1, lineHeight: 21 }}>{s}</Label>
+                  <SymbolView name={{ ios: 'arrow.up.right', android: 'north_east', web: 'north_east' }} size={13} weight="semibold" tintColor={t.secondaryText} style={{ opacity: 0.6 }} />
+                </Pressable>
+              ))}
+            </Card>
           </View>
         )}
+
         {turns.map((m, i) => m.role === 'user' ? (
           <View key={i} style={[styles.bubble, styles.user, { backgroundColor: t.tint }]}>
-            <Label style={{ color: '#FFFFFF', fontSize: 16 }}>{m.text}</Label>
+            <Label style={{ color: t.onTint, fontSize: 16, lineHeight: 22 }}>{m.text}</Label>
           </View>
         ) : m.answer ? (
           <AnswerCard key={i} answer={m.answer} buckets={buckets} preview={m.preview} />
@@ -81,45 +101,57 @@ export default function AskScreen() {
             <Label style={{ fontSize: 16, lineHeight: 22 }}>{m.text}</Label>
           </View>
         ))}
-        {busy && <ActivityIndicator style={{ alignSelf: 'flex-start', marginLeft: 8 }} />}
-      </ScrollView>
-      <View style={[styles.credits, { borderTopColor: t.separator, backgroundColor: t.card }]}>
-        {outOfCredits ? (
-          <>
-            <Label secondary style={{ fontSize: 13, flex: 1 }}>
-              You've used this month's {credits.allowance} questions. More arrive {creditsResetLabel(month)}.
-            </Label>
-            <Pressable onPress={buyPack} accessibilityRole="button" style={[styles.pack, { backgroundColor: t.tint }]}>
-              <Label style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '600' }}>+{CREDIT_PACK.credits} for {CREDIT_PACK.price}</Label>
-            </Pressable>
-          </>
-        ) : (
-          <Label secondary style={{ fontSize: 13 }}>
-            {creditBalance.total} {creditBalance.total === 1 ? 'credit' : 'credits'} left
-            {creditBalance.extra ? ` (${creditBalance.extra} extra)` : ''} · 1 per question · resets {creditsResetLabel(month)}
-          </Label>
+        {busy && (
+          <View style={styles.working} accessibilityLiveRegion="polite">
+            <ActivityIndicator color={t.tint} />
+            <Label secondary style={{ fontSize: 14 }}>SettleDown is working</Label>
+          </View>
         )}
-      </View>
-      <View style={[styles.inputBar, { backgroundColor: t.card }]}>
-        <TextInput accessibilityLabel="Ask a question" value={draft} onChangeText={setDraft} placeholder={outOfCredits ? 'Out of credits this month' : 'Ask a question…'} editable={!outOfCredits} placeholderTextColor={t.secondaryText}
-          style={[styles.input, { color: t.text, backgroundColor: t.background }]} onSubmitEditing={() => send(draft)}
-          returnKeyType="send" multiline={false} maxLength={500} />
-        <Pressable onPress={() => send(draft)} disabled={!draft.trim() || busy || outOfCredits} accessibilityRole="button" accessibilityLabel="Send"
-          style={[styles.send, { backgroundColor: draft.trim() && !busy && !outOfCredits ? t.tint : t.track }]}>
-          <Label style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '700' }}>↑</Label>
-        </Pressable>
+      </ScrollView>
+
+      {/* Composer: sits just above the floating tab bar. */}
+      <View style={{ paddingHorizontal: 16, paddingBottom: tabBar + 4, gap: 8 }}>
+        <View style={styles.credits}>
+          {outOfCredits ? (
+            <>
+              <Label secondary style={{ fontSize: 13, flex: 1 }}>
+                You've used this month's {credits.allowance} questions. More arrive {creditsResetLabel(month)}.
+              </Label>
+              <Pressable onPress={buyPack} accessibilityRole="button" style={[styles.pack, { backgroundColor: t.tint }]}>
+                <Label style={{ color: t.onTint, fontSize: 13, fontWeight: '600' }}>+{CREDIT_PACK.credits} for {CREDIT_PACK.price}</Label>
+              </Pressable>
+            </>
+          ) : (
+            <Label secondary style={{ fontSize: 13, flex: 1 }} numberOfLines={1}>
+              {creditBalance.total} {creditBalance.total === 1 ? 'credit' : 'credits'} left
+              {creditBalance.extra ? ` (${creditBalance.extra} extra)` : ''} · 1 per question · resets {creditsResetLabel(month)}
+            </Label>
+          )}
+        </View>
+        <View style={[styles.inputBar, { backgroundColor: t.card, boxShadow: `0 1px 2px ${t.shadow}, 0 8px 24px ${t.shadow}` }]}>
+          <TextInput accessibilityLabel="Ask a question" value={draft} onChangeText={setDraft} placeholder={outOfCredits ? 'Out of credits this month' : 'Ask a question…'} editable={!outOfCredits} placeholderTextColor={t.secondaryText}
+            style={[styles.input, { color: t.text }]} onSubmitEditing={() => send(draft)}
+            returnKeyType="send" multiline={false} maxLength={500} />
+          <Pressable onPress={() => send(draft)} disabled={!canSend} accessibilityRole="button" accessibilityLabel="Send" accessibilityState={{ disabled: !canSend }}
+            style={[styles.send, { backgroundColor: canSend ? t.tint : t.track }]}>
+            <SymbolView name={{ ios: 'arrow.up', android: 'arrow_upward', web: 'arrow_upward' }} size={18} weight="bold" tintColor={canSend ? t.onTint : t.secondaryText} />
+          </Pressable>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  suggestion: { padding: 14, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth },
-  bubble: { padding: 14, borderRadius: 16, maxWidth: '92%', alignSelf: 'flex-start' },
-  user: { alignSelf: 'flex-end' },
-  credits: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingTop: 8, borderTopWidth: StyleSheet.hairlineWidth },
-  pack: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14 },
-  inputBar: { flexDirection: 'row', gap: 8, padding: 10, alignItems: 'center' },
-  input: { flex: 1, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10, fontSize: 16 },
-  send: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: 4 },
+  title: { fontFamily: Fonts.display, fontSize: 32, lineHeight: 38, letterSpacing: -0.64 },
+  suggestion: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 15 },
+  bubble: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 22, maxWidth: '88%', alignSelf: 'flex-start' },
+  user: { alignSelf: 'flex-end', borderBottomRightRadius: 8 },
+  working: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 },
+  credits: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, minHeight: 20 },
+  pack: { paddingHorizontal: 14, height: 32, borderRadius: 16, justifyContent: 'center' },
+  inputBar: { flexDirection: 'row', gap: 8, paddingLeft: 20, paddingRight: 6, height: 52, borderRadius: 26, alignItems: 'center' },
+  input: { flex: 1, fontSize: 16, height: 40 },
+  send: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
 });

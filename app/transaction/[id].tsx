@@ -1,7 +1,8 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
-import { Label, ListRow, Screen, Section, Tag, useTheme, AiMark } from '@/components/ui';
+import { BucketChip, Button, Display, IconChip, Label, ListRow, Screen, Section, Tag, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { dayHeading, formatCents, splitLabel, splitShare, splitWays } from '@/src/domain';
 
@@ -9,7 +10,6 @@ import { dayHeading, formatCents, splitLabel, splitShare, splitWays } from '@/sr
 export default function TransactionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { transactions, allocations, buckets, accountLabel, setBillSplit, moveToBucket } = useBudget();
-  const t = useTheme();
   const tx = transactions.find((x) => x.id === id);
   if (!tx) return <Screen><Label secondary>This purchase no longer exists.</Label></Screen>;
   const parts = allocations.filter((a) => a.transactionId === tx.id);
@@ -20,7 +20,7 @@ export default function TransactionScreen() {
       <Stack.Screen options={{ title: 'Purchase' }} />
       <View style={{ alignItems: 'center', gap: 6, paddingTop: 8 }}>
         <Label secondary style={{ fontSize: 15 }}>{tx.merchant.trim()}</Label>
-        <Label style={{ fontSize: 40, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatCents(tx.amount)}</Label>
+        <Display size={48} style={{ lineHeight: 54 }}>{formatCents(tx.amount)}</Display>
         {tx.split && <Label secondary style={{ fontSize: 14 }}>{splitLabel(tx)}</Label>}
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
           <Label secondary style={{ fontSize: 14 }}>{dayHeading(tx.date, new Date().toISOString().slice(0, 10))}</Label>
@@ -31,7 +31,7 @@ export default function TransactionScreen() {
       <Section title={parts.length > 1 ? 'Split across buckets' : 'Bucket'}>
         {parts.map((p, i) => (
           <ListRow key={i} title={name(p.bucketId)} figure={formatCents(p.amount)} last={i === parts.length - 1}
-            leading={p.source === 'ai' ? <AiMark size={15} /> : undefined}
+            leading={<BucketChip icon={buckets.find((b) => b.id === p.bucketId)?.icon} />}
             note={p.source === 'receipt' ? 'From receipt' : p.source === 'ai' ? `Sorted by AI · ${p.reason ?? 'Best match'}`
               : p.source === 'rule' ? p.reason ?? 'Your rule' : p.source === 'user' ? 'You chose this' : null}
             onPress={() => router.push({ pathname: '/bucket/[id]', params: { id: p.bucketId } })} />
@@ -54,14 +54,11 @@ export default function TransactionScreen() {
       </Section>
 
       {parts.length <= 1 && (
-        <Pressable onPress={() => router.push({ pathname: '/scan-receipt', params: { transactionId: tx.id } })} accessibilityRole="button"
-          style={{ backgroundColor: t.card, borderRadius: 12, padding: 14, alignItems: 'center' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <AiMark size={16} />
-            <Label style={{ color: t.tint, fontSize: 17 }}>Scan receipt to split</Label>
-          </View>
-          <Label secondary style={{ fontSize: 13, marginTop: 2 }}>For mixed trips, like groceries + toys</Label>
-        </Pressable>
+        <Section>
+          <ListRow title="Scan receipt to split" note="For mixed trips, like groceries + toys" last
+            leading={<IconChip icon={{ ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' }} />}
+            onPress={() => router.push({ pathname: '/scan-receipt', params: { transactionId: tx.id } })} />
+        </Section>
       )}
     </Screen>
   );
@@ -82,11 +79,12 @@ function MoveBucket({ current, merchant, split, buckets, onMove }: {
   const sep = { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.separator };
   return (
     <View>
-      <Pressable onPress={() => setOpen((o) => !o)} accessibilityRole="button" aria-expanded={open}
-        style={[{ paddingHorizontal: 16, paddingVertical: 13 }, sep]}>
-        <Label style={{ color: t.tint, fontSize: 17 }}>{open ? 'Done' : split ? 'Put it all in one bucket' : 'Move to another bucket'}</Label>
-        {moved && !open ? <Label secondary style={{ fontSize: 13, marginTop: 2 }}>{moved}</Label> : null}
-      </Pressable>
+      <View style={[{ paddingHorizontal: 16, paddingVertical: 12, gap: 6, alignItems: 'flex-start' }, sep]}>
+        <Button small variant="secondary" title={open ? 'Done' : split ? 'Put it all in one bucket' : 'Move to another bucket'}
+          icon={open ? { ios: 'checkmark', android: 'check', web: 'check' } : { ios: 'arrow.left.arrow.right', android: 'swap_horiz', web: 'swap_horiz' }}
+          onPress={() => setOpen((o) => !o)} />
+        {moved && !open ? <Label secondary style={{ fontSize: 13 }}>{moved}</Label> : null}
+      </View>
       {open && (
         <>
           <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10 }, sep]}>
@@ -94,7 +92,7 @@ function MoveBucket({ current, merchant, split, buckets, onMove }: {
               <Label style={{ fontSize: 15 }}>Always put {merchant} here</Label>
               <Label secondary style={{ fontSize: 13 }}>Moves its other purchases too, and teaches auto sorting</Label>
             </View>
-            <Switch value={always} onValueChange={setAlways} trackColor={{ true: t.tint }} thumbColor="#FFFFFF" accessibilityLabel={`Always put ${merchant} here`} />
+            <Switch value={always} onValueChange={setAlways} trackColor={{ true: t.green }} thumbColor="#FFFFFF" accessibilityLabel={`Always put ${merchant} here`} />
           </View>
           {buckets.map((b) => (
             <Pressable key={b.id} onPress={() => {
@@ -103,7 +101,7 @@ function MoveBucket({ current, merchant, split, buckets, onMove }: {
             }} accessibilityRole="radio" aria-checked={b.id === current}
               style={[{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }, sep]}>
               <Label style={{ flex: 1, fontSize: 16 }}>{b.name}</Label>
-              {b.id === current && <Label style={{ color: t.tint, fontSize: 16, fontWeight: '600' }}>✓</Label>}
+              {b.id === current && <SymbolView name={{ ios: 'checkmark', android: 'check', web: 'check' }} size={16} weight="semibold" tintColor={t.tint} />}
             </Pressable>
           ))}
         </>
@@ -145,9 +143,9 @@ function SplitBill({ full, ways, share, recurring, merchant, onChange }: {
           return (
             <Pressable key={o.label} onPress={() => pick(o.value)} accessibilityRole="radio" accessibilityState={{ selected: on }}
               aria-label={typeof o.value === 'number' && o.value > 1 ? `Split ${o.value} ways` : o.label}
-              style={{ flexGrow: o.value === 1 || o.value === 'custom' ? 1.6 : 1, flexBasis: 0, paddingVertical: 8, borderRadius: 999, alignItems: 'center',
+              style={{ flexGrow: o.value === 1 || o.value === 'custom' ? 1.6 : 1, flexBasis: 0, height: 36, justifyContent: 'center', borderRadius: 999, alignItems: 'center',
                 backgroundColor: on ? t.tint : t.track }}>
-              <Label style={{ fontSize: 14, fontWeight: '600', color: on ? '#FFFFFF' : t.text }}>{o.label}</Label>
+              <Label style={{ fontSize: 14, fontWeight: '600', color: on ? t.onTint : t.text }}>{o.label}</Label>
             </Pressable>
           );
         })}
@@ -159,18 +157,18 @@ function SplitBill({ full, ways, share, recurring, merchant, onChange }: {
             <Label style={{ fontSize: 16 }}>$</Label>
             <TextInput value={draft} onChangeText={setDraft} onEndEditing={commitDraft} onBlur={commitDraft} keyboardType="decimal-pad" returnKeyType="done"
               accessibilityLabel="Your share in dollars"
-              style={{ color: t.text, fontSize: 16, width: 96, textAlign: 'right', paddingVertical: 6, paddingHorizontal: 8, borderRadius: 8, backgroundColor: t.track, fontVariant: ['tabular-nums'] }} />
+              style={{ color: t.text, fontSize: 16, width: 96, textAlign: 'right', paddingVertical: 8, paddingHorizontal: 10, borderRadius: 10, backgroundColor: t.track, fontVariant: ['tabular-nums'] }} />
           </View>
           <Label secondary style={{ fontSize: 13, textAlign: 'right' }}>of {formatCents(full)} · {Math.round((share / full) * 100)}%</Label>
         </View>
       )}
       {ways !== 1 && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 0.5, borderTopColor: t.separator }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.separator }}>
           <View style={{ flex: 1 }}>
             <Label style={{ fontSize: 16 }}>Every {merchant} charge</Label>
             <Label secondary style={{ fontSize: 13 }}>Split future bills the same way</Label>
           </View>
-          <Switch trackColor={{ true: t.tint }} value={recurring} onValueChange={(v) => onChange(ways, share, v)} accessibilityLabel={`Split every ${merchant} charge`} />
+          <Switch trackColor={{ true: t.green }} thumbColor="#FFFFFF" value={recurring} onValueChange={(v) => onChange(ways, share, v)} accessibilityLabel={`Split every ${merchant} charge`} />
         </View>
       )}
     </Section>

@@ -1,10 +1,12 @@
-import { useFonts } from 'expo-font';
+import { Fraunces_500Medium, Fraunces_600SemiBold, useFonts } from '@expo-google-fonts/fraunces';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
+import { useTheme } from '@/components/ui';
 import { useColorScheme } from '@/components/useColorScheme';
+import { Fonts } from '@/constants/Colors';
 import { AuthProvider } from '@/src/auth/AuthProvider';
 import { BudgetProvider } from '@/src/data/BudgetStore';
 import { useNotificationRouting } from '@/src/notifications';
@@ -24,7 +26,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    Fraunces_500Medium, Fraunces_600SemiBold,
   });
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
@@ -47,13 +49,24 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const t = useTheme();
   useNotificationRouting();
+  const base = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
+  // Navigation chrome in the Grove palette: cream behind every screen, green back buttons,
+  // serif titles on the native header.
+  const theme = { ...base, colors: { ...base.colors, primary: t.tint, background: t.background, card: t.background, text: t.text, border: t.separator } };
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={theme}>
       <AuthProvider>
       <BudgetProvider>
-        <Stack>
+        <Stack screenOptions={{
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: t.background },
+          headerTintColor: t.tint,
+          headerTitleStyle: { fontFamily: Fonts.display, fontSize: 19, color: t.text },
+          contentStyle: { backgroundColor: t.background },
+        }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="new-bucket" options={{ presentation: 'modal', title: 'New Bucket' }} />
           <Stack.Screen name="goal-order" options={{ title: 'Goal Order', headerBackTitle: 'Back' }} />
@@ -63,6 +76,7 @@ function RootLayoutNav() {
           <Stack.Screen name="invite" options={{ presentation: 'modal', title: 'Invite' }} />
           <Stack.Screen name="settings" options={{ title: 'Settings', headerBackTitle: 'Back' }} />
           <Stack.Screen name="transaction/[id]" options={{ title: 'Purchase', headerBackTitle: 'Back' }} />
+          <Stack.Screen name="month" options={{ title: 'The month ahead', headerBackTitle: 'Back' }} />
           <Stack.Screen name="patterns" options={{ title: 'Patterns & tune-ups', headerBackTitle: 'Back' }} />
           <Stack.Screen name="cancel" options={{ title: 'Cancel subscription', headerBackTitle: 'Back' }} />
           <Stack.Screen name="join/[code]" options={{ title: 'Join' }} />

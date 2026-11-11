@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { bucketStatuses, compareToLastMonth, forecastMonth, projectionInsight, previousMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type GoalFields, reorderGoals, type Transaction, applySplits, vendorKey, type BillSplit, type MerchantRule, type SplitSettings, weeklyRecap, findBills, billsByBucket, billsOutlook, withBills, budgetTuneUps, bucketTrends, smallPurchases } from '@/src/domain';
+import { bucketStatuses, compareToLastMonth, forecastMonth, projectionInsight, previousMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type GoalFields, reorderGoals, type Transaction, applySplits, vendorKey, type BillSplit, type MerchantRule, type SplitSettings, weeklyRecap, findBills, billsByBucket, billsOutlook, withBills, budgetTuneUps, bucketTrends, smallPurchases, freeToSpend, monthVerdict, monthAhead } from '@/src/domain';
 import { demoAccounts, demoAllocations, demoBuckets, demoGoals, demoMembers, demoRules, demoSplits, demoTransactions } from './demo';
 
 /**
@@ -78,6 +78,10 @@ function useBudgetState() {
   const trend = useMemo(() => compareToLastMonth(transactions, allocations, month, today), [transactions, allocations, month, today]);
   const todayIso = `${month}-${String(today).padStart(2, '0')}`;
   const recap = useMemo(() => weeklyRecap({ transactions, allocations, buckets, end: todayIso }), [transactions, allocations, buckets, todayIso]);
+  // The home screen's one number, its headline, and the path of bills through month end.
+  const free = useMemo(() => freeToSpend(statuses, bills.bills, transactions, month, today), [statuses, bills, transactions, month, today]);
+  const verdict = useMemo(() => monthVerdict(free, forecast), [free, forecast]);
+  const ahead = useMemo(() => monthAhead(bills.bills, free, month, today), [bills, free, month, today]);
   // The month-end outlook always leads the Insights card.
   const insights = useMemo(() => {
     const outlook = projectionInsight(forecast, {
@@ -128,7 +132,7 @@ function useBudgetState() {
   const addBucket = (name: string, monthlyLimit: number) =>
     setBuckets((bs) => [...bs, { id: `custom-${Date.now()}`, name, icon: 'star.fill', monthlyLimit, isCustom: true }]);
 
-  return { month, today, buckets, transactions, allocations, setBillSplit, rules, moveToBucket, goals, addGoal, updateGoal, deleteGoal, setGoalOrder, statuses, impact, trend, forecast, insights, recap, bills, cutIdeas, tuneUps, trends, small, setBucketLimit, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack, members, accounts, meId, accountLabel };
+  return { month, today, buckets, transactions, allocations, setBillSplit, rules, moveToBucket, goals, addGoal, updateGoal, deleteGoal, setGoalOrder, statuses, impact, trend, forecast, insights, recap, bills, free, verdict, ahead, cutIdeas, tuneUps, trends, small, setBucketLimit, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack, members, accounts, meId, accountLabel };
 }
 
 type BudgetState = ReturnType<typeof useBudgetState>;

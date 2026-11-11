@@ -1,86 +1,104 @@
-import { Link, router } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { BillsCard } from '@/components/Bills';
-import { InsightsCard } from '@/components/Insights';
-import { SpendingTrend } from '@/components/SpendingTrend';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, StyleSheet } from 'react-native';
+import { AheadCard, FreeCard, HeroCarousel, TrendCard } from '@/components/HomeCarousel';
 import { WeeklyRecapCard } from '@/components/WeeklyRecap';
-import { Label, ListRow, PaceBar, Screen, Section, Tag, useTheme } from '@/components/ui';
+import { AiMark, BucketChip, Button, IconChip, Label, ListRow, PaceBar, Screen, Section, SettingsButton, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
-import { bucketPace, byAttention, daysInMonth, formatCents, paceTag, weeklyAllowance } from '@/src/domain';
+import { bucketPace, byAttention, daysInMonth, formatCents, paceTag, weeklyAllowance, type BucketStatus, type Insight } from '@/src/domain';
 
+const $ = (c: number) => formatCents(c, { showCents: false });
+
+/**
+ * Home. The headline says how the month is going; the carousel under it holds the three
+ * ways to look at it (free to spend per day, the trend against last month with its
+ * projection, and the bills ahead). Below: only what needs a look, then everything else.
+ */
 export default function BudgetScreen() {
-  const { statuses, impact, trend, forecast, month, today, insights, recap, bills, tuneUps, trends } = useBudget();
+  const { statuses, trend, forecast, month, today, insights, recap, tuneUps, trends, free, verdict, ahead } = useBudget();
   const t = useTheme();
   const days = daysInMonth(month);
-  const $ = (c: number) => formatCents(c, { showCents: false });
-  const totalLimit = statuses.reduce((s, b) => s + b.bucket.monthlyLimit, 0);
-  const totalSpent = statuses.reduce((s, b) => s + b.spent, 0);
-  // The summary uses the same month-end outlook as Insights, so the two always agree.
-  const outlook = insights.find((i) => i.kind === 'month_projection');
-  const daysLeft = Math.max(1, days - today);
-  const weeklyLeft = Math.max(0, totalLimit - totalSpent) / daysLeft * 7;
+  const [showAll, setShowAll] = useState(false);
+
+  const sorted = byAttention(statuses, today, days);
+  const tone = (s: BucketStatus) => paceTag(s, bucketPace(s, today, days)).tone;
+  const flagged = sorted.filter((s) => tone(s) !== 'good');
+  const fine = sorted.filter((s) => tone(s) === 'good');
+  // Alerts that aren't about a bucket's limit: a store costing more than usual, a price rise.
+  const alerts = insights.filter((i) => i.kind === 'unusual_vendor' || i.kind === 'subscription_change').slice(0, 2);
+  const dateLabel = new Date(`${month}-${String(today).padStart(2, '0')}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' });
+
+  const bucketRow = (s: BucketStatus, last: boolean) => {
+    const pace = bucketPace(s, today, days);
+    const tag = paceTag(s, pace);
+    const over = s.overBy > 0;
+    return (
+      <ListRow key={s.bucket.id} title={s.bucket.name} last={last}
+        figure={over ? `${$(s.overBy)} over` : `${$(s.remaining)} left`} figureTone={over ? 'bad' : undefined}
+        note={over ? `${$(s.spent)} of ${$(s.bucket.monthlyLimit)} · ${Math.max(0, days - today)} days to go`
+          : tag.tone === 'warn' ? `Heading over · ${weeklyAllowance(s, today, days).text}`
+          : `${$(s.spent)} of ${$(s.bucket.monthlyLimit)} · ${weeklyAllowance(s, today, days).text}`}
+        leading={<BucketChip icon={s.bucket.icon} tone={tag.tone} />}
+        bar={<PaceBar ratio={s.ratio} tone={tag.tone} paceAt={pace.monthElapsed} />}
+        onPress={() => router.push({ pathname: '/bucket/[id]', params: { id: s.bucket.id } })} />
+    );
+  };
+
+  const alertRow = (i: Insight, last: boolean) => (
+    <ListRow key={i.id} title={i.card.label} figure={i.card.figure} note={i.card.note} last={last}
+      leading={<IconChip tone={i.card.tone} icon={i.kind === 'subscription_change'
+        ? { ios: 'arrow.triangle.2.circlepath', android: 'autorenew', web: 'autorenew' }
+        : { ios: 'storefront.fill', android: 'storefront', web: 'storefront' }} />}
+      onPress={() => (i.kind === 'subscription_change' ? router.push('/subscriptions')
+        : router.push({ pathname: '/activity', params: { vendor: i.vendor ?? i.card.label, at: String(Date.now()) } }))} />
+  );
 
   return (
-    <Screen>
-      <Section title="Spending trend">
-        <View style={{ padding: 16 }}>
-          <SpendingTrend trend={trend} forecast={forecast} month={month} />
-        </View>
+    <Screen eyebrow={dateLabel} title={verdict.text} action={<SettingsButton />}>
+      <HeroCarousel pages={[
+        { key: 'free', label: 'Free to spend', node: <FreeCard free={free} days={recap.days} month={month} /> },
+        { key: 'trend', label: 'Trend', node: <TrendCard trend={trend} forecast={forecast} month={month} /> },
+        { key: 'ahead', label: 'Month ahead', node: <AheadCard ahead={ahead} free={free} forecast={forecast} today={today} /> },
+      ]} />
+
+      <Section title={flagged.length + alerts.length ? 'Needs a look' : 'All settled'}>
+        {flagged.length + alerts.length === 0 && (
+          <ListRow title="Every bucket is on track" note="Nothing needs your attention right now."
+            leading={<IconChip icon={{ ios: 'checkmark', android: 'check', web: 'check' }} />} />
+        )}
+        {flagged.map((s) => bucketRow(s, false))}
+        {alerts.map((i) => alertRow(i, false))}
+        <Pressable onPress={() => router.push({ pathname: '/ask', params: { q: 'How can I cut my spending this month?' } })} accessibilityRole="button"
+          style={({ pressed }) => [styles.askRow, pressed && { backgroundColor: t.track }]}>
+          <AiMark size={16} />
+          <Label style={{ color: t.tint, fontSize: 15, fontWeight: '600' }}>Ask how to cut spending this month</Label>
+        </Pressable>
       </Section>
 
-      <InsightsCard insights={insights} />
+      {fine.length > 0 && (
+        <Section>
+          <ListRow title={`${fine.length} bucket${fine.length === 1 ? '' : 's'} on track`} last={!showAll}
+            note={showAll ? null : `${$(fine.reduce((sum, s) => sum + Math.max(0, s.remaining), 0))} left across them`}
+            leading={<IconChip icon={{ ios: 'checkmark', android: 'check', web: 'check' }} />}
+            figure={showAll ? 'Hide' : 'Show'} onPress={() => setShowAll((v) => !v)} chevron={false} />
+          {showAll && fine.map((s, i) => bucketRow(s, i === fine.length - 1))}
+        </Section>
+      )}
 
       <WeeklyRecapCard recap={recap} />
 
-      <Section title="This month">
-        <View style={{ padding: 16, gap: 4 }}>
-          <View style={styles.between}>
-            <Label style={{ fontSize: 20, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{$(totalSpent)} <Label secondary style={{ fontSize: 15, fontWeight: '400' }}>of {$(totalLimit)}</Label></Label>
-            {outlook && <Tag tone={outlook.card.tone}>{outlook.card.tag}</Tag>}
-          </View>
-          <Label secondary style={{ fontSize: 13 }}>
-            {daysLeft >= 7 ? `${$(weeklyLeft)}/week left overall` : `${$(totalLimit - totalSpent)} left for ${daysLeft} days`}
-            {impact.hitsSavings > 0 ? ` · ${$(impact.hitsSavings)} coming out of savings` : ''}
-          </Label>
-          <PaceBar ratio={totalSpent / Math.max(1, totalLimit)} tone={outlook?.card.tone ?? 'good'} paceAt={today / days} />
-        </View>
-      </Section>
-
-      <BillsCard outlook={bills} />
-
-      <Section title="Buckets">
-        {byAttention(statuses, today, days).map((s, i, all) => {
-          const pace = bucketPace(s, today, days);
-          const tag = paceTag(s, pace);
-          return (
-            <ListRow key={s.bucket.id} title={s.bucket.name} figure={`${$(s.spent)} / ${$(s.bucket.monthlyLimit)}`}
-              figureTone={tag.tone === 'bad' ? 'bad' : undefined}
-              note={weeklyAllowance(s, today, days).text} tag={tag.tone === 'good' ? null : { tone: tag.tone, text: tag.tag }}
-              leading={<View style={[styles.icon, { backgroundColor: t.track }]}>
-                <SymbolView name={{ ios: s.bucket.icon as any, android: 'category', web: 'category' }} size={15} tintColor={t.secondaryText} />
-              </View>}
-              bar={<PaceBar ratio={s.ratio} tone={tag.tone} paceAt={pace.monthElapsed} />}
-              onPress={() => router.push({ pathname: '/bucket/[id]', params: { id: s.bucket.id } })} last={i === all.length - 1} />
-          );
-        })}
-      </Section>
-
-
       <Section>
         <ListRow title="Patterns & tune-ups" last onPress={() => router.push('/patterns')}
-          note={[tuneUps.length ? `${tuneUps.length} budget suggestion${tuneUps.length === 1 ? '' : 's'}` : 'Limits match your spending',
+          leading={<IconChip icon={{ ios: 'slider.horizontal.3', android: 'tune', web: 'tune' }} />}
+          note={[tuneUps.length ? `${tuneUps.length} suggestion${tuneUps.length === 1 ? '' : 's'}` : 'Limits match your spending',
             trends.length ? `${trends.length} change${trends.length === 1 ? '' : 's'} from usual` : null].filter(Boolean).join(' · ')} />
       </Section>
 
-      <Link href="/new-bucket" asChild>
-        <Pressable accessibilityRole="button"><Label style={{ color: t.tint, fontSize: 17, textAlign: 'center' }}>Add custom bucket</Label></Pressable>
-      </Link>
+      <Button variant="secondary" title="Add custom bucket" icon={{ ios: 'plus', android: 'add', web: 'add' }} onPress={() => router.push('/new-bucket')} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  icon: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  askRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, minHeight: 50 },
 });

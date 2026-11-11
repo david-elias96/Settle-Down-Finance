@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { AiMark, Label, Screen, Section, Tag, useTheme } from '@/components/ui';
+import { Button, Display, Label, ListRow, Screen, Section, Tag, space, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { formatCents, smallNote, trendNote, type TuneUp } from '@/src/domain';
 
@@ -23,80 +24,64 @@ export default function PatternsScreen() {
     <Screen>
       <Section title="Budget tune-ups" footer="Based on your last few whole months, from the cards linked so far. One-off months like a trip are left out.">
         {rows.length === 0 && (
-          <View style={styles.row}><Label secondary style={{ fontSize: 15 }}>Your limits match how you spend. Nothing to change.</Label></View>
+          <View style={styles.row}><Label secondary style={{ fontSize: 15, lineHeight: 21 }}>Your limits match how you spend. Nothing to change.</Label></View>
         )}
         {rows.map((u, i) => {
           const done = !!applied[u.bucketId];
           return (
             <View key={u.bucketId} style={[styles.row, i > 0 && sep]}>
-              <Pressable style={{ flex: 1, gap: 2 }} onPress={() => router.push({ pathname: '/bucket/[id]', params: { id: u.bucketId } })}
+              <Pressable style={{ flex: 1, gap: 3 }} onPress={() => router.push({ pathname: '/bucket/[id]', params: { id: u.bucketId } })}
                 accessibilityRole="button" aria-label={`${u.name}: ${u.kind} from ${$(u.limit)} to ${$(u.suggested)}. ${u.reason}`}>
                 <Label style={{ fontSize: 16, fontWeight: '600' }}>{u.name}</Label>
-                <Label style={{ fontSize: 15, fontVariant: ['tabular-nums'] }}>
-                  <Label secondary style={{ textDecorationLine: 'line-through' }}>{$(u.limit)}</Label>  →  {$(u.suggested)}
-                </Label>
-                <Label secondary style={{ fontSize: 13 }}>{u.reason}</Label>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Label secondary style={{ fontSize: 15, textDecorationLine: 'line-through', fontVariant: ['tabular-nums'] }}>{$(u.limit)}</Label>
+                  <SymbolView name={{ ios: 'arrow.right', android: 'arrow_forward', web: 'arrow_forward' }} size={12} weight="semibold" tintColor={t.secondaryText} />
+                  <Label style={{ fontSize: 15, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{$(u.suggested)}</Label>
+                </View>
+                <Label secondary style={{ fontSize: 13, lineHeight: 18 }}>{u.reason}</Label>
               </Pressable>
-              {done ? <Tag tone="good">Applied</Tag> : (
-                <Pressable onPress={() => apply(u)} accessibilityRole="button" aria-label={`Apply: set ${u.name} to ${$(u.suggested)}`}
-                  style={[styles.pill, { backgroundColor: `${t.tint}14` }]}>
-                  <Label style={{ color: t.tint, fontSize: 15, fontWeight: '600' }}>Apply</Label>
-                </Pressable>
-              )}
+              {done ? <Tag tone="good">Applied</Tag>
+                : <Button small variant="secondary" title="Apply" onPress={() => apply(u)} accessibilityLabel={`Apply: set ${u.name} to ${$(u.suggested)}`} />}
             </View>
           );
         })}
         {pending.length > 1 && (
-          <Pressable onPress={() => pending.forEach(apply)} accessibilityRole="button" style={[styles.row, sep]}>
-            <View style={{ flex: 1 }}>
-              <Label style={{ color: t.tint, fontSize: 17 }}>Apply all {pending.length}</Label>
-              <Label secondary style={{ fontSize: 13 }}>
-                {net === 0 ? 'Your monthly budget stays the same' : `Your monthly budget goes ${net > 0 ? 'up' : 'down'} ${$(Math.abs(net))}`}
-              </Label>
-            </View>
-          </Pressable>
+          <View style={[styles.applyAll, sep]}>
+            <Button title={`Apply all ${pending.length}`} onPress={() => pending.forEach(apply)} />
+            <Label secondary style={{ fontSize: 13, textAlign: 'center' }}>
+              {net === 0 ? 'Your monthly budget stays the same' : `Your monthly budget goes ${net > 0 ? 'up' : 'down'} ${$(Math.abs(net))}`}
+            </Label>
+          </View>
         )}
       </Section>
 
       {trends.length > 0 && (
         <Section title="Last month vs usual">
           {trends.map((tr, i) => (
-            <Pressable key={tr.bucketId} onPress={() => router.push({ pathname: '/bucket/[id]', params: { id: tr.bucketId } })}
-              accessibilityRole="button" aria-label={`${tr.name}, ${tr.change > 0 ? 'up' : 'down'} ${$(Math.abs(tr.change))}. ${trendNote(tr)}`}
-              style={[styles.row, i > 0 && sep]}>
-              <View style={{ flex: 1, gap: 2 }}>
-                <Label style={{ fontSize: 16, fontWeight: '600' }}>{tr.name}</Label>
-                <Label secondary style={{ fontSize: 13 }}>{trendNote(tr)}</Label>
-              </View>
-              <Tag tone={tr.change > 0 ? 'warn' : 'good'}>{`${tr.change > 0 ? 'Up' : 'Down'} ${$(Math.abs(tr.change))}`}</Tag>
-            </Pressable>
+            <ListRow key={tr.bucketId} title={tr.name} note={trendNote(tr)} wrapNote last={i === trends.length - 1}
+              tag={{ tone: tr.change > 0 ? 'warn' : 'good', text: `${tr.change > 0 ? 'Up' : 'Down'} ${$(Math.abs(tr.change))}` }}
+              onPress={() => router.push({ pathname: '/bucket/[id]', params: { id: tr.bucketId } })} />
           ))}
         </Section>
       )}
 
       {small && (
         <Section title="Small purchases add up" footer="Coffee, snacks and app charges each feel like nothing. Together they're a bucket of their own.">
-          <View style={styles.row} accessible aria-label={`${$(small.total)} in small purchases. ${smallNote(small)}`}>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Label style={{ fontSize: 28, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{$(small.total)}</Label>
-              <Label secondary style={{ fontSize: 13 }}>{smallNote(small)}</Label>
-            </View>
+          <View style={styles.small} accessible aria-label={`${$(small.total)} in small purchases. ${smallNote(small)}`}>
+            <Display size={40}>{$(small.total)}</Display>
+            <Label secondary style={{ fontSize: 14, lineHeight: 20 }}>{smallNote(small)}</Label>
           </View>
         </Section>
       )}
 
-      <Pressable onPress={() => router.push({ pathname: '/ask', params: { q: 'What patterns do you see in my spending?' } })}
-        accessibilityRole="button" style={{ backgroundColor: t.card, borderRadius: 12, padding: 14, alignItems: 'center' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <AiMark size={16} />
-          <Label style={{ color: t.tint, fontSize: 17 }}>Ask about my patterns</Label>
-        </View>
-      </Pressable>
+      <Button variant="secondary" ai title="Ask about my patterns"
+        onPress={() => router.push({ pathname: '/ask', params: { q: 'What patterns do you see in my spending?' } })} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12 },
-  pill: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 16 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.m, paddingHorizontal: space.l, paddingVertical: 14 },
+  applyAll: { padding: space.l, gap: space.s + 2 },
+  small: { padding: space.l, gap: space.xs },
 });
