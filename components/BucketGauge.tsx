@@ -1,10 +1,10 @@
 import { View } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
-import { Label, useTheme } from '@/components/ui';
+import { Display, Label, useTheme } from '@/components/ui';
 import { formatCents, paceTag, type BucketPace, type BucketStatus } from '@/src/domain';
 
 const SIZE = 220;
-const STROKE = 16;
+const STROKE = 14;
 const R = (SIZE - STROKE) / 2 - 6;
 const C = 2 * Math.PI * R;
 
@@ -38,7 +38,7 @@ export function BucketGauge({ status, pace }: { status: BucketStatus; pace: Buck
         <Line x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y} stroke={t.text} strokeWidth={3} strokeLinecap="round" />
       </Svg>
       <View style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }} pointerEvents="none">
-        <Label style={{ fontSize: 44, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{pace.percentUsed}%</Label>
+        <Display size={48}>{pace.percentUsed}%</Display>
         <Label secondary style={{ fontSize: 14, fontVariant: ['tabular-nums'] }}>
           {formatCents(status.spent, { showCents: false })} of {formatCents(status.bucket.monthlyLimit, { showCents: false })}
         </Label>

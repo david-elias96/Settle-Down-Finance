@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Settle Down · A calm family budget for iPhone</title>
 <meta name="description" content="Settle Down links your family's accounts, sorts every purchase into buckets, and tells you where you stand the moment you spend. Coming soon to iPhone.">
-<meta name="theme-color" content="#1F5B3F">
+<meta name="theme-color" content="#F6F4EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0D1712" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="canonical" href="https://settledownfinancial.com/">
@@ -19,205 +20,273 @@
 <style>
 @font-face { font-family: "Fraunces"; src: url("assets/fonts/fraunces.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
 
+/* Grove: cream paper, deep green, leaf and amber, with liquid glass on anything that floats. */
 :root {
-  --bg: #FBFAF7; --bg-2: #F1F4EE; --card: #FFFFFF; --text: #17221D; --muted: #55605A; --rule: #E3E1DA;
-  --brand: #1F5B3F; --brand-ink: #F3F7EF; --leaf: #8FD19E; --leaf-ink: #2F7A4D; --sun: #E9A92B;
+  --bg: #F6F4EE; --bg-2: #ECEFE6; --card: #FFFFFF; --text: #17221D; --muted: #56615A; --rule: #E6E2D8;
+  --brand: #1F5B3F; --brand-ink: #FFFFFF; --brand-hover: #26694A; --tint-soft: #E3F1E6;
+  --leaf: #8FD19E; --leaf-ink: #2A6E45; --sun: #F6C04E; --sun-ink: #875600;
   --hero-bg: #1F5B3F; --hero-text: #F3F7EF; --hero-muted: #C9DCCF;
-  --shadow: 0 1px 2px rgba(23,34,29,.06), 0 12px 32px rgba(23,34,29,.10);
+  --glass: rgba(255,255,255,.62); --glass-edge: rgba(255,255,255,.85); --glass-shadow: 0 10px 30px rgba(23,34,29,.12);
+  --glow-leaf: rgba(143,209,158,.42); --glow-sun: rgba(246,192,78,.26);
+  --shadow: 0 1px 2px rgba(23,34,29,.06), 0 12px 32px rgba(23,34,29,.08);
+  color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0D1712; --bg-2: #13211A; --card: #182820; --text: #E9EEEA; --muted: #A9B4AD; --rule: #24302A;
-    --brand: #8FD19E; --brand-ink: #0D1712; --leaf-ink: #8FD19E; --sun: #F6C04E;
-    --hero-bg: #13261C; --hero-text: #F3F7EF; --hero-muted: #A9C4B2;
+    --bg: #0D1712; --bg-2: #13211A; --card: #16241D; --text: #E9EEEA; --muted: #A9B4AD; --rule: #24332B;
+    --brand: #8FD19E; --brand-ink: #0D1712; --brand-hover: #A3DCB0; --tint-soft: #1D3527;
+    --leaf-ink: #8FD19E; --sun-ink: #F6C04E;
+    --hero-bg: #1A3A2A; --hero-text: #F3F7EF; --hero-muted: #A9C4B2;
+    --glass: rgba(28,46,37,.62); --glass-edge: rgba(233,238,234,.14); --glass-shadow: 0 10px 30px rgba(0,0,0,.45);
+    --glow-leaf: rgba(143,209,158,.16); --glow-sun: rgba(246,192,78,.10);
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.35);
+    color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0D1712; --bg-2: #13211A; --card: #182820; --text: #E9EEEA; --muted: #A9B4AD; --rule: #24302A;
-  --brand: #8FD19E; --brand-ink: #0D1712; --leaf-ink: #8FD19E; --sun: #F6C04E;
-  --hero-bg: #13261C; --hero-text: #F3F7EF; --hero-muted: #A9C4B2;
+  --bg: #0D1712; --bg-2: #13211A; --card: #16241D; --text: #E9EEEA; --muted: #A9B4AD; --rule: #24332B;
+  --brand: #8FD19E; --brand-ink: #0D1712; --brand-hover: #A3DCB0; --tint-soft: #1D3527;
+  --leaf-ink: #8FD19E; --sun-ink: #F6C04E;
+  --hero-bg: #1A3A2A; --hero-text: #F3F7EF; --hero-muted: #A9C4B2;
+  --glass: rgba(28,46,37,.62); --glass-edge: rgba(233,238,234,.14); --glass-shadow: 0 10px 30px rgba(0,0,0,.45);
+  --glow-leaf: rgba(143,209,158,.16); --glow-sun: rgba(246,192,78,.10);
   --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.35);
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+html { scroll-behavior: smooth; scroll-padding-top: 96px; -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 img { max-width: 100%; display: block; }
 a { color: var(--leaf-ink); }
-h1, h2, h3 { font-family: "Fraunces", Georgia, serif; font-weight: 700; letter-spacing: -0.01em; line-height: 1.12; margin: 0; }
-h1 { font-size: clamp(40px, 6.4vw, 68px); }
-h2 { font-size: clamp(30px, 4.2vw, 44px); }
-h3 { font-size: 21px; line-height: 1.25; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; border-radius: 6px; }
+h1, h2, h3 { font-family: "Fraunces", Georgia, serif; font-weight: 600; letter-spacing: -0.02em; line-height: 1.08; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(44px, 7vw, 84px); letter-spacing: -0.03em; line-height: 1; }
+h2 { font-size: clamp(30px, 4.2vw, 46px); }
+h3 { font-size: 21px; line-height: 1.25; letter-spacing: -0.01em; }
 p { margin: 0; }
 .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
-.eyebrow { font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--leaf-ink); margin-bottom: 14px; }
-.lede { font-size: 19px; color: var(--muted); max-width: 34em; }
+.eyebrow { font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--leaf-ink); margin-bottom: 14px; }
+.lede { font-size: 19px; line-height: 1.55; color: var(--muted); max-width: 34em; text-wrap: pretty; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* Header */
-header.top { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--hero-bg) 92%, transparent); backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px); color: var(--hero-text); }
-header.top .wrap { display: flex; align-items: center; gap: 24px; height: 64px; }
-.brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; font-family: "Fraunces", Georgia, serif; font-weight: 700; font-size: 22px; letter-spacing: -0.01em; }
-.brand svg { width: 38px; height: auto; }
-header.top nav { margin-left: auto; display: flex; align-items: center; gap: 28px; }
-header.top nav a { color: var(--hero-muted); text-decoration: none; font-size: 15px; font-weight: 500; }
-header.top nav a:hover { color: var(--hero-text); }
+/* Liquid glass: a frosted, light-catching surface for things that float above the page. */
+.glass { background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); }
+
+/* Buttons */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 999px; padding: 0 22px; height: 48px; font-family: inherit; font-size: 16px; font-weight: 600; line-height: 1; text-decoration: none; cursor: pointer; white-space: nowrap; transition: transform .15s ease, background .15s ease; }
 .btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .7; cursor: default; }
+.btn-brand { background: var(--brand); color: var(--brand-ink); }
+.btn-brand:hover { background: var(--brand-hover); }
 .btn-sun { background: #F6C04E; color: #1B2420; }
 .btn-sun:hover { background: #F8CC6A; }
-header.top .btn { height: 38px; padding: 0 16px; font-size: 14px; }
-header.top nav a.btn { color: #1B2420; }
+
+/* Header: a glass pill that the page scrolls underneath */
+header.top { position: sticky; top: 12px; z-index: 20; padding: 0 16px; margin-top: 12px; }
+header.top .bar { max-width: 1088px; margin: 0 auto; display: flex; align-items: center; gap: 24px; height: 60px; padding: 0 10px 0 20px; border-radius: 999px; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 21px; letter-spacing: -0.02em; }
+.brand svg { width: 36px; height: 27px; color: var(--brand); }
+header.top nav { margin-left: auto; display: flex; align-items: center; gap: 28px; }
+header.top nav a:not(.btn) { color: var(--muted); text-decoration: none; font-size: 15px; font-weight: 500; }
+header.top nav a:not(.btn):hover { color: var(--text); }
+header.top .btn { height: 40px; padding: 0 18px; font-size: 14px; }
 
 /* Hero */
-.hero { background: var(--hero-bg); color: var(--hero-text); position: relative; z-index: 2; }
-.hero .wrap { display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; padding-top: 72px; padding-bottom: 0; }
-.hero h1 { color: var(--hero-text); }
-.hero h1 em { font-style: italic; color: #8FD19E; font-weight: 600; }
-.hero .lede { color: var(--hero-muted); margin-top: 20px; }
-.hero .copy { padding-bottom: 88px; }
-.badge { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--hero-text); background: rgba(243,247,239,.1); border: 1px solid rgba(243,247,239,.18); border-radius: 999px; padding: 6px 14px 6px 10px; margin-bottom: 24px; }
-.badge i { width: 8px; height: 8px; border-radius: 50%; background: #F6C04E; box-shadow: 0 0 0 4px rgba(246,192,78,.25); }
-.waitlist { display: flex; gap: 10px; margin-top: 32px; max-width: 480px; }
-.waitlist input { flex: 1; min-width: 0; height: 48px; border-radius: 999px; border: 1px solid rgba(243,247,239,.25); background: rgba(243,247,239,.08); color: var(--hero-text); padding: 0 20px; font: inherit; font-size: 16px; }
-.waitlist input::placeholder { color: var(--hero-muted); opacity: .8; }
-.waitlist input:focus { outline: 2px solid #F6C04E; outline-offset: 2px; }
-.form-note { margin-top: 12px; font-size: 14px; color: var(--hero-muted); min-height: 1.6em; }
-.form-note.ok { color: #8FD19E; font-weight: 600; }
-.form-note.err { color: #F6C04E; }
+.hero { position: relative; margin-top: -72px; padding-top: 72px; overflow-x: clip; }
+.hero::before { content: ""; position: absolute; inset: 0 0 -120px 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(560px 460px at 76% 44%, var(--glow-leaf), transparent 70%), radial-gradient(420px 340px at 94% 78%, var(--glow-sun), transparent 70%), radial-gradient(520px 380px at 8% 6%, var(--glow-leaf), transparent 72%); }
+.hero .wrap { display: grid; grid-template-columns: 1.08fr .92fr; gap: 40px; align-items: center; padding-top: 72px; padding-bottom: 96px; }
+.hero h1 em { font-style: italic; font-weight: 500; color: var(--brand); }
+.hero .lede { margin-top: 24px; font-size: 20px; }
+.badge { display: inline-flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 600; color: var(--text); border-radius: 999px; padding: 7px 15px 7px 12px; margin-bottom: 28px; }
+.badge i { width: 8px; height: 8px; border-radius: 50%; background: #E9A92B; box-shadow: 0 0 0 4px rgba(246,192,78,.3); }
+
+.waitlist { display: flex; align-items: center; gap: 6px; margin-top: 36px; max-width: 480px; height: 60px; padding: 6px; border-radius: 999px; background: var(--card); box-shadow: var(--shadow); border: 1px solid var(--rule); }
+.waitlist:focus-within { border-color: var(--brand); }
+.waitlist input { flex: 1; min-width: 0; height: 100%; border: 0; border-radius: 999px; background: transparent; color: var(--text); padding: 0 18px; font: inherit; font-size: 16px; }
+.waitlist input::placeholder { color: var(--muted); opacity: .8; }
+.waitlist input:focus { outline: none; }
+.form-note { margin-top: 14px; padding-left: 24px; font-size: 14px; color: var(--muted); min-height: 1.6em; }
+.form-note.ok { color: var(--leaf-ink); font-weight: 600; }
+.form-note.err { color: var(--sun-ink); font-weight: 600; }
 .form-note a { color: inherit; }
 
-.stage { position: relative; align-self: end; display: flex; justify-content: center; }
-.hills { position: absolute; left: -40%; right: -40%; bottom: -1px; height: 140px; pointer-events: none; }
-.phone { position: relative; width: 300px; border-radius: 50px; padding: 11px; background: #0E1512; box-shadow: 0 30px 80px rgba(0,0,0,.35), inset 0 0 0 1.5px #2A3530; }
-.phone img { border-radius: 39px; width: 100%; height: auto; aspect-ratio: 390 / 844; object-fit: cover; background: #fff; }
-.phone::after { content: ""; position: absolute; top: 19px; left: 50%; transform: translateX(-50%); width: 27%; height: 7.4%; max-height: 24px; border-radius: 999px; background: #0E1512; }
-.hero .phone { margin-bottom: -150px; }
-.notif { position: absolute; z-index: 3; width: 300px; top: 312px; left: -8px; background: rgba(255,255,255,.92); color: #17221D; border-radius: 22px; padding: 14px 16px; box-shadow: 0 16px 40px rgba(0,0,0,.28); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); font-size: 14px; line-height: 1.4; animation: drop .7s cubic-bezier(.2,.9,.3,1.2) .4s both; }
-.notif .row { display: flex; align-items: center; gap: 8px; color: #55605A; font-size: 12px; margin-bottom: 6px; }
+.stage { position: relative; display: flex; justify-content: center; padding: 8px 0; }
+.phone { position: relative; width: 300px; border-radius: 52px; padding: 10px; background: #0E1512; box-shadow: 0 40px 80px -24px rgba(23,34,29,.45), 0 12px 24px -12px rgba(23,34,29,.3), inset 0 0 0 1.5px #2F3A35; }
+.phone img { border-radius: 42px; width: 100%; height: auto; aspect-ratio: 390 / 844; object-fit: cover; background: #F6F4EE; }
+.phone::after { content: ""; position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 28%; height: 25px; border-radius: 999px; background: #0E1512; }
+.float { position: absolute; z-index: 3; color: var(--text); border-radius: 24px; font-size: 14px; line-height: 1.4; }
+.notif { width: 272px; bottom: 118px; left: -28px; padding: 14px 16px; animation: drop .7s cubic-bezier(.2,.9,.3,1.2) .4s both; }
+.notif .row { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .02em; margin-bottom: 6px; }
 .notif .row img { width: 20px; height: 20px; border-radius: 5px; }
-.notif .row span:last-child { margin-left: auto; }
+.notif .row span:last-child { margin-left: auto; font-weight: 500; }
 .notif b { display: block; font-size: 15px; }
-.notif .bar { height: 6px; border-radius: 3px; background: #E5E5EA; margin-top: 10px; overflow: hidden; }
-.notif .bar i { display: block; height: 100%; width: 81%; background: #FF9500; border-radius: 3px; }
-@keyframes drop { from { opacity: 0; transform: translateY(-16px) scale(.96); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .notif { animation: none; } html { scroll-behavior: auto; } }
+.notif .bar { height: 6px; border-radius: 3px; background: rgba(23,34,29,.1); margin-top: 10px; overflow: hidden; }
+.notif .bar i { display: block; height: 100%; width: 81%; background: #E9A92B; border-radius: 3px; }
+.outlook { right: -72px; top: 84px; padding: 12px 16px 12px 12px; display: flex; align-items: center; gap: 12px; animation: drop .7s cubic-bezier(.2,.9,.3,1.2) .65s both; }
+.outlook .dot { flex: none; width: 36px; height: 36px; border-radius: 12px; background: var(--brand); color: var(--brand-ink); display: grid; place-items: center; }
+.outlook .dot svg { width: 18px; height: 18px; }
+.outlook small { display: block; color: var(--muted); font-size: 12px; font-weight: 500; }
+.outlook b { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 17px; letter-spacing: -0.01em; }
+@keyframes drop { from { opacity: 0; transform: translateY(-14px) scale(.96); } to { opacity: 1; transform: none; } }
 
 /* Trust strip */
-.strip { background: var(--bg-2); border-bottom: 1px solid var(--rule); padding: 190px 0 36px; }
-.strip ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-.strip li { display: flex; gap: 12px; align-items: flex-start; font-size: 15px; color: var(--muted); }
-.strip li strong { display: block; color: var(--text); font-size: 16px; }
-.ico { flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--card); display: grid; place-items: center; color: var(--leaf-ink); box-shadow: var(--shadow); }
+.strip { padding: 0 0 24px; }
+.strip ul { list-style: none; margin: 0; padding: 28px 32px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; background: var(--card); border-radius: 28px; box-shadow: var(--shadow); }
+.strip li { display: flex; gap: 14px; align-items: flex-start; font-size: 15px; line-height: 1.45; color: var(--muted); }
+.strip li strong { display: block; color: var(--text); font-size: 16px; margin-bottom: 2px; }
+.ico { flex: none; width: 40px; height: 40px; border-radius: 13px; background: var(--tint-soft); display: grid; place-items: center; color: var(--brand); }
 .ico svg { width: 20px; height: 20px; }
 
 /* Feature rows */
-section.features { padding: 112px 0 40px; }
+section.features { padding: 112px 0 16px; }
 .section-head { text-align: center; max-width: 720px; margin: 0 auto 72px; }
-.section-head .lede { margin: 16px auto 0; }
-.feature { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center; margin-bottom: 112px; }
-.feature:nth-child(even) .shot { order: 2; }
-.feature .shot { display: flex; justify-content: center; position: relative; }
-.feature .shot::before { content: ""; position: absolute; inset: 8% 4%; border-radius: 40px; background: var(--bg-2); z-index: -1; }
-.feature .phone { width: 280px; }
-.feature h2 { margin-bottom: 16px; }
-.feature ul { list-style: none; padding: 0; margin: 24px 0 0; }
+.section-head .lede { margin: 18px auto 0; }
+.feature { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center; margin-bottom: 96px; }
+.feature:nth-child(odd) .shot { order: 2; }
+.feature .shot { position: relative; display: flex; justify-content: center; align-items: center; padding: 56px 0; border-radius: 44px; background: var(--bg-2); overflow: hidden; isolation: isolate; }
+.feature .shot::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(340px 300px at 24% 22%, var(--glow-leaf), transparent 70%), radial-gradient(300px 260px at 84% 84%, var(--glow-sun), transparent 70%); }
+.feature .phone { width: 270px; border-radius: 48px; padding: 9px; }
+.feature .phone img { border-radius: 39px; }
+.feature .phone::after { top: 18px; height: 22px; }
+.shot.duo .phone + .phone { position: absolute; width: 214px; right: 6%; bottom: -70px; border-radius: 40px; padding: 7px; transform: rotate(5deg); }
+.shot.duo .phone + .phone img { border-radius: 33px; }
+.shot.duo .phone + .phone::after { top: 14px; height: 17px; }
+.shot.duo .phone:first-child { margin-right: 22%; }
+.feature h2 { margin-bottom: 18px; }
+.feature ul { list-style: none; padding: 0; margin: 26px 0 0; }
 .feature li { position: relative; padding-left: 32px; margin-bottom: 12px; color: var(--muted); }
 .feature li::before { content: ""; position: absolute; left: 0; top: calc((1.6em - 20px) / 2); width: 20px; height: 20px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='10' fill='%238FD19E'/%3E%3Cpath d='M6 10.2l2.7 2.7L14 7.6' fill='none' stroke='%231F5B3F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 20px 20px no-repeat; }
 .feature li strong { color: var(--text); font-weight: 600; }
 .ai { display: inline-flex; align-items: center; gap: 6px; }
-.ai svg { width: 18px; height: 18px; color: var(--sun); }
-.asks { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 24px; }
-.asks span { background: #007AFF; color: #fff; font-size: 15px; font-weight: 500; line-height: 1.35; padding: 9px 16px; border-radius: 20px 20px 20px 6px; max-width: 100%; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .asks span { background: #0A84FF; } }
-:root[data-theme="dark"] .asks span { background: #0A84FF; }
+.ai svg { width: 18px; height: 18px; color: var(--sun-ink); }
+.asks { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 26px; }
+.asks span { background: var(--brand); color: var(--brand-ink); font-size: 15px; font-weight: 500; line-height: 1.35; padding: 10px 16px; border-radius: 20px 20px 20px 6px; max-width: 100%; }
 
 /* Grid */
-section.more { padding: 40px 0 112px; }
+section.more { padding: 16px 0 112px; }
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-.tile { background: var(--card); border: 1px solid var(--rule); border-radius: 24px; padding: 28px; }
-.tile .ico { margin-bottom: 18px; background: var(--bg-2); box-shadow: none; }
+.tile { background: var(--card); border-radius: 28px; padding: 28px; box-shadow: var(--shadow); }
+.tile .ico { margin-bottom: 20px; }
 .tile h3 { margin-bottom: 8px; }
-.tile p { color: var(--muted); font-size: 16px; }
+.tile p { color: var(--muted); font-size: 16px; line-height: 1.5; }
 
-/* Privacy */
-section.trust { background: var(--hero-bg); color: var(--hero-text); padding: 104px 0; }
-section.trust .wrap { display: grid; grid-template-columns: .9fr 1.1fr; gap: 64px; align-items: start; }
+/* Privacy: glass tiles on deep green */
+section.trust { padding: 0 16px; }
+.trust-card { position: relative; max-width: 1200px; margin: 0 auto; border-radius: 44px; background: var(--hero-bg); color: var(--hero-text); padding: 88px 0; overflow: hidden; isolation: isolate; }
+.trust-card::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(520px 380px at 88% 12%, rgba(143,209,158,.28), transparent 70%), radial-gradient(420px 320px at 4% 96%, rgba(246,192,78,.14), transparent 70%); }
+.trust-card .wrap { display: grid; grid-template-columns: .9fr 1.1fr; gap: 64px; align-items: center; padding: 0 56px; }
 section.trust .eyebrow { color: #8FD19E; }
-section.trust .lede { color: var(--hero-muted); margin-top: 16px; }
+section.trust .lede { color: var(--hero-muted); margin-top: 18px; }
 section.trust a { color: #8FD19E; }
-.promises { display: grid; grid-template-columns: 1fr 1fr; gap: 28px 32px; }
-.promises h3 { font-family: inherit; font-size: 17px; font-weight: 700; margin-bottom: 6px; color: var(--hero-text); letter-spacing: 0; }
-.promises p { color: var(--hero-muted); font-size: 15px; }
+.promises { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.promises > div { border-radius: 24px; padding: 22px; background: rgba(243,247,239,.08); border: 1px solid rgba(243,247,239,.14); box-shadow: inset 0 1px 0 rgba(255,255,255,.14); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); }
+.promises h3 { font-family: inherit; font-size: 17px; font-weight: 700; line-height: 1.3; margin-bottom: 6px; color: var(--hero-text); letter-spacing: 0; }
+.promises p { color: var(--hero-muted); font-size: 15px; line-height: 1.5; }
 
 /* Pricing */
 section.pricing { padding: 112px 0; }
 .hl { color: var(--text); font-weight: 600; }
 .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 760px; margin: 0 auto; }
-.plan { background: var(--card); border: 1px solid var(--rule); border-radius: 28px; padding: 32px; position: relative; }
-.plan.best { border: 2px solid var(--brand); }
-.plan .tag { position: absolute; top: -14px; left: 32px; background: var(--brand); color: var(--brand-ink); font-size: 13px; font-weight: 700; padding: 4px 12px; border-radius: 999px; }
+.plan { background: var(--card); border-radius: 32px; padding: 32px; position: relative; box-shadow: var(--shadow); }
+.plan.best { background: var(--hero-bg); color: var(--hero-text); box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 16px 40px -12px rgba(31,91,63,.5); }
+.plan .tag { position: absolute; top: 28px; right: 28px; background: #F6C04E; color: #1B2420; font-size: 13px; font-weight: 700; line-height: 1; padding: 7px 12px; border-radius: 999px; }
 .plan h3 { font-family: inherit; font-size: 17px; letter-spacing: 0; color: var(--muted); font-weight: 600; }
-.price { font-family: "Fraunces", Georgia, serif; font-size: 52px; font-weight: 700; line-height: 1; margin: 14px 0 6px; letter-spacing: -0.02em; }
+.plan.best h3, .plan.best .sub, .plan.best .price small { color: var(--hero-muted); }
+.price { font-family: "Fraunces", Georgia, serif; font-size: 56px; font-weight: 600; line-height: 1; margin: 16px 0 8px; letter-spacing: -0.03em; }
 .price small { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 17px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
 .plan .sub { color: var(--muted); font-size: 15px; }
-.included { max-width: 760px; margin: 28px auto 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 24px; color: var(--muted); font-size: 15px; }
+.included { max-width: 760px; margin: 32px auto 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 24px; color: var(--muted); font-size: 15px; }
 .included span { display: inline-flex; align-items: center; gap: 8px; }
 .included span::before { content: ""; flex: none; width: 18px; height: 18px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='10' fill='%238FD19E'/%3E%3Cpath d='M6 10.2l2.7 2.7L14 7.6' fill='none' stroke='%231F5B3F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 18px 18px no-repeat; }
 
 /* Final CTA */
-section.cta { padding: 0 0 112px; }
-.cta-card { background: var(--hero-bg); color: var(--hero-text); border-radius: 36px; padding: 64px 48px; text-align: center; position: relative; overflow: hidden; }
-.cta-card svg.mark { width: 96px; margin: 0 auto 24px; }
-.cta-card .lede { color: var(--hero-muted); margin: 16px auto 0; }
-.cta-card .waitlist { margin: 32px auto 0; }
-.cta-card .form-note { text-align: center; }
+section.cta { padding: 0 16px 96px; }
+.cta-card { max-width: 1200px; margin: 0 auto; background: var(--hero-bg); color: var(--hero-text); border-radius: 44px; padding: 80px 24px; text-align: center; position: relative; overflow: hidden; isolation: isolate; }
+.cta-card::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(480px 340px at 50% -10%, rgba(143,209,158,.3), transparent 70%), radial-gradient(380px 300px at 96% 100%, rgba(246,192,78,.16), transparent 70%); }
+.cta-card svg.mark { width: 96px; height: 72px; margin: 0 auto 24px; display: block; }
+.cta-card .lede { color: var(--hero-muted); margin: 18px auto 0; }
+.cta-card .waitlist { margin: 36px auto 0; background: rgba(243,247,239,.1); border-color: rgba(243,247,239,.2); box-shadow: inset 0 1px 0 rgba(255,255,255,.16); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); }
+.cta-card .waitlist:focus-within { border-color: #F6C04E; }
+.cta-card .waitlist input { color: var(--hero-text); }
+.cta-card .waitlist input::placeholder { color: var(--hero-muted); }
+.cta-card .form-note { text-align: center; padding-left: 0; color: var(--hero-muted); }
+.cta-card .form-note.ok { color: #8FD19E; }
+.cta-card .form-note.err { color: #F6C04E; }
 
-footer { border-top: 1px solid var(--rule); padding: 32px 0 48px; color: var(--muted); font-size: 14px; }
+footer { padding: 0 0 48px; color: var(--muted); font-size: 14px; }
 footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
-footer nav { margin-left: auto; display: flex; gap: 20px; }
-footer a { color: var(--muted); }
+footer nav { margin-left: auto; display: flex; gap: 24px; }
+footer a { color: var(--muted); text-decoration: none; }
+footer a:hover { color: var(--text); }
 footer .brand { color: var(--text); font-size: 18px; }
-footer .brand svg { width: 30px; }
+footer .brand svg { width: 30px; height: 23px; }
+
+/* Sections ease in as they scroll into view (only when scripting and motion are on). */
+.js .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); }
+.js .reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .float { animation: none; }
+  .js .reveal { opacity: 1; transform: none; transition: none; }
+}
 
 /* Responsive */
+@media (min-width: 961px) and (max-width: 1263px) { .outlook { display: none; } }
 @media (max-width: 960px) {
-  .hero .wrap { grid-template-columns: 1fr; padding-top: 48px; gap: 0; }
-  .hero .copy { padding-bottom: 56px; text-align: center; }
+  .hero .wrap { grid-template-columns: 1fr; padding-top: 56px; padding-bottom: 72px; gap: 56px; }
+  .hero .copy { text-align: center; }
   .hero .lede, .waitlist { margin-left: auto; margin-right: auto; }
-  .notif { left: 50%; margin-left: -230px; }
-  .feature, section.trust .wrap { grid-template-columns: 1fr; gap: 40px; }
-  .feature:nth-child(even) .shot { order: 0; }
-  .feature { margin-bottom: 88px; }
+  .form-note { padding-left: 0; }
+  .notif { left: 50%; margin-left: -262px; }
+  .outlook { right: 50%; margin-right: -262px; }
+  .feature, .trust-card .wrap { grid-template-columns: 1fr; gap: 40px; }
+  .feature:nth-child(odd) .shot { order: 0; }
+  .feature { margin-bottom: 80px; }
   .feature .text { max-width: 600px; }
   .grid { grid-template-columns: 1fr 1fr; }
-  .strip ul { grid-template-columns: 1fr; gap: 16px; }
+  .strip ul { grid-template-columns: 1fr; gap: 20px; }
 }
 @media (max-width: 640px) {
   .wrap { padding: 0 16px; }
+  header.top { padding: 0 12px; }
+  header.top .bar { padding: 0 8px 0 16px; height: 56px; }
   header.top nav a:not(.btn) { display: none; }
-  .brand { font-size: 20px; }
-  .waitlist { flex-direction: column; }
-  .waitlist input { flex: none; }
-  .waitlist .btn { width: 100%; }
-  .phone { width: 260px; border-radius: 44px; padding: 10px; }
-  .phone img { border-radius: 34px; }
-  .hero .phone { margin-bottom: -130px; }
-  .notif { width: 270px; left: 50%; margin-left: -150px; top: 282px; }
-  .strip { padding-top: 160px; }
-  .feature .phone { width: 250px; }
+  .brand { font-size: 19px; }
+  .hero .wrap { padding-top: 40px; }
+  .hero .lede { font-size: 18px; }
+  .phone { width: 264px; border-radius: 46px; padding: 9px; }
+  .phone img { border-radius: 37px; }
+  .phone::after { top: 18px; height: 22px; }
+  .notif { width: 248px; margin-left: -168px; bottom: 96px; padding: 12px 14px; font-size: 13px; }
+  .notif b { font-size: 14px; }
+  .outlook { display: none; }
+  .strip ul { padding: 24px 20px; }
+  .feature .shot { padding: 40px 0; border-radius: 32px; }
+  .feature .phone { width: 240px; border-radius: 42px; padding: 8px; }
+  .feature .phone img { border-radius: 34px; }
+  .shot.duo .phone + .phone { display: none; }
+  .shot.duo .phone:first-child { margin-right: 0; }
   .grid, .plans, .promises { grid-template-columns: 1fr; }
-  .plans { gap: 28px; }
-  section.features, section.pricing { padding: 80px 0 24px; }
-  section.pricing { padding-bottom: 80px; }
+  section.features { padding: 80px 0 0; }
   section.more { padding-bottom: 80px; }
-  section.trust { padding: 80px 0; }
+  section.pricing { padding: 80px 0; }
   .section-head { margin-bottom: 48px; }
-  .cta-card { padding: 48px 20px; border-radius: 28px; }
+  section.trust, section.cta { padding-left: 8px; padding-right: 8px; }
+  .trust-card { padding: 56px 0; border-radius: 32px; }
+  .trust-card .wrap { padding: 0 20px; }
+  .cta-card { padding: 56px 16px; border-radius: 32px; }
+  section.cta { padding-bottom: 64px; }
   footer nav { margin-left: 0; }
 }
+@media (max-width: 400px) {
+  .waitlist { flex-direction: column; height: auto; border-radius: 30px; padding: 6px; }
+  .waitlist input { width: 100%; height: 48px; flex: none; text-align: center; }
+  .waitlist .btn { width: 100%; }
+}
 </style>
+<script>document.documentElement.classList.add('js');</script>
 </head>
 <body>
 
@@ -235,13 +304,13 @@ footer .brand svg { width: 30px; }
 </svg>
 
 <header class="top">
-  <div class="wrap">
+  <div class="bar glass">
     <a class="brand" href="/" aria-label="Settle Down home"><svg aria-hidden="true"><use href="#mark"/></svg>Settle Down</a>
     <nav aria-label="Main">
       <a href="#features">Features</a>
       <a href="#privacy">Privacy</a>
       <a href="#pricing">Pricing</a>
-      <a class="btn btn-sun" href="#join">Join the waitlist</a>
+      <a class="btn btn-brand" href="#join">Join the waitlist</a>
     </nav>
   </div>
 </header>
@@ -250,31 +319,35 @@ footer .brand svg { width: 30px; }
   <section class="hero">
     <div class="wrap">
       <div class="copy">
-        <div class="badge"><i></i>Coming soon to iPhone</div>
-        <h1>Money, <em>settled.</em><br>For the whole household.</h1>
-        <p class="lede">Settle Down links your family's accounts, sorts every purchase into buckets, and tells you where you stand the moment you spend. No spreadsheets, no end-of-month surprises.</p>
+        <div class="badge glass"><i></i>Coming soon to iPhone</div>
+        <h1>Know where you stand. <em>Then relax.</em></h1>
+        <p class="lede">Settle Down links your family's accounts, sorts every purchase into buckets, and turns it all into one calm number: what you can spend today.</p>
         <form class="waitlist" data-waitlist novalidate>
           <label class="sr" for="email-top">Email address</label>
           <input id="email-top" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
-          <button class="btn btn-sun" type="submit">Join the waitlist</button>
+          <button class="btn btn-brand" type="submit">Join the waitlist</button>
         </form>
         <p class="form-note" aria-live="polite">Be first in line for the beta. One email when it's ready, nothing else.</p>
       </div>
       <div class="stage">
         <div class="phone">
-          <img src="assets/screens/bucket.webp" width="780" height="1688" alt="The Groceries bucket: 81% used, $569 of $700, heading over, with this month's grocery purchases.">
+          <img src="assets/screens/home.webp" width="780" height="1688" alt="The Settle Down home screen: “You’re on track.” above a green card showing $98 a day free to spend through the end of the month, with this week's spending by day.">
         </div>
-        <div class="notif" aria-hidden="true">
+        <div class="float notif glass" aria-hidden="true">
           <div class="row"><img src="apple-touch-icon.png" alt=""><span>SETTLE DOWN</span><span>now</span></div>
           <b>Costco · $286.55 → Groceries</b>
           $569 of $700 used · $130 left, heading over
           <div class="bar"><i></i></div>
         </div>
+        <div class="float outlook glass" aria-hidden="true">
+          <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>
+          <span><small>Likely finish</small><b>$956 under budget</b></span>
+        </div>
       </div>
     </div>
   </section>
 
-  <div class="strip">
+  <div class="strip reveal">
     <div class="wrap">
       <ul>
         <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><span><strong>Bank connections through Plaid</strong>Your bank login never touches our servers.</span></li>
@@ -286,14 +359,17 @@ footer .brand svg { width: 30px; }
 
   <section class="features" id="features">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <p class="eyebrow">What it does</p>
         <h2>A budget that keeps up with you</h2>
         <p class="lede">Most budgeting apps tell you what went wrong last month. Settle Down tells you while there's still time to do something about it.</p>
       </div>
 
-      <div class="feature">
-        <div class="shot"><div class="phone"><img src="assets/screens/activity.webp" width="780" height="1688" loading="lazy" alt="The Activity screen: November purchases grouped by day, each sorted into a bucket like Dining Out, Entertainment or Groceries."></div></div>
+      <div class="feature reveal">
+        <div class="shot duo">
+          <div class="phone"><img src="assets/screens/activity.webp" width="780" height="1688" loading="lazy" alt="The Activity screen: November purchases grouped by day, each sorted into a bucket like Dining Out, Entertainment or Groceries."></div>
+          <div class="phone"><img src="assets/screens/bucket.webp" width="780" height="1688" loading="lazy" alt="The Groceries bucket: 81% used, $569 of $700, heading over, with this month's grocery purchases."></div>
+        </div>
         <div class="text">
           <p class="eyebrow">Buckets and alerts</p>
           <h2>Know where you stand after every purchase</h2>
@@ -307,8 +383,8 @@ footer .brand svg { width: 30px; }
         </div>
       </div>
 
-      <div class="feature">
-        <div class="shot"><div class="phone"><img src="assets/screens/budget.webp" width="780" height="1688" loading="lazy" alt="Spending trend chart comparing this month to last month, with a projected month-end total."></div></div>
+      <div class="feature reveal">
+        <div class="shot"><div class="phone"><img src="assets/screens/trend.webp" width="780" height="1688" loading="lazy" alt="The spending trend card: this month's spending against last month, with the Projected view showing a likely month-end total and its range."></div></div>
         <div class="text">
           <p class="eyebrow">Trends and projections</p>
           <h2>See the month before it happens</h2>
@@ -321,7 +397,7 @@ footer .brand svg { width: 30px; }
         </div>
       </div>
 
-      <div class="feature">
+      <div class="feature reveal">
         <div class="shot"><div class="phone"><img src="assets/screens/ask.webp" width="780" height="1688" loading="lazy" alt="Asking 'How can I cut my spending this month?' and getting a card listing the biggest savings opportunities by bucket."></div></div>
         <div class="text">
           <p class="eyebrow ai"><svg aria-hidden="true"><use href="#sparkle"/></svg>SettleDown, your money assistant</p>
@@ -340,8 +416,8 @@ footer .brand svg { width: 30px; }
         </div>
       </div>
 
-      <div class="feature">
-        <div class="shot"><div class="phone"><img src="assets/screens/savings.webp" width="780" height="1688" loading="lazy" alt="The Savings screen: $5,650 saved across goals, with Emergency Fund, Summer Vacation and Christmas progress bars."></div></div>
+      <div class="feature reveal">
+        <div class="shot"><div class="phone"><img src="assets/screens/savings.webp" width="780" height="1688" loading="lazy" alt="The Savings screen: $4,200 saved across goals, untouched by this month's spending, with the Emergency Fund on track."></div></div>
         <div class="text">
           <p class="eyebrow">Savings goals</p>
           <h2>Savings that stay put</h2>
@@ -357,11 +433,11 @@ footer .brand svg { width: 30px; }
 
   <section class="more">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <p class="eyebrow">And a few things you'll love</p>
         <h2>The busywork, handled</h2>
       </div>
-      <div class="grid">
+      <div class="grid reveal">
         <div class="tile">
           <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></span>
           <h3>Scan a receipt, split the purchase</h3>
@@ -397,6 +473,7 @@ footer .brand svg { width: 30px; }
   </section>
 
   <section class="trust" id="privacy">
+    <div class="trust-card reveal">
     <div class="wrap">
       <div>
         <p class="eyebrow">Privacy and security</p>
@@ -410,16 +487,17 @@ footer .brand svg { width: 30px; }
         <div><h3>Leave whenever you like</h3><p>Unlink a bank or delete your account from Settings, and your data is gone within 30 days.</p></div>
       </div>
     </div>
+    </div>
   </section>
 
   <section class="pricing" id="pricing">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <p class="eyebrow">Our mission</p>
         <h2>A budget app should fit in everyone's budget.</h2>
         <p class="lede"><strong class="hl">Settle Down does that.</strong> One plan covers your whole household with every feature included. No tiers, no upsells.</p>
       </div>
-      <div class="plans">
+      <div class="plans reveal">
         <div class="plan">
           <h3>Monthly</h3>
           <p class="price">$5.99<small> / month</small></p>
@@ -441,8 +519,7 @@ footer .brand svg { width: 30px; }
   </section>
 
   <section class="cta" id="join">
-    <div class="wrap">
-      <div class="cta-card">
+      <div class="cta-card reveal">
         <svg class="mark" aria-hidden="true" style="color:#F3F7EF"><use href="#mark"/></svg>
         <h2>Ready to settle down?</h2>
         <p class="lede">We're putting the finishing touches on the iPhone app. Join the waitlist and we'll let you know the moment the beta opens.</p>
@@ -453,13 +530,12 @@ footer .brand svg { width: 30px; }
         </form>
         <p class="form-note" aria-live="polite">One email when it's ready. Nothing else.</p>
       </div>
-    </div>
   </section>
 </main>
 
 <footer>
   <div class="wrap">
-    <a class="brand" href="/"><svg aria-hidden="true" style="color:var(--brand)"><use href="#mark"/></svg>Settle Down</a>
+    <a class="brand" href="/"><svg aria-hidden="true"><use href="#mark"/></svg>Settle Down</a>
     <span>© 2026 Settle Down Finance</span>
     <nav aria-label="Footer">
       <a href="/privacy">Privacy Policy</a>
@@ -505,6 +581,14 @@ footer .brand svg { width: 30px; }
       });
     });
   });
+
+  // Ease sections in as they scroll into view.
+  var items = document.querySelectorAll('.reveal');
+  if (!('IntersectionObserver' in window)) { items.forEach(function (el) { el.classList.add('in'); }); return; }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+  items.forEach(function (el) { io.observe(el); });
 })();
 </script>
 </body>

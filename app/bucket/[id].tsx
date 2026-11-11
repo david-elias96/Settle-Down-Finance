@@ -1,7 +1,7 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 import { BucketGauge } from '@/components/BucketGauge';
-import { Label, ListRow, Screen, Section, StatTile, Tag } from '@/components/ui';
+import { Card, Label, ListRow, Screen, Section, StatTile, Tag } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { bucketPace, daysInMonth, formatCents, paceTag, shortDate, weeklyAllowance } from '@/src/domain';
 
@@ -26,7 +26,8 @@ export default function BucketScreen() {
   return (
     <Screen>
       <Stack.Screen options={{ title: status.bucket.name }} />
-      <View style={{ gap: 10, paddingTop: 8, alignItems: 'center' }}>
+      <Card>
+      <View style={{ gap: 10, paddingVertical: 20, alignItems: 'center' }}>
         <BucketGauge status={status} pace={pace} />
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
           <Tag tone={tag.tone}>{tag.tag}</Tag>
@@ -34,8 +35,9 @@ export default function BucketScreen() {
         </View>
         <Label secondary style={{ fontSize: 12 }}>The tick marks an even pace for today</Label>
       </View>
+      </Card>
 
-      <View style={{ flexDirection: 'row', gap: 10 }}>
+      <View style={{ flexDirection: 'row', gap: 12 }}>
         <StatTile label="Spent" value={$(status.spent)} />
         {status.overBy > 0
           ? <StatTile label="Over by" value={$(status.overBy)} tone="bad" />

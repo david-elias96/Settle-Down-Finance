@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { Row, Screen, Section } from '@/components/ui';
+import { IconChip, ListRow, Screen, Section } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { formatCents } from '@/src/domain';
 
@@ -17,7 +17,8 @@ export default function ScanReceipt() {
   return (
     <Screen>
       <Section footer="The camera and item reading are the next step. The split math is already built and tested.">
-        <Row title={tx ? `${tx.merchant} · ${formatCents(tx.amount)}` : 'Receipt'} subtitle="Receipt scanning coming soon" last />
+        <ListRow title={tx ? tx.merchant.trim() : 'Receipt'} figure={tx ? formatCents(tx.amount) : undefined} note="Receipt scanning coming soon" last
+          leading={<IconChip icon={{ ios: 'doc.text.viewfinder', android: 'document_scanner', web: 'document_scanner' }} />} />
       </Section>
     </Screen>
   );

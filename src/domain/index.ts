@@ -19,3 +19,4 @@ export * from './autoSort';
 export * from './bills';
 export * from './patterns';
 export * from './security';
+export * from './daily';

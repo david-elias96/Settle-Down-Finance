@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { Label, ListRow, PaceBar, Row, Screen, Section, toneColor, useTheme } from '@/components/ui';
+import { StyleSheet, Text, View } from 'react-native';
+import { Button, Display, HeroCard, IconChip, Label, ListRow, PaceBar, Screen, Section, SettingsButton, toneColor, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { formatCents, goalForecast } from '@/src/domain';
 
@@ -17,15 +17,21 @@ export default function SavingsScreen() {
   const totalSaved = impact.goals.reduce((s, g) => s + g.balanceAfter, 0);
 
   return (
-    <Screen>
-      <View style={{ gap: 2, paddingHorizontal: 4 }}>
-        <Label secondary style={{ fontSize: 13 }}>Saved across goals</Label>
-        <Label style={{ fontSize: 30, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{$(totalSaved)}</Label>
-      </View>
+    <Screen title="Savings" action={<SettingsButton />}>
+      <HeroCard style={{ gap: 2 }}>
+        <View accessible accessibilityRole="header" aria-label={`Saved across goals: ${$(totalSaved)}. ${over === 0 ? 'Savings are safe this month.' : `${formatCents(impact.hitsSavings)} of overspending comes out of savings this month.`}`} style={{ gap: 2 }}>
+          <Text style={{ fontSize: 14, fontWeight: '500', color: t.heroMuted }}>Saved across goals</Text>
+          <Display size={48} color={t.heroText} style={{ lineHeight: 54, letterSpacing: -1.4 }}>{$(totalSaved)}</Display>
+          <Text style={{ fontSize: 15, color: impact.hitsSavings > 0 ? t.sun : t.heroMuted }}>
+            {impact.hitsSavings > 0 ? `${formatCents(impact.hitsSavings)} of overspending is coming out this month` : 'Untouched by this month’s spending'}
+          </Text>
+        </View>
+      </HeroCard>
 
       <Section title="Overspending this month">
         {over === 0 ? (
-          <ListRow title="No overspending" note="Every bucket is within its limit, so savings are untouched." tag={{ tone: 'good', text: 'Savings safe' }} last />
+          <ListRow title="No overspending" note="Every bucket is within its limit." tag={{ tone: 'good', text: 'Savings safe' }} last
+            leading={<IconChip icon={{ ios: 'checkmark.shield.fill', android: 'verified_user', web: 'verified_user' }} />} />
         ) : (
           <View style={{ padding: 16, gap: 12 }}>
             <Label style={{ fontSize: 17, fontWeight: '600' }}>{formatCents(over)} over budget. Here's where it comes from:</Label>
@@ -48,7 +54,8 @@ export default function SavingsScreen() {
 
       <Section title="Goals">
         {impact.goals.length === 0 && (
-          <ListRow title="No savings goals yet" note="Add one for a trip, a car, or a rainy day." last />
+          <ListRow title="No savings goals yet" note="Add one for a trip, a car, or a rainy day." last
+            leading={<IconChip icon={{ ios: 'leaf.fill', android: 'savings', web: 'savings' }} />} />
         )}
         {impact.goals.map(({ goal, drawn, balanceAfter, monthsDelayed }, i) => {
           const f = goalForecast(goal, balanceAfter, month);
@@ -64,22 +71,21 @@ export default function SavingsScreen() {
         })}
       </Section>
 
-      <Section>
-        <Pressable accessibilityRole="button" onPress={() => router.push('/goal')}>
-          <Row icon={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }} title="Add savings goal" last={impact.goals.length < 2} />
-        </Pressable>
-        {impact.goals.length > 1 && (
-          <Pressable accessibilityRole="button" onPress={() => router.push('/goal-order')}>
-            <Row icon={{ ios: 'arrow.up.arrow.down', android: 'swap_vert', web: 'swap_vert' }} title="Change goal order" subtitle="Pick which goal is protected first" last />
-          </Pressable>
-        )}
-      </Section>
+      {impact.goals.length > 1 && (
+        <Section>
+          <ListRow title="Change goal order" note="Pick which goal is protected first" last
+            leading={<IconChip icon={{ ios: 'arrow.up.arrow.down', android: 'swap_vert', web: 'swap_vert' }} />}
+            onPress={() => router.push('/goal-order')} />
+        </Section>
+      )}
+
+      <Button title="Add savings goal" icon={{ ios: 'plus', android: 'add', web: 'add' }} onPress={() => router.push('/goal')} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  stack: { flexDirection: 'row', height: 14, borderRadius: 7, overflow: 'hidden', gap: 2 },
+  stack: { flexDirection: 'row', height: 12, borderRadius: 6, overflow: 'hidden', gap: 2 },
   legend: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   swatch: { width: 12, height: 12, borderRadius: 3 },
 });

@@ -1,9 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { ActivitySummary, type SummaryData } from '@/components/ActivitySummary';
-import { SymbolView } from 'expo-symbols';
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { AccessibilityInfo, Animated, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
-import { Label, ListRow, Row, Screen, Section, useTheme } from '@/components/ui';
+import { BucketChip, Button, Glass, ListRow, Row, Screen, Section, SettingsButton, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import {
   dayHeading, filterTransactions, splitLabel, formatCents, monthLabel, monthOptions, NO_FILTER, vendorKey, vendorOptions,
@@ -24,7 +23,6 @@ export default function ActivityScreen() {
   }, [params.vendor, params.at, currentMonth]);
   const [search, setSearch] = useState('');
   // "Clear filters" sits a little in from the first chip's left edge, under its curve.
-  const [chipHeight, setChipHeight] = useState(36);
   // Where the filter row sits on screen, so the dropdown can open right under it.
   const chipRow = useRef<ComponentRef<typeof View>>(null);
   const [anchor, setAnchor] = useState<{ x: number; top: number; y: number; width: number } | null>(null);
@@ -84,21 +82,19 @@ export default function ActivityScreen() {
   );
 
   return (
-    <Screen>
+    <Screen title="Activity" action={<SettingsButton />}>
       <ActivitySummary data={summary} />
       <View style={{ gap: 10 }}>
-        <View ref={chipRow} collapsable={false} style={{ flexDirection: 'row', gap: 8 }} onLayout={(e) => setChipHeight(e.nativeEvent.layout.height)}>
+        <View ref={chipRow} collapsable={false} style={{ flexDirection: 'row', gap: 8 }}>
           {chipButtons}
         </View>
         {active && (
-          <Pressable onPress={() => setFilter(NO_FILTER)} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', marginLeft: chipHeight / 4 }}>
-            <Label style={{ color: t.tint, fontSize: 15 }}>Clear filters</Label>
-          </Pressable>
+          <Button small variant="secondary" title="Clear filters" icon={{ ios: 'xmark', android: 'close', web: 'close' }} onPress={() => setFilter(NO_FILTER)} style={{ alignSelf: 'flex-start' }} />
         )}
       </View>
 
       <Modal visible={!!options && !!anchor} transparent animationType="fade" onRequestClose={() => setOpen(null)}>
-        <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: "#00000026" }]} onPress={() => setOpen(null)} accessibilityLabel="Close filter menu" />
+        <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(23,34,29,0.2)' }]} onPress={() => setOpen(null)} accessibilityLabel="Close filter menu" />
         {anchor && (
           // The filter buttons again, above the dim layer, so tapping another one switches menus.
           <View style={{ position: 'absolute', top: anchor.top, left: anchor.x, width: anchor.width, flexDirection: 'row', gap: 8 }}>
@@ -106,7 +102,7 @@ export default function ActivityScreen() {
           </View>
         )}
         {options && anchor && (
-          <View style={[styles.menu, { top: anchor.y + 6, left: anchor.x, width: anchor.width, maxHeight: screenH - anchor.y - 120, backgroundColor: t.card, borderColor: t.separator, borderRadius: chipHeight / 2, shadowColor: '#000' }]}>
+          <Glass corner={22} style={{ ...styles.menu, top: anchor.y + 6, left: anchor.x, width: anchor.width, maxHeight: screenH - anchor.y - 120 }}>
             {open === 'vendor' && (
               <View style={[styles.search, { borderBottomColor: t.separator }]}>
                 <TextInput accessibilityLabel="Search vendors" value={search} onChangeText={setSearch} placeholder="Search vendors" placeholderTextColor={t.secondaryText}
@@ -122,13 +118,13 @@ export default function ActivityScreen() {
               ))}
             </ScrollView>
             {options.list.length === 0 && <Row title="No matches" last />}
-          </View>
+          </Glass>
         )}
       </Modal>
 
       {items.length === 0 && <Section><Row title="No purchases match these filters" last /></Section>}
       {groupByDay(items).map(([date, group]) => (
-        <Section key={date} title={dayHeading(date, todayIso)}>
+        <Section key={date} quiet title={dayHeading(date, todayIso)}>
           {group.map(({ tx, parts, amount }, i) => {
             const bucket = buckets.find((b) => b.id === parts[0]?.bucketId);
             const owner = accounts.find((a) => a.id === tx.accountId)?.ownerId;
@@ -141,9 +137,7 @@ export default function ActivityScreen() {
             ].filter(Boolean).join(' · ');
             return (
               <ListRow key={tx.id} title={tx.merchant.trim()} figure={formatCents(amount)} note={note} last={i === group.length - 1}
-                leading={<View style={[styles.icon, { backgroundColor: t.track }]}>
-                  <SymbolView name={{ ios: (bucket?.icon ?? 'circle') as any, android: 'category', web: 'category' }} size={15} tintColor={t.secondaryText} />
-                </View>}
+                leading={<BucketChip icon={bucket?.icon} />}
                 onPress={() => router.push({ pathname: '/transaction/[id]', params: { id: tx.id } })} />
             );
           })}
@@ -183,9 +177,9 @@ function Chip({ label, active, open, onPress }: { label: string; active: boolean
       <Animated.View pointerEvents="none" style={[styles.halo, { backgroundColor: t.tint, opacity: anim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.22] }) }]} />
       <Pressable onPress={onPress} onPressIn={() => setPressed(true)} onPressOut={() => setPressed(false)}
         accessibilityRole="button" accessibilityState={{ expanded: open }}
-        style={[styles.chip, { backgroundColor: active ? t.tint : t.card, borderColor: lifted ? t.tint : active ? t.tint : t.separator }]}>
-        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ flexShrink: 1, fontSize: 15, color: active ? '#FFFFFF' : t.text }}>{label}</Text>
-        <Text style={{ fontSize: 12, color: active ? '#FFFFFF' : t.secondaryText }}>{open ? '▴' : '▾'}</Text>
+        style={[styles.chip, { backgroundColor: active ? t.tint : t.card, borderColor: lifted ? t.tint : active ? t.tint : t.card, boxShadow: `0 1px 2px ${t.shadow}, 0 4px 12px ${t.shadow}` }]}>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ flexShrink: 1, fontSize: 15, fontWeight: '500', color: active ? t.onTint : t.text }}>{label}</Text>
+        <Text style={{ fontSize: 12, color: active ? t.onTint : t.secondaryText }}>{open ? '▴' : '▾'}</Text>
       </Pressable>
     </Animated.View>
   );
@@ -208,7 +202,7 @@ function OptionRow({ label, count, total, selected, onPress, last }: { label: st
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected }}
       aria-label={`${label}, ${spend}, ${count} purchase${count === 1 ? '' : 's'}`}
-      style={[styles.option, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.separator }, selected && { backgroundColor: `${t.tint}14` }]}>
+      style={[styles.option, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.separator }, selected && { backgroundColor: t.tintSoft }]}>
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={{ color: t.text, fontSize: 16, fontWeight: selected ? '600' : '400' }} numberOfLines={1}>{label}</Text>
         <Text style={{ color: t.secondaryText, fontSize: 13 }}>{count} purchase{count === 1 ? '' : 's'}</Text>
@@ -220,10 +214,9 @@ function OptionRow({ label, count, total, selected, onPress, last }: { label: st
 }
 
 const styles = StyleSheet.create({
-  chip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
+  chip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 12, height: 40, borderRadius: 999, borderWidth: 1 },
   halo: { position: 'absolute', top: -5, bottom: -5, left: -5, right: -5, borderRadius: 999 },
-  icon: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   search: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
-  menu: { position: 'absolute', borderWidth: 1, overflow: 'hidden', paddingVertical: 4, shadowOpacity: 0.18, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 12 },
+  menu: { position: 'absolute', overflow: 'hidden', paddingVertical: 4 },
   option: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 18 },
 });

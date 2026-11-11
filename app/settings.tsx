@@ -3,7 +3,7 @@ import { Link, router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable } from 'react-native';
-import { Label, Row, Screen, Section, useTheme } from '@/components/ui';
+import { Label, Pill, Row, Screen, Section } from '@/components/ui';
 import { useAuth } from '@/src/auth/AuthProvider';
 import { backend, callFunction, PRIVACY_POLICY_URL } from '@/src/lib/backend';
 import { useBudget } from '@/src/data/BudgetStore';
@@ -12,7 +12,6 @@ import { TRANSACTION_CATEGORY } from '@/src/notifications';
 
 export default function SettingsScreen() {
   const { transactions, allocations, statuses, month, credits, creditBalance, members, accounts, meId } = useBudget();
-  const t = useTheme();
   const auth = useAuth();
 
   // Banks linked to the household (display fields only; tokens never reach the phone).
@@ -73,7 +72,7 @@ export default function SettingsScreen() {
         <Link href="/invite" asChild>
           <Pressable accessibilityRole="button">
             <Row icon={{ ios: 'person.badge.plus', android: 'person_add', web: 'person_add' }} title="Invite a family member"
-              right={<Label style={{ color: t.tint }}>Invite</Label>} last />
+              right={<Pill>Invite</Pill>} last />
           </Pressable>
         </Link>
       </Section>
@@ -88,7 +87,7 @@ export default function SettingsScreen() {
         {banks.map((b) => (
           <Pressable key={b.id} onPress={() => (b.linked_by === auth.session?.user.id ? unlink(b) : Alert.alert('Linked by someone else', 'Only the person who linked this bank can unlink it.'))} accessibilityRole="button">
             <Row icon={{ ios: 'building.columns', android: 'account_balance', web: 'account_balance' }} title={b.institution_name ?? 'Bank'}
-              subtitle={b.status === 'ok' ? 'Connected' : 'Needs reconnecting'} right={b.linked_by === auth.session?.user.id ? <Label style={{ color: t.tint }}>Unlink</Label> : undefined} />
+              subtitle={b.status === 'ok' ? 'Connected' : 'Needs reconnecting'} right={b.linked_by === auth.session?.user.id ? <Pill>Unlink</Pill> : undefined} />
           </Pressable>
         ))}
         <Pressable onPress={() => router.push('/connect-bank')} accessibilityRole="button">
@@ -107,17 +106,17 @@ export default function SettingsScreen() {
             {auth.hasFactor && !auth.hasPasskey && (
               <Pressable onPress={() => router.push('/two-step?setup=passkey')} accessibilityRole="button">
                 <Row icon={{ ios: 'person.badge.key.fill', android: 'key', web: 'key' }} title="Add a passkey"
-                  subtitle="Face ID sign-in check that can't be phished" right={<Label style={{ color: t.tint }}>Add</Label>} />
+                  subtitle="Face ID sign-in check that can't be phished" right={<Pill>Add</Pill>} />
               </Pressable>
             )}
           </>
         ) : auth.connected ? (
           <Pressable onPress={() => router.push('/sign-in')} accessibilityRole="button">
-            <Row icon={{ ios: 'person.crop.circle', android: 'person', web: 'person' }} title="Sign in" right={<Label style={{ color: t.tint }}>Sign in</Label>} />
+            <Row icon={{ ios: 'person.crop.circle', android: 'person', web: 'person' }} title="Sign in" right={<Pill>Sign in</Pill>} />
           </Pressable>
         ) : null}
         <Pressable onPress={() => WebBrowser.openBrowserAsync(PRIVACY_POLICY_URL)} accessibilityRole="link">
-          <Row icon={{ ios: 'doc.text.fill', android: 'description', web: 'description' }} title="Privacy policy" right={<Label style={{ color: t.tint }}>Read</Label>} />
+          <Row icon={{ ios: 'doc.text.fill', android: 'description', web: 'description' }} title="Privacy policy" right={<Pill>Read</Pill>} />
         </Pressable>
         {auth.session && (
           <Pressable onPress={() => auth.signOut()} accessibilityRole="button">
@@ -125,7 +124,7 @@ export default function SettingsScreen() {
           </Pressable>
         )}
         <Pressable onPress={deleteAccount} accessibilityRole="button">
-          <Row icon={{ ios: 'trash.fill', android: 'delete', web: 'delete' }} title="Delete my account" right={<Label style={{ color: t.redText }}>Delete</Label>} last />
+          <Row icon={{ ios: 'trash.fill', android: 'delete', web: 'delete' }} title="Delete my account" right={<Pill tone="bad">Delete</Pill>} last />
         </Pressable>
       </Section>
       <Section title="Plan" footer={`Ask and receipt scans use 1 credit each. Resets ${creditsResetLabel(month)}.`}>
@@ -135,7 +134,7 @@ export default function SettingsScreen() {
       </Section>
       <Section title="Notifications" footer="Lock your phone after tapping Send. The alert arrives in 3 seconds.">
         <Pressable onPress={sendPreview} accessibilityRole="button">
-          <Row icon={{ ios: 'bell.badge.fill', android: 'notifications', web: 'notifications' }} title="Send a sample transaction alert" right={<Label style={{ color: t.tint }}>Send</Label>} last />
+          <Row icon={{ ios: 'bell.badge.fill', android: 'notifications', web: 'notifications' }} title="Send a sample transaction alert" right={<Pill>Send</Pill>} last />
         </Pressable>
       </Section>
     </Screen>
