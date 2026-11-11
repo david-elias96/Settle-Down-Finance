@@ -79,7 +79,7 @@ export default function ConnectBankScreen() {
         <Row icon={{ ios: 'person.2.fill', android: 'group', web: 'group' }} title="Shared with your household"
           subtitle="Members of your household see these transactions in the shared budget." />
         <Row icon={{ ios: 'hand.raised.fill', android: 'block', web: 'block' }} title="Never sold"
-          subtitle="We don't sell your data or use it for ads. Our service providers (Plaid, Supabase, Anthropic, Expo, Apple) process it only to run the app." />
+          subtitle="We don't sell your data or use it for ads. Our service providers (Plaid, Supabase, Anthropic, Resend, Expo, Apple) process it only to run the app." />
         <Row icon={{ ios: 'trash.fill', android: 'delete', web: 'delete' }} title="You stay in control" last
           subtitle="Unlink a bank or delete your account in Settings at any time; we delete the data and end our access at Plaid." />
       </Section>

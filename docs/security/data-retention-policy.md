@@ -1,6 +1,6 @@
 # Settle Down Finance Data Retention and Disposal Policy
 
-Version 1.0 · Effective 2026-11-10 · Owner: Security Owner (founder)
+Version 1.1 · Effective 2026-11-10 · Owner: Security Owner (founder)
 
 ## 1. Purpose and scope
 
@@ -64,6 +64,7 @@ When we delete data, the following happens at each vendor:
 - **Supabase:** deleted rows and Vault secrets are removed from the live database at once, and from backups when they expire.
 - **Anthropic (Claude API):** receives only the fields a feature needs, never tokens, account numbers or passwords. It keeps API data under its commercial retention terms and does not use it to train models.
 - **Expo and Apple:** receive only push tokens and notification text. Push tokens are deleted with the account.
+- **Resend:** sends sign-in code emails, so it receives the email address and the one-time code. It keeps delivery logs under its own retention terms; we do not store emails there.
 
 A new vendor that would receive consumer data must first be reviewed, including how long it keeps that data, and added to the Information Security Policy.
 
@@ -89,4 +90,5 @@ This policy is reviewed at least every 12 months with the Information Security P
 
 | Version | Date | Change | Approved by |
 | --- | --- | --- | --- |
+| 1.1 | 2026-11-10 | Resend added as the email provider | David Elias, Security Owner |
 | 1.0 | 2026-11-10 | First version | David Elias, Security Owner |
