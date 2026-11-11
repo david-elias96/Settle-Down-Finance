@@ -1,8 +1,8 @@
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
-import { Label, Row, Screen, Section, useTheme } from '@/components/ui';
+import { ActivityIndicator, Alert, Pressable, View } from 'react-native';
+import { Button, Card, Intro, Label, Notice, Pill, Row, Screen, Section, useTheme } from '@/components/ui';
 import { useAuth } from '@/src/auth/AuthProvider';
 import { callFunction, PLAID_PRIVACY_URL, PRIVACY_POLICY_URL } from '@/src/lib/backend';
 
@@ -58,22 +58,19 @@ export default function ConnectBankScreen() {
   if (!auth.connected) {
     return (
       <Screen>
-        <Label secondary style={{ paddingHorizontal: 4 }}>Linking banks turns on with the TestFlight build, once sign-in is connected.</Label>
+        <Notice title="Bank linking isn't on yet" icon={{ ios: 'building.columns.fill', android: 'account_balance', web: 'account_balance' }}>Linking banks turns on with the TestFlight build, once sign-in is connected.</Notice>
       </Screen>
     );
   }
   if (!auth.ready || (!auth.linkGate.ok && auth.linkGate.next !== 'consent')) {
-    return <Screen><ActivityIndicator /></Screen>;
+    return <Screen><ActivityIndicator color={t.tint} style={{ marginTop: 48 }} /></Screen>;
   }
 
   return (
     <Screen>
-      <View style={{ gap: 8, paddingHorizontal: 4 }}>
-        <Label style={{ fontSize: 22, fontWeight: '700' }}>Connect your bank</Label>
-        <Label secondary style={{ fontSize: 15, lineHeight: 21 }}>
-          Settle Down uses Plaid to connect to your bank. You sign in to your bank inside Plaid; we never see your bank username or password.
-        </Label>
-      </View>
+      <Intro title="Connect your bank">
+        Settle Down uses Plaid to connect to your bank. You sign in to your bank inside Plaid; we never see your bank username or password.
+      </Intro>
       <Section title="What we collect and why">
         <Row icon={{ ios: 'list.bullet.rectangle', android: 'list', web: 'list' }} title="Accounts, balances and transactions"
           subtitle="Account names, the last 4 digits, balances, and the last 90 days of transactions, then new ones as they post." />
@@ -88,22 +85,20 @@ export default function ConnectBankScreen() {
       </Section>
       <Section>
         <Pressable onPress={() => WebBrowser.openBrowserAsync(PRIVACY_POLICY_URL)} accessibilityRole="link">
-          <Row icon={{ ios: 'doc.text.fill', android: 'description', web: 'description' }} title="Settle Down Privacy Policy" right={<Label style={{ color: t.tint }}>Read</Label>} />
+          <Row icon={{ ios: 'doc.text.fill', android: 'description', web: 'description' }} title="Settle Down Privacy Policy" right={<Pill>Read</Pill>} />
         </Pressable>
         <Pressable onPress={() => WebBrowser.openBrowserAsync(PLAID_PRIVACY_URL)} accessibilityRole="link">
-          <Row icon={{ ios: 'doc.text', android: 'description', web: 'description' }} title="Plaid End User Privacy Policy" right={<Label style={{ color: t.tint }}>Read</Label>} last />
+          <Row icon={{ ios: 'doc.text', android: 'description', web: 'description' }} title="Plaid End User Privacy Policy" right={<Pill>Read</Pill>} last />
         </Pressable>
       </Section>
-      <Pressable onPress={agreeAndConnect} disabled={busy} accessibilityRole="button" style={[styles.button, { backgroundColor: busy ? t.track : t.tint }]}>
-        <Label style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '600' }}>{auth.linkGate.ok ? 'Continue to Plaid' : 'Agree and continue'}</Label>
-      </Pressable>
-      <Label secondary style={{ fontSize: 13, paddingHorizontal: 20, textAlign: 'center' }}>
-        By continuing you agree to the Privacy Policy and allow Settle Down to collect, store and use this data as described.
-      </Label>
+      <Card padded>
+        <View style={{ gap: 14 }}>
+          <Label secondary style={{ fontSize: 14, lineHeight: 20 }}>
+            By continuing you agree to the Privacy Policy and allow Settle Down to collect, store and use this data as described.
+          </Label>
+          <Button title={auth.linkGate.ok ? 'Continue to Plaid' : 'Agree and continue'} loading={busy} onPress={agreeAndConnect} />
+        </View>
+      </Card>
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  button: { marginHorizontal: 16, padding: 14, borderRadius: 12, alignItems: 'center' },
-});

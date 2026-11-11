@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
+import { createContext, useContext } from 'react';
+import { StyleSheet, Text, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
-import { Label, useTheme } from '@/components/ui';
+import { Display, Segmented, useTheme } from '@/components/ui';
 import { daysInMonth, formatCents, previousMonth, type MonthComparison, type MonthForecast, type TrendPoint } from '@/src/domain';
 
 const HEIGHT = 180;
@@ -19,12 +20,16 @@ function niceMax(cents: number) {
 }
 
 /**
- * Running total of this month's spending (blue) against last month's (gray, dashed)
- * as the benchmark, plus a dotted projection to month end with a shaded likely range.
- * Drag across the chart to compare any day.
+ * Running total of this month's spending (solid) against last month's (dashed) as the
+ * benchmark, plus a dotted projection to month end with a shaded likely range.
+ * Drag across the chart to compare any day. With `onHero` it draws on the deep green
+ * hero card: leaf-green line, cream text.
  */
-export function SpendingTrend({ trend, forecast, month }: { trend: MonthComparison; forecast?: MonthForecast; month: string }) {
+export function SpendingTrend({ trend, forecast, month, onHero }: { trend: MonthComparison; forecast?: MonthForecast; month: string; onHero?: boolean }) {
   const t = useTheme();
+  const c: Ink = onHero
+    ? { line: t.leaf, muted: t.heroMuted, grid: 'rgba(243,247,239,0.14)', surface: t.hero, text: t.heroText, up: t.sun, down: t.leaf }
+    : { line: t.tint, muted: t.secondaryText, grid: t.separator, surface: t.card, text: t.text, up: t.red, down: t.green };
   const [width, setWidth] = useState(0);
   const [activeDay, setActiveDay] = useState<number | null>(null);
   // "So far" shows actual spending only; "Projected" adds the month-end forecast.
@@ -73,38 +78,34 @@ export function SpendingTrend({ trend, forecast, month }: { trend: MonthComparis
   const proj = !cur ? projection?.points.find((p) => p.day === active) : undefined;
 
   return (
+    <InkContext.Provider value={c}>
     <View style={{ gap: 10 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+      {/* Label and switch share the top line; the big number gets a line to itself so it never wraps. */}
+      <View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, minHeight: 32 }}>
+          <Text style={{ fontSize: 14, fontWeight: '500', color: c.muted, flexShrink: 1 }} numberOfLines={1}>
+            {monthName(month, 'long')}{projection ? ', projected' : ' so far'}
+          </Text>
+          {forecast && forecast.points.length > 1 && (
+            <Segmented onHero={onHero} value={mode} onChange={(m) => { setMode(m); setActiveDay(null); }}
+              options={[{ value: 'actual', label: 'So far' }, { value: 'projected', label: 'Projected' }]} />
+          )}
+        </View>
+        <Display size={44} color={c.text} numberOfLines={1} adjustsFontSizeToFit>
+          {projection ? `~${formatCents(projection.end.mid, { showCents: false })}` : formatCents(trend.spentSoFar, { showCents: false })}
+        </Display>
         {projection ? (
-          <View style={{ flexShrink: 1 }}>
-            <Label secondary style={{ fontSize: 13 }}>Projected for {monthName(month, 'long')}</Label>
-            <Label style={{ fontSize: 34, fontWeight: '700', fontVariant: ['tabular-nums'] }}>~{formatCents(projection.end.mid, { showCents: false })}</Label>
-            <Label secondary style={{ fontSize: 13 }}>
-              {projection.end.high > projection.end.low
-                ? `Likely ${formatCents(projection.end.low, { showCents: false })}–${formatCents(projection.end.high, { showCents: false })}`
-                : 'At your current pace'}
-            </Label>
-          </View>
+          <Text style={{ fontSize: 13, color: c.muted }}>
+            {projection.end.high > projection.end.low
+              ? `Likely ${formatCents(projection.end.low, { showCents: false })}–${formatCents(projection.end.high, { showCents: false })}`
+              : 'At your current pace'}
+          </Text>
         ) : (
-          <View style={{ flexShrink: 1 }}>
-            <Label secondary style={{ fontSize: 13 }}>Spent so far in {monthName(month, 'long')}</Label>
-            <Label style={{ fontSize: 34, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatCents(trend.spentSoFar, { showCents: false })}</Label>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Label style={{ color: up ? t.red : t.green, fontSize: 13 }}>{up ? '▲' : '▼'}</Label>
-              <Label secondary style={{ fontSize: 13 }}>
-                {formatCents(Math.abs(trend.difference), { showCents: false })} {up ? 'more' : 'less'} than {monthName(prevMonth)} {Math.min(last?.day ?? 1, trend.previous.length || 1)}
-              </Label>
-            </View>
-          </View>
-        )}
-        {forecast && forecast.points.length > 1 && (
-          <View style={[styles.segment, { backgroundColor: t.track }]} accessibilityRole="tablist">
-            {(['actual', 'projected'] as const).map((m) => (
-              <Pressable key={m} onPress={() => { setMode(m); setActiveDay(null); }} accessibilityRole="tab" accessibilityState={{ selected: mode === m }}
-                style={[styles.segmentItem, mode === m && { backgroundColor: t.card }]}>
-                <Label style={{ fontSize: 13, fontWeight: mode === m ? '600' : '400' }}>{m === 'actual' ? 'So far' : 'Projected'}</Label>
-              </Pressable>
-            ))}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+            <Text style={{ color: up ? c.up : c.down, fontSize: 11 }}>{up ? '▲' : '▼'}</Text>
+            <Text style={{ fontSize: 13, color: c.muted }}>
+              {formatCents(Math.abs(trend.difference), { showCents: false })} {up ? 'more' : 'less'} than {monthName(prevMonth)} {Math.min(last?.day ?? 1, trend.previous.length || 1)}
+            </Text>
           </View>
         )}
       </View>
@@ -112,11 +113,11 @@ export function SpendingTrend({ trend, forecast, month }: { trend: MonthComparis
       {/* Readout for the day under the finger (defaults to today). */}
       <View style={{ flexDirection: 'row', gap: 16, minHeight: 18 }}>
         {proj ? (
-          <Legend color={t.tint} dotted label={`${monthName(month)} ${active} projected: ${formatCents(proj.mid, { showCents: false })}`} />
+          <Legend color={c.line} dotted label={`${monthName(month)} ${active} projected: ${formatCents(proj.mid, { showCents: false })}`} />
         ) : (
-          <Legend color={t.tint} label={`${monthName(month)} ${active}: ${cur ? formatCents(cur.cumulative, { showCents: false }) : '–'}`} />
+          <Legend color={c.line} label={`${monthName(month)} ${active}: ${cur ? formatCents(cur.cumulative, { showCents: false }) : '–'}`} />
         )}
-        <Legend color={t.secondaryText} dashed label={`${monthName(prevMonth)} ${Math.min(active, trend.previous.length)}: ${prev ? formatCents(prev.cumulative, { showCents: false }) : '–'}`} />
+        <Legend color={c.muted} dashed label={`${monthName(prevMonth)} ${Math.min(active, trend.previous.length)}: ${prev ? formatCents(prev.cumulative, { showCents: false }) : '–'}`} />
       </View>
 
       <View
@@ -133,36 +134,36 @@ export function SpendingTrend({ trend, forecast, month }: { trend: MonthComparis
         {width > 0 && (
           <Svg width={width} height={HEIGHT}>
             {ticks.map((v) => (
-              <Line key={v} x1={PAD.left} x2={width - PAD.right} y1={y(v)} y2={y(v)} stroke={t.separator} strokeWidth={1} />
+              <Line key={v} x1={PAD.left} x2={width - PAD.right} y1={y(v)} y2={y(v)} stroke={c.grid} strokeWidth={1} />
             ))}
-            <Path d={previousPath} stroke={t.secondaryText} strokeWidth={2} strokeDasharray="5 4" fill="none" strokeLinejoin="round" strokeLinecap="round" />
+            <Path d={previousPath} stroke={c.muted} strokeWidth={2} strokeDasharray="5 4" fill="none" strokeLinejoin="round" strokeLinecap="round" />
             {/* Benchmark at last month's total, drawn see-through on top so last month's dashed
                 line shows through it and flows into it where they meet. */}
             {trend.previousTotal > 0 && (
               <Line x1={PAD.left} x2={width - PAD.right} y1={y(trend.previousTotal)} y2={y(trend.previousTotal)}
-                stroke={t.secondaryText} strokeOpacity={0.3} strokeWidth={2} strokeLinecap="round" />
+                stroke={c.muted} strokeOpacity={0.3} strokeWidth={2} strokeLinecap="round" />
             )}
             {prevEnd && (
-              <Circle cx={x(Math.min(prevEnd.day, days))} cy={y(prevEnd.cumulative)} r={4} fill={t.secondaryText} stroke={t.card} strokeWidth={2} />
+              <Circle cx={x(Math.min(prevEnd.day, days))} cy={y(prevEnd.cumulative)} r={4} fill={c.muted} stroke={c.surface} strokeWidth={2} />
             )}
-            {bandPath ? <Path d={bandPath} fill={t.tint} fillOpacity={0.12} stroke="none" /> : null}
+            {bandPath ? <Path d={bandPath} fill={c.line} fillOpacity={0.12} stroke="none" /> : null}
             {projectedPath ? (
-              <Path d={projectedPath} stroke={t.tint} strokeOpacity={0.75} strokeWidth={2} strokeDasharray="0.1 5" fill="none" strokeLinejoin="round" strokeLinecap="round" />
+              <Path d={projectedPath} stroke={c.line} strokeOpacity={0.75} strokeWidth={2} strokeDasharray="0.1 5" fill="none" strokeLinejoin="round" strokeLinecap="round" />
             ) : null}
-            <Path d={currentPath} stroke={t.tint} strokeWidth={2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+            <Path d={currentPath} stroke={c.line} strokeWidth={2.5} fill="none" strokeLinejoin="round" strokeLinecap="round" />
 
             {activeDay != null && (
-              <Line x1={x(active)} x2={x(active)} y1={PAD.top} y2={PAD.top + plotH} stroke={t.secondaryText} strokeWidth={1} />
+              <Line x1={x(active)} x2={x(active)} y1={PAD.top} y2={PAD.top + plotH} stroke={c.muted} strokeWidth={1} />
             )}
             {prev && activeDay != null && (
-              <Circle cx={x(Math.min(active, days))} cy={y(prev.cumulative)} r={4} fill={t.secondaryText} stroke={t.card} strokeWidth={2} />
+              <Circle cx={x(Math.min(active, days))} cy={y(prev.cumulative)} r={4} fill={c.muted} stroke={c.surface} strokeWidth={2} />
             )}
             {proj && activeDay != null && (
-              <Circle cx={x(active)} cy={y(proj.mid)} r={4} fill={t.card} stroke={t.tint} strokeWidth={2} />
+              <Circle cx={x(active)} cy={y(proj.mid)} r={4} fill={c.surface} stroke={c.line} strokeWidth={2} />
             )}
             {(activeDay == null ? last : cur) && (
               <Circle cx={x((activeDay == null ? last! : cur!).day)} cy={y((activeDay == null ? last! : cur!).cumulative)} r={5}
-                fill={t.tint} stroke={t.card} strokeWidth={2} />
+                fill={c.line} stroke={c.surface} strokeWidth={2} />
             )}
           </Svg>
         )}
@@ -185,8 +186,13 @@ export function SpendingTrend({ trend, forecast, month }: { trend: MonthComparis
         )}
       </View>
     </View>
+    </InkContext.Provider>
   );
 }
+
+/** The chart's colors: on a white card, or on the green hero card. */
+interface Ink { line: string; muted: string; grid: string; surface: string; text: string; up: string; down: string }
+const InkContext = createContext<Ink | null>(null);
 
 /** Short axis label: $0, $500, $1.5k, $2k. */
 const compact = (cents: number) => {
@@ -195,21 +201,20 @@ const compact = (cents: number) => {
 };
 
 function Axis({ children, style }: { children: string; style: object }) {
-  const t = useTheme();
-  return <Text numberOfLines={1} pointerEvents="none" style={[{ position: 'absolute', fontSize: 11, color: t.secondaryText, fontVariant: ['tabular-nums'] }, style]}>{children}</Text>;
+  const c = useContext(InkContext)!;
+  return <Text numberOfLines={1} style={[{ position: 'absolute', pointerEvents: 'none', fontSize: 11, color: c.muted, fontVariant: ['tabular-nums'] }, style]}>{children}</Text>;
 }
 
 function Legend({ color, label, dashed, dotted }: { color: string; label: string; dashed?: boolean; dotted?: boolean }) {
+  const c = useContext(InkContext)!;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
       <View style={[styles.swatch, { borderColor: color, borderStyle: dotted ? 'dotted' : dashed ? 'dashed' : 'solid' }]} />
-      <Label secondary style={{ fontSize: 13, fontVariant: ['tabular-nums'] }}>{label}</Label>
+      <Text style={{ fontSize: 13, color: c.muted, fontVariant: ['tabular-nums'] }}>{label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   swatch: { width: 16, height: 0, borderTopWidth: 2 },
-  segment: { flexDirection: 'row', borderRadius: 9, padding: 2, marginTop: 2 },
-  segmentItem: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7 },
 });

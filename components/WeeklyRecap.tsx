@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { AiMark, Label, Section, Tag, toneTextColor, useTheme } from '@/components/ui';
+import { AiMark, Display, Label, Section, Tag, toneTextColor, useTheme } from '@/components/ui';
 import { formatCents, shortDate, type RecapPoint, type WeeklyRecap } from '@/src/domain';
 
 const $ = (c: number) => formatCents(c, { showCents: false });
@@ -40,7 +40,7 @@ export function WeeklyRecapCard({ recap }: { recap: WeeklyRecap }) {
           </View>
         </View>
         <View style={styles.between}>
-          <Label style={{ fontSize: 28, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{$(recap.spent)}</Label>
+          <Display size={30}>{$(recap.spent)}</Display>
           {recap.pace > 0 && <Tag tone={recap.tone}>{TAG[recap.tone]}</Tag>}
         </View>
         <Label secondary style={{ fontSize: 13 }}>
@@ -58,12 +58,12 @@ export function WeeklyRecapCard({ recap }: { recap: WeeklyRecap }) {
               <View key={d.date} style={styles.dayCol}>
                 <View style={{ height: 56, justifyContent: 'flex-end', width: '100%', alignItems: 'center' }}>
                   <View style={{
-                    width: '62%', maxWidth: 22, borderRadius: 4, minHeight: d.spent > 0 ? 3 : 2,
+                    width: '62%', maxWidth: 24, borderRadius: 6, minHeight: d.spent > 0 ? 4 : 3,
                     height: Math.max(0, d.spent) / max * 56,
-                    backgroundColor: d.spent > 0 ? t.tint : t.track, opacity: isToday || d.spent <= 0 ? 1 : 0.45,
+                    backgroundColor: d.spent <= 0 ? t.track : isToday ? t.tint : t.leaf,
                   }} />
                 </View>
-                <Label secondary style={{ fontSize: 11, fontWeight: isToday ? '700' : '400' }}>{DAY_LETTERS[day]}</Label>
+                <Label secondary style={{ fontSize: 11, fontWeight: isToday ? '700' : '500', color: isToday ? t.text : undefined }}>{DAY_LETTERS[day]}</Label>
               </View>
             );
           })}
@@ -96,11 +96,9 @@ export function WeeklyRecapCard({ recap }: { recap: WeeklyRecap }) {
       })}
 
       <Pressable onPress={() => router.push({ pathname: '/ask', params: { q: 'How did my spending go this week?' } })} accessibilityRole="button">
-        <View style={[styles.row, { borderTopColor: t.separator, paddingVertical: 13 }]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <AiMark size={15} />
-            <Label style={{ color: t.tint, fontSize: 15 }}>Ask about my week</Label>
-          </View>
+        <View style={[styles.row, { borderTopColor: t.separator, minHeight: 50, gap: 8 }]}>
+          <AiMark size={16} />
+          <Label style={{ color: t.tint, fontSize: 15, fontWeight: '600' }}>Ask about my week</Label>
         </View>
       </Pressable>
     </Section>

@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { AiMark, Label, ListRow, Row, Screen, Section, StatTile, Tag, useTheme } from '@/components/ui';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { AiMark, Display, HeroCard, IconChip, Label, ListRow, Row, Screen, Section, SettingsButton, StatTile, Tag, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { cancelRoute, findSubscriptions, formatCents, shortDate, type Subscription } from '@/src/domain';
 
@@ -22,20 +22,21 @@ export default function SubscriptionsScreen() {
   const soon = subs.filter((s) => { const n = daysUntil(s.nextDate); return n >= 0 && n <= 7; }).sort((a, b) => a.nextDate.localeCompare(b.nextDate));
 
   return (
-    <Screen>
-      <View accessible accessibilityRole="header" aria-label={`Subscriptions: ${formatCents(monthly)} a month, ${$(monthly * 12)} a year, ${subs.length} active`}
-        style={[styles.hero, { backgroundColor: t.card }]}>
-        <Label secondary style={{ fontSize: 13 }}>You pay for subscriptions</Label>
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-          <Label style={{ fontSize: 40, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatCents(monthly)}</Label>
-          <Label secondary style={{ fontSize: 17 }}>a month</Label>
+    <Screen title="Subscriptions" action={<SettingsButton />}>
+      <HeroCard style={{ gap: 2 }}>
+        <View accessible accessibilityRole="header" aria-label={`Subscriptions: ${formatCents(monthly)} a month, ${$(monthly * 12)} a year, ${subs.length} active`} style={{ gap: 2 }}>
+          <Text style={{ fontSize: 14, fontWeight: '500', color: t.heroMuted }}>You pay for subscriptions</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
+            <Display size={48} color={t.heroText} style={{ lineHeight: 54, letterSpacing: -1.4 }}>{formatCents(monthly)}</Display>
+            <Text style={{ fontSize: 17, fontWeight: '600', color: t.heroText, paddingBottom: 9 }}>a month</Text>
+          </View>
+          <Text style={{ fontSize: 15, color: t.heroMuted }}>{$(monthly * 12)} a year</Text>
         </View>
-        <Label secondary style={{ fontSize: 15 }}>{$(monthly * 12)} a year</Label>
-      </View>
+      </HeroCard>
 
-      <View style={{ flexDirection: 'row', gap: 10 }}>
+      <View style={{ flexDirection: 'row', gap: 12 }}>
         <StatTile label="Active" value={String(subs.length)} />
-        <StatTile label="Price went up" value={String(raised.length)} tone={raised.length ? 'warn' : undefined} />
+        <StatTile label="Price rises" value={String(raised.length)} tone={raised.length ? 'warn' : undefined} />
         <StatTile label="Next charge" value={next ? shortDate(next.nextDate) : '–'} />
       </View>
 
@@ -48,15 +49,15 @@ export default function SubscriptionsScreen() {
         </Section>
       )}
 
-      <Section title={`All subscriptions · ${subs.length}`} footer="Found from charges that repeat every month. AI cancels for you: you sign in yourself and approve the last step.">
+      <Section title="All subscriptions" footer="Found from charges that repeat every month. AI cancels for you: you sign in yourself and approve the last step.">
         {subs.length === 0 && <Row title="None found yet" subtitle="They show up after two months of charges." last />}
         {subs.map((s, i) => <SubscriptionRow key={s.vendor} s={s} last={i === subs.length - 1} />)}
       </Section>
 
       <Section footer="A pretend service. Free, nothing real is touched.">
-        <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/cancel', params: { demo: '1' } })}>
-          <Row icon={{ ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' }} title="Practice AI cancel" right={<Label style={{ color: t.tint }}>Start</Label>} last />
-        </Pressable>
+        <ListRow title="Practice AI cancel" note="See how cancelling works" last
+          leading={<IconChip icon={{ ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' }} />}
+          onPress={() => router.push({ pathname: '/cancel', params: { demo: '1' } })} />
       </Section>
     </Screen>
   );
@@ -84,7 +85,7 @@ function SubscriptionRow({ s, last }: { s: Subscription; last: boolean }) {
       </View>
       <Pressable accessibilityRole="button" accessibilityLabel={apple ? `Manage ${name} in iPhone Settings` : `Cancel ${name} with AI`}
         onPress={() => router.push({ pathname: '/cancel', params: { vendor: s.vendor, amount: String(s.amount) } })}
-        style={[styles.cancel, { backgroundColor: t.track }]}>
+        style={({ pressed }) => [styles.cancel, { backgroundColor: apple ? t.tintSoft : `${t.red}1F`, opacity: pressed ? 0.7 : 1 }]}>
         {!apple && <AiMark size={12} color={t.redText} />}
         <Label style={{ color: apple ? t.tint : t.redText, fontSize: 14, fontWeight: '600' }}>{apple ? 'Manage' : 'Cancel'}</Label>
       </Pressable>
@@ -93,8 +94,7 @@ function SubscriptionRow({ s, last }: { s: Subscription; last: boolean }) {
 }
 
 const styles = StyleSheet.create({
-  hero: { borderRadius: 12, padding: 16, gap: 2 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 16 },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  cancel: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14 },
+  cancel: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 14, height: 36, minWidth: 84, borderRadius: 18 },
 });

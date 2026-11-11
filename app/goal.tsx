@@ -2,7 +2,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { Label, Row, Screen, Section, Tag, useTheme } from '@/components/ui';
+import { Button, Card, Label, Notice, Row, Screen, Section, Tag, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { formatCents, GOAL_NAME_MAX, goalForecast, goalIdeas, ideaTargetMonth, isEmergencyFund, monthInputValue, monthlyNeeded, parseGoalDraft, type GoalDraft } from '@/src/domain';
 
@@ -63,7 +63,7 @@ export default function GoalScreen() {
   };
 
   if (id && !existing) {
-    return <Screen><Label secondary style={{ textAlign: 'center' }}>This goal was deleted.</Label></Screen>;
+    return <Screen><Notice title="This goal was deleted" /></Screen>;
   }
 
   return (
@@ -83,9 +83,9 @@ export default function GoalScreen() {
             {ideas.map((idea) => (
               <Pressable key={idea.name} accessibilityRole="button" accessibilityLabel={`Use idea: ${idea.name}`}
                 onPress={() => setDraft((d) => ({ ...d, name: idea.name, targetMonth: idea.month && !d.targetMonth ? ideaTargetMonth(idea.month, month) : d.targetMonth }))}
-                style={[styles.idea, { backgroundColor: `${t.tint}14` }]}>
+                style={({ pressed }) => [styles.idea, { backgroundColor: t.tintSoft, opacity: pressed ? 0.7 : 1 }]}>
                 <SymbolView name={{ ios: idea.icon, android: idea.material, web: idea.material } as SymbolViewProps['name']} size={16} tintColor={t.tint} />
-                <Label style={{ color: t.tint, fontSize: 15, fontWeight: '500' }}>{idea.name}</Label>
+                <Label style={{ color: t.tint, fontSize: 15, fontWeight: '600' }}>{idea.name}</Label>
               </Pressable>
             ))}
           </View>
@@ -111,8 +111,8 @@ export default function GoalScreen() {
                 <Row title={`To finish by ${shortMonth(g.targetDate)}`} subtitle={`${$(needed)} a month`}
                   right={g.monthlyContribution === needed ? <Tag tone="good">Using this</Tag> : (
                     <Pressable accessibilityRole="button" accessibilityLabel={`Use ${$(needed)} a month`} hitSlop={8}
-                      onPress={() => set('monthly')(String(needed / 100))} style={[styles.pill, { backgroundColor: `${t.tint}1A` }]}>
-                      <Label style={{ color: t.tint, fontSize: 15, fontWeight: '600' }}>Use {$(needed)}</Label>
+                      onPress={() => set('monthly')(String(needed / 100))} style={[styles.pill, { backgroundColor: t.tintSoft }]}>
+                      <Label style={{ color: t.tint, fontSize: 14, fontWeight: '600' }}>Use {$(needed)}</Label>
                     </Pressable>
                   )}
                   last />
@@ -121,18 +121,14 @@ export default function GoalScreen() {
         </Section>
       )}
 
-      {tried && !parsed.ok && <Label style={{ color: t.red, fontSize: 15, textAlign: 'center' }}>{parsed.error}</Label>}
-
-      <Pressable accessibilityRole="button" onPress={save} style={[styles.primary, { backgroundColor: t.tint }]}>
-        <Label style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '600' }}>{existing ? 'Save changes' : 'Add goal'}</Label>
-      </Pressable>
-      {existing && (
-        <Section>
-          <Pressable accessibilityRole="button" onPress={remove} style={{ padding: 14, alignItems: 'center' }}>
-            <Label style={{ color: t.red, fontSize: 17 }}>Delete goal</Label>
-          </Pressable>
-        </Section>
+      {tried && !parsed.ok && (
+        <Card padded style={{ backgroundColor: `${t.red}1F`, boxShadow: undefined }}>
+          <Label style={{ color: t.redText, fontSize: 15, fontWeight: '500' }}>{parsed.error}</Label>
+        </Card>
       )}
+
+      <Button title={existing ? 'Save changes' : 'Add goal'} onPress={save} />
+      {existing && <Button variant="plain" title="Delete goal" textColor={t.redText} icon={{ ios: 'trash', android: 'delete', web: 'delete' }} onPress={remove} style={{ marginTop: -12 }} />}
     </Screen>
   );
 }
@@ -140,8 +136,7 @@ export default function GoalScreen() {
 const styles = StyleSheet.create({
   right: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   figure: { fontSize: 17, fontWeight: '600', fontVariant: ['tabular-nums'] },
-  pill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14 },
-  primary: { padding: 14, borderRadius: 12, alignItems: 'center' },
-  ideas: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 12 },
-  idea: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16 },
+  pill: { paddingHorizontal: 14, height: 32, borderRadius: 16, justifyContent: 'center' },
+  ideas: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 16 },
+  idea: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, height: 36, borderRadius: 18 },
 });
