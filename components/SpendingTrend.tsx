@@ -80,32 +80,33 @@ export function SpendingTrend({ trend, forecast, month, onHero }: { trend: Month
   return (
     <InkContext.Provider value={c}>
     <View style={{ gap: 10 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+      {/* Label and switch share the top line; the big number gets a line to itself so it never wraps. */}
+      <View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, minHeight: 32 }}>
+          <Text style={{ fontSize: 14, fontWeight: '500', color: c.muted, flexShrink: 1 }} numberOfLines={1}>
+            {monthName(month, 'long')}{projection ? ', projected' : ' so far'}
+          </Text>
+          {forecast && forecast.points.length > 1 && (
+            <Segmented onHero={onHero} value={mode} onChange={(m) => { setMode(m); setActiveDay(null); }}
+              options={[{ value: 'actual', label: 'So far' }, { value: 'projected', label: 'Projected' }]} />
+          )}
+        </View>
+        <Display size={44} color={c.text} numberOfLines={1} adjustsFontSizeToFit>
+          {projection ? `~${formatCents(projection.end.mid, { showCents: false })}` : formatCents(trend.spentSoFar, { showCents: false })}
+        </Display>
         {projection ? (
-          <View style={{ flexShrink: 1 }}>
-            <Text style={{ fontSize: 14, fontWeight: '500', color: c.muted }}>{monthName(month, 'long')}, projected</Text>
-            <Display size={44} color={c.text}>~{formatCents(projection.end.mid, { showCents: false })}</Display>
+          <Text style={{ fontSize: 13, color: c.muted }}>
+            {projection.end.high > projection.end.low
+              ? `Likely ${formatCents(projection.end.low, { showCents: false })}–${formatCents(projection.end.high, { showCents: false })}`
+              : 'At your current pace'}
+          </Text>
+        ) : (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+            <Text style={{ color: up ? c.up : c.down, fontSize: 11 }}>{up ? '▲' : '▼'}</Text>
             <Text style={{ fontSize: 13, color: c.muted }}>
-              {projection.end.high > projection.end.low
-                ? `Likely ${formatCents(projection.end.low, { showCents: false })}–${formatCents(projection.end.high, { showCents: false })}`
-                : 'At your current pace'}
+              {formatCents(Math.abs(trend.difference), { showCents: false })} {up ? 'more' : 'less'} than {monthName(prevMonth)} {Math.min(last?.day ?? 1, trend.previous.length || 1)}
             </Text>
           </View>
-        ) : (
-          <View style={{ flexShrink: 1 }}>
-            <Text style={{ fontSize: 14, fontWeight: '500', color: c.muted }}>{monthName(month, 'long')} so far</Text>
-            <Display size={44} color={c.text}>{formatCents(trend.spentSoFar, { showCents: false })}</Display>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-              <Text style={{ color: up ? c.up : c.down, fontSize: 11 }}>{up ? '▲' : '▼'}</Text>
-              <Text style={{ fontSize: 13, color: c.muted }}>
-                {formatCents(Math.abs(trend.difference), { showCents: false })} {up ? 'more' : 'less'} than {monthName(prevMonth)} {Math.min(last?.day ?? 1, trend.previous.length || 1)}
-              </Text>
-            </View>
-          </View>
-        )}
-        {forecast && forecast.points.length > 1 && (
-          <Segmented onHero={onHero} value={mode} onChange={(m) => { setMode(m); setActiveDay(null); }}
-            options={[{ value: 'actual', label: 'So far' }, { value: 'projected', label: 'Projected' }]} />
         )}
       </View>
 
