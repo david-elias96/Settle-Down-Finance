@@ -1,7 +1,7 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AgentBrowser, type AgentBrowserHandle, type BrowserSource } from '@/components/AgentBrowser';
 import { Button, Card, Display, Glass, IconChip, Intro, Label, ListRow, Notice, Pill, Screen, Section, fieldStyle, space, useTheme } from '@/components/ui';
@@ -154,7 +154,7 @@ function AgentRun({ run }: { run: Run }) {
   return (
     <View style={{ flex: 1, backgroundColor: t.background }}>
       <Stack.Screen options={{ title: run.demo ? 'Practice run' : run.name, headerRight: () => (
-        <Pressable onPress={() => { agent.stop(); router.back(); }} accessibilityRole="button" accessibilityLabel="Stop" hitSlop={8}><Pill tone="bad">Stop</Pill></Pressable>
+        <Pressable onPress={() => { agent.stop(); router.back(); }} accessibilityRole="button" accessibilityLabel="Stop" hitSlop={8} style={Platform.OS === 'web' ? { marginRight: space.l } : undefined}><Pill tone="bad">Stop</Pill></Pressable>
       ) }} />
       <View style={[styles.status, { backgroundColor: userTurn ? t.hero : t.card, borderBottomColor: t.separator }]}>
         {userTurn ? (
