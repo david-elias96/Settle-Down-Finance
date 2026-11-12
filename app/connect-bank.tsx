@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, View } from 'react-native';
-import { Button, Card, Intro, Label, Notice, Pill, Row, Screen, Section, useTheme } from '@/components/ui';
+import { Button, Card, IconChip, Intro, Label, Notice, Pill, Row, Screen, Section, useTheme } from '@/components/ui';
 import { useAuth } from '@/src/auth/AuthProvider';
 import { useBudget } from '@/src/data/BudgetStore';
 import { callFunction, PLAID_PRIVACY_URL, PRIVACY_POLICY_URL } from '@/src/lib/backend';
@@ -18,6 +18,8 @@ export default function ConnectBankScreen() {
   const auth = useAuth();
   const { reload } = useBudget();
   const [busy, setBusy] = useState(false);
+  /** Shown under the button while it works, so tapping Agree visibly does something. */
+  const [status, setStatus] = useState<string | null>(null);
 
   // Send the user to the step they're missing: sign in, then two-step verification.
   useEffect(() => {
@@ -30,13 +32,18 @@ export default function ConnectBankScreen() {
   const agreeAndConnect = async () => {
     setBusy(true);
     try {
-      if (!auth.linkGate.ok) await auth.acceptConsent();
+      if (!auth.linkGate.ok) {
+        setStatus('Saving your agreement…');
+        await auth.acceptConsent();
+      }
+      setStatus('Getting your secure bank connection ready…');
       const householdId = await auth.ensureHousehold();
       const { linkToken } = await callFunction<{ linkToken: string }>('plaid-link-token', { householdId });
       // Expo Go can't open Plaid (no native SDK). Getting this far still proves the backend is ready.
       if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
         Alert.alert('Almost there', 'Your account is ready for bank linking. Plaid itself only opens in the real app build (TestFlight or a development build), not in Expo Go.');
         setBusy(false);
+        setStatus(null);
         return;
       }
       // Loaded lazily: Plaid's native SDK exists only in development and TestFlight builds.
@@ -55,13 +62,15 @@ export default function ConnectBankScreen() {
             Alert.alert('Could not finish connecting', (e as Error).message);
           }
         },
-        onExit: () => setBusy(false),
+        onExit: () => { setBusy(false); setStatus(null); },
         onEvent: () => {},
       });
+      setStatus('Opening Plaid…');
       await session.open();
     } catch (e) {
       Alert.alert('Could not open bank connection', (e as Error).message);
       setBusy(false);
+      setStatus(null);
     }
   };
 
@@ -103,10 +112,21 @@ export default function ConnectBankScreen() {
       </Section>
       <Card padded>
         <View style={{ gap: 14 }}>
-          <Label secondary style={{ fontSize: 14, lineHeight: 20 }}>
-            By continuing you agree to the Privacy Policy and allow Settle Down to collect, store and use this data as described.
-          </Label>
+          {auth.linkGate.ok ? (
+            <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }} accessible accessibilityLabel="You agreed to these terms">
+              <IconChip icon={{ ios: 'checkmark.circle.fill', android: 'check_circle', web: 'check_circle' }} tone="good" />
+              <View style={{ flex: 1, gap: 2 }}>
+                <Label style={{ fontSize: 16, fontWeight: '600' }}>You agreed to these terms</Label>
+                <Label secondary style={{ fontSize: 13, lineHeight: 18 }}>Thanks. Next, sign in to your bank inside Plaid.</Label>
+              </View>
+            </View>
+          ) : (
+            <Label secondary style={{ fontSize: 14, lineHeight: 20 }}>
+              By continuing you agree to the Privacy Policy and allow Settle Down to collect, store and use this data as described.
+            </Label>
+          )}
           <Button title={auth.linkGate.ok ? 'Continue to Plaid' : 'Agree and continue'} loading={busy} onPress={agreeAndConnect} />
+          {status && <Label secondary style={{ fontSize: 13, textAlign: 'center' }}>{status}</Label>}
         </View>
       </Card>
     </Screen>
