@@ -75,6 +75,9 @@ function RootLayoutNav() {
           headerTintColor: t.tint,
           headerTitleStyle: { fontFamily: Fonts.display, fontSize: 19, color: t.text },
           contentStyle: { backgroundColor: t.background },
+          // Our headers are opaque, so iOS 26's top scroll edge effect only shades the first lines
+          // of content (it hid the two-step heading). Turn it off for stack screens.
+          scrollEdgeEffects: { top: 'hidden' },
         }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="new-bucket" options={{ presentation: 'modal', title: 'New Bucket' }} />
