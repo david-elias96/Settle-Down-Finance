@@ -44,18 +44,16 @@ export default function RootLayout() {
     Fraunces_500Medium, Fraunces_600SemiBold,
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
+  // A font that fails to load (e.g. a missing file on the web host) falls back to the system
+  // font instead of crashing the whole app.
+  const ready = loaded || !!error;
   useEffect(() => {
-    if (error) throw error;
-  }, [error]);
-
-  useEffect(() => {
-    if (loaded) {
+    if (ready) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [ready]);
 
-  if (!loaded) {
+  if (!ready) {
     return null;
   }
 
