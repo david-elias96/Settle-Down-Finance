@@ -506,3 +506,13 @@ function KeyboardDone({ height }: { height: number | null }) {
     </View>
   );
 }
+
+/** A screen for something that's gone (deleted, or an old link), with a way back instead of a dead end. */
+export function Gone({ title, children }: { title: string; children?: string }) {
+  return (
+    <Screen>
+      <Notice title={title} icon={{ ios: 'questionmark.folder', android: 'help', web: 'help' }}>{children}</Notice>
+      <Button title="Back to my budget" onPress={() => router.replace('/')} />
+    </Screen>
+  );
+}

@@ -2,7 +2,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { Button, Card, Label, Notice, Row, Screen, Section, Tag, useTheme } from '@/components/ui';
+import { Button, Card, Gone, Label, Notice, Row, Screen, Section, Tag, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { formatCents, GOAL_NAME_MAX, goalForecast, goalIdeas, ideaTargetMonth, isEmergencyFund, monthInputValue, monthlyNeeded, parseGoalDraft, type GoalDraft } from '@/src/domain';
 
@@ -63,7 +63,12 @@ export default function GoalScreen() {
   };
 
   if (id && !existing) {
-    return <Screen><Notice title="This goal was deleted" /></Screen>;
+    return (
+      <>
+        <Stack.Screen options={{ title: 'Goal' }} />
+        <Gone title="This goal was deleted">Its savings stay in your account; it just isn't tracked as a goal anymore.</Gone>
+      </>
+    );
   }
 
   return (
