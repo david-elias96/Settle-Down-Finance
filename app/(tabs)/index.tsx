@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { AheadCard, FreeCard, HeroCarousel, TrendCard } from '@/components/HomeCarousel';
 import { WeeklyRecapCard } from '@/components/WeeklyRecap';
-import { AiMark, BucketChip, Button, IconChip, Label, ListRow, PaceBar, Screen, Section, SettingsButton, useTheme } from '@/components/ui';
+import { AiMark, BucketChip, Button, IconChip, Label, ListRow, Notice, PaceBar, Screen, Section, SettingsButton, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { bucketPace, byAttention, daysInMonth, formatCents, paceTag, weeklyAllowance, type BucketStatus, type Insight } from '@/src/domain';
 
@@ -15,7 +15,7 @@ const $ = (c: number) => formatCents(c, { showCents: false });
  * projection, and the bills ahead). Below: only what needs a look, then everything else.
  */
 export default function BudgetScreen() {
-  const { statuses, trend, forecast, month, today, insights, recap, tuneUps, trends, free, verdict, ahead } = useBudget();
+  const { statuses, trend, forecast, month, today, insights, recap, tuneUps, trends, free, verdict, ahead, live, loading, syncError, transactions } = useBudget();
   const t = useTheme();
   const days = daysInMonth(month);
   const [showAll, setShowAll] = useState(false);
@@ -55,6 +55,12 @@ export default function BudgetScreen() {
 
   return (
     <Screen eyebrow={dateLabel} title={verdict.text} action={<SettingsButton />}>
+      {syncError && <Notice title={syncError} icon={{ ios: 'exclamationmark.triangle.fill', android: 'warning', web: 'warning' }} />}
+      {live && !loading && !syncError && transactions.length === 0 && (
+        <Notice title="No purchases yet" icon={{ ios: 'building.columns.fill', android: 'account_balance', web: 'account_balance' }}>
+          Connect a bank in Settings and your purchases will show up here as they post.
+        </Notice>
+      )}
       <HeroCarousel pages={[
         { key: 'free', label: 'Free to spend', node: <FreeCard free={free} days={recap.days} month={month} /> },
         { key: 'trend', label: 'Trend', node: <TrendCard trend={trend} forecast={forecast} month={month} /> },

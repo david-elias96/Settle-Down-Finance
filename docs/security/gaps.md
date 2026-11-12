@@ -22,7 +22,6 @@ Last reviewed: 2026-11-10.
 
 | Gap | Policy section |
 | --- | --- |
-| Screens still read sample data; wiring Budget/Activity to Supabase queries is the next backend task. Sign-in, two-step verification, consent, bank linking, unlinking and account deletion already use the real backend when `EXPO_PUBLIC_SUPABASE_URL` is set | — |
 | Register the phone's push token after sign-in (needed for retention notices and alerts) | 8 |
 
 ## Closed
@@ -38,4 +37,5 @@ Last reviewed: 2026-11-10.
 | Invite codes used `random()` | PR #12: `gen_random_bytes` with rejection sampling |
 | Household members could read the cancel assistant's raw page text | PR #12: column grants hide `messages` |
 | No CI or dependency scanning | PR #12: GitHub Actions (typecheck, tests, Deno check, weekly `npm audit` and gitleaks), Dependabot |
+| Screens read sample data instead of the household's own | App data PR: `BudgetStore` loads and saves through Supabase (RLS-scoped) once signed in; bill splits stored in `bill_splits` (0009) |
 | No risk register | PR #12: `docs/security/risk-register.md` (13 risks, rated, with controls and open items) |
