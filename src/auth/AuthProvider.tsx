@@ -1,7 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { authRequest, backend, PASSKEY_ORIGINS, PASSKEY_RP_ID } from '@/src/lib/backend';
-import { oauthParams } from '@/src/lib/oauth';
+import { handoffRedirect, oauthParams } from '@/src/lib/oauth';
 import { CONSENT_NOTICE_VERSION, plaidLinkGate } from '@/src/domain';
 
 type Aal = 'aal1' | 'aal2' | null;
@@ -63,10 +63,11 @@ function useAuthState() {
   const signInWithGoogle = async () => {
     if (!backend) throw new Error('Not connected');
     const [WebBrowser, Linking] = await Promise.all([import('expo-web-browser'), import('expo-linking')]);
-    const redirectTo = Linking.createURL('auth-callback');
-    const { data, error } = await backend.auth.signInWithOAuth({ provider: 'google', options: { redirectTo, skipBrowserRedirect: true } });
+    // Supabase sends the browser to our website, which hands the code back to this app address.
+    const appReturn = Linking.createURL('auth-callback');
+    const { data, error } = await backend.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: handoffRedirect(appReturn), skipBrowserRedirect: true } });
     if (error) throw error;
-    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+    const result = await WebBrowser.openAuthSessionAsync(data.url, appReturn);
     if (result.type !== 'success') return false;
     const params = oauthParams(result.url);
     if (params.get('error')) throw new Error(params.get('error_description') ?? 'Google sign-in was not completed');
