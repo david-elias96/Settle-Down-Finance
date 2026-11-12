@@ -1,7 +1,7 @@
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, View } from 'react-native';
 import { Button, Card, IconChip, Intro, Label, Notice, Pill, Row, Screen, Section, useTheme } from '@/components/ui';
 import { useAuth } from '@/src/auth/AuthProvider';
@@ -30,32 +30,59 @@ export default function ConnectBankScreen() {
     else router.replace('/two-step?then=connect-bank');
   }, [auth.connected, auth.ready, auth.linkGate, auth.hasFactor]);
 
+  /** Set once a bank is linked: the screen shows it and a Continue button, whatever happens next. */
+  const [linked, setLinked] = useState<string | null>(null);
+  /** True when this page was reloaded by a bank's own sign-in (web OAuth); there's no in-app history to go back to. */
+  const resumed = useRef(false);
+
+  /** Leaves the screen after linking: back where they came from, or wherever the route guard sends them. */
+  const leave = () => {
+    // During the welcome, its screen lists what's linked and offers "Link another account".
+    if (auth.needsOnboarding) router.replace('/link-banks');
+    // A page reloaded by the bank's sign-in has no in-app history to go back through.
+    else if (!resumed.current && router.canGoBack()) router.back();
+    else router.replace('/settings');
+  };
+
   /** Sends Plaid's one-time public token to the backend, which keeps the access token in Vault. */
   const finishLink = async (householdId: string, result: PlaidLinkResult) => {
     if (!result) { setBusy(false); setStatus(null); return; }
     setStatus('Finishing up…');
     try {
-      const r = await callFunction<{ accounts: number }>('plaid-exchange', {
+      // Never spin forever: after 30 seconds, stop and say where to check.
+      const r = await withTimeout(callFunction<{ accounts: number }>('plaid-exchange', {
         householdId, publicToken: result.publicToken, institutionName: result.institutionName,
-      });
+      }), 30_000);
       reload();
-      Alert.alert('Bank connected', `${r.accounts} account${r.accounts === 1 ? '' : 's'} linked. New purchases will show up shortly.`);
-      if (router.canGoBack()) router.back(); else router.replace('/settings');
-    } catch (e) {
-      Alert.alert('Could not finish connecting', (e as Error).message);
+      auth.refresh().catch(() => {});
       setBusy(false);
       setStatus(null);
+      setLinked(`${result.institutionName ?? 'Your bank'} · ${r.accounts} account${r.accounts === 1 ? '' : 's'} linked`);
+      leave();
+    } catch (e) {
+      setBusy(false);
+      setStatus(null);
+      if ((e as Error).message === TIMED_OUT) {
+        Alert.alert('Still working on it', 'Your bank may already be linked. Check Settings → Linked accounts in a minute before trying again.');
+      } else {
+        Alert.alert('Could not finish connecting', (e as Error).message);
+      }
     }
   };
 
   // Web app: coming back from a bank's own sign-in page (OAuth) resumes the same Link session.
+  // Runs once per page load, so two Plaid windows can never open for the same return.
   useEffect(() => {
-    if (Platform.OS !== 'web' || !auth.ready || !auth.linkGate.ok) return;
+    if (Platform.OS !== 'web' || !auth.ready || !auth.linkGate.ok || resumed.current) return;
     const resume = pendingOAuthReturn();
     if (!resume) return;
+    resumed.current = true;
+    const receivedRedirectUri = window.location.href;
+    // Drop Plaid's state from the address so a refresh doesn't try to resume a finished session.
+    try { window.history.replaceState(null, '', window.location.pathname); } catch { /* ignore */ }
     setBusy(true);
     setStatus('Finishing your bank sign-in…');
-    openPlaidLink({ ...resume, receivedRedirectUri: window.location.href })
+    openPlaidLink({ ...resume, receivedRedirectUri })
       .then((result) => finishLink(resume.householdId, result))
       .catch((e) => { Alert.alert('Could not open bank connection', (e as Error).message); setBusy(false); setStatus(null); });
   }, [auth.ready, auth.linkGate.ok]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -90,6 +117,25 @@ export default function ConnectBankScreen() {
     return (
       <Screen>
         <Notice title="Bank linking isn't on yet" icon={{ ios: 'building.columns.fill', android: 'account_balance', web: 'account_balance' }}>Linking banks turns on once sign-in is connected.</Notice>
+      </Screen>
+    );
+  }
+  // Linked: say so plainly, with a way on even if leaving the screen didn't happen by itself.
+  if (linked) {
+    return (
+      <Screen>
+        <Card padded>
+          <View style={{ gap: 14 }}>
+            <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+              <IconChip icon={{ ios: 'checkmark.circle.fill', android: 'check_circle', web: 'check_circle' }} tone="good" />
+              <View style={{ flex: 1, gap: 2 }}>
+                <Label style={{ fontSize: 16, fontWeight: '600' }}>Bank connected</Label>
+                <Label secondary style={{ fontSize: 13, lineHeight: 18 }}>{linked}. New purchases will show up shortly.</Label>
+              </View>
+            </View>
+            <Button title="Continue" onPress={leave} />
+          </View>
+        </Card>
       </Screen>
     );
   }
@@ -143,4 +189,13 @@ export default function ConnectBankScreen() {
       </Card>
     </Screen>
   );
+}
+
+const TIMED_OUT = 'timed out';
+/** Rejects with TIMED_OUT if the work hasn't finished in time (the work itself carries on). */
+function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(TIMED_OUT)), ms);
+    work.then((v) => { clearTimeout(timer); resolve(v); }, (e) => { clearTimeout(timer); reject(e); });
+  });
 }
