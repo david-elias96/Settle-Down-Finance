@@ -4,7 +4,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Alert, Linking, Platform, Text, TextInput, View } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import QRCode from 'react-native-qrcode-svg';
-import { Button, fieldStyle, IconChip, Intro, KeyboardDone, Label, ListRow, Screen, Section, useTheme } from '@/components/ui';
+import { Button, fieldStyle, IconChip, Intro, Label, ListRow, Screen, Section, useTheme } from '@/components/ui';
 import { AppIcon, useAuthenticatorIcons } from '@/components/AppIcon';
 import { useAuth } from '@/src/auth/AuthProvider';
 import { AUTHENTICATOR_APPS, openAuthenticator } from '@/src/lib/authenticators';
@@ -52,7 +52,7 @@ export default function TwoStepScreen() {
   const showCodeEntry = enrolling ? useApp : !auth.hasPasskey || useApp;
 
   return (
-    <Screen overlay={<KeyboardDone />}>
+    <Screen keyboardDone>
       <Intro title={enrolling ? 'Set up two-step verification' : 'Confirm it’s you'}>
         {enrolling
           ? 'Bank connections need a second step after sign-in. A passkey uses Face ID and only works with Settle Down, so it can’t be phished.'

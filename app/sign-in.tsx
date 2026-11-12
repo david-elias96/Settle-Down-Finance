@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, TextInput } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { Button, fieldStyle, Intro, KeyboardDone, Label, Notice, radius, Screen, Section, useTheme } from '@/components/ui';
+import { Button, fieldStyle, Intro, Label, Notice, radius, Screen, Section, useTheme } from '@/components/ui';
 import { useAuth } from '@/src/auth/AuthProvider';
 
 /** Sign in with Apple, Google, or a one-time code sent by email. Two-step verification comes next. */
@@ -14,6 +14,7 @@ export default function SignInScreen() {
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  const sendCode = async () => { await auth.sendEmailCode(email); setSent(true); };
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
     try { await fn(); } catch (e) { Alert.alert('Sign-in failed', (e as Error).message); } finally { setBusy(false); }
@@ -29,7 +30,7 @@ export default function SignInScreen() {
   }
 
   return (
-    <Screen overlay={<KeyboardDone />}>
+    <Screen keyboardDone>
       <Intro title="Sign in">
         Your budget is tied to your account. Next you'll confirm it's you with a passkey (Face ID) before any bank is connected.
       </Intro>
@@ -46,15 +47,15 @@ export default function SignInScreen() {
       </Pressable>
       <Section title="Or use your email" footer={sent ? 'Enter the code we emailed you. Only the newest email works.' : "We'll email you a sign-in code."}>
         <TextInput accessibilityLabel="Email" value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor={t.secondaryText}
-          style={[fieldStyle, { color: t.text, borderBottomWidth: sent ? StyleSheet.hairlineWidth : 0, borderBottomColor: t.separator }]} autoCapitalize="none" autoComplete="email" keyboardType="email-address" editable={!sent} />
+          style={[fieldStyle, { color: t.text, borderBottomWidth: sent ? StyleSheet.hairlineWidth : 0, borderBottomColor: t.separator }]} autoCapitalize="none" autoComplete="email" keyboardType="email-address" editable={!sent} returnKeyType="send" onSubmitEditing={() => { if (email.includes('@') && !busy) run(sendCode); }} />
         {sent && (
           <TextInput accessibilityLabel="Code from email" value={code} onChangeText={setCode} placeholder="12345678" placeholderTextColor={t.secondaryText}
-            style={[fieldStyle, { color: t.text, fontVariant: ['tabular-nums'], letterSpacing: 2 }]} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={10} />
+            style={[fieldStyle, { color: t.text, fontVariant: ['tabular-nums'], letterSpacing: 2 }]} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={10} autoFocus />
         )}
       </Section>
       <Button title={sent ? 'Sign in' : 'Email me a code'} disabled={busy || (sent ? code.replace(/\D/g, '').length < 6 : !email.includes('@'))}
         onPress={() => run(async () => {
-          if (!sent) { await auth.sendEmailCode(email); setSent(true); } else { await auth.verifyEmailCode(email, code); done(); }
+          if (!sent) await sendCode(); else { await auth.verifyEmailCode(email, code); done(); }
         })} />
       {sent && (
         <Button title="Send a new code" variant="plain" disabled={busy}
