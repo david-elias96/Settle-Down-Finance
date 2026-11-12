@@ -59,12 +59,13 @@ export type Verdict = { text: string; tone: 'good' | 'warn' | 'bad' };
  * The home screen's headline: one calm sentence on how the month is going, from the
  * forecast's likely month-end total against the budget.
  */
-export function monthVerdict(free: Pick<FreeToSpend, 'budget' | 'spent'>, forecast?: Pick<MonthForecast, 'end'>): Verdict {
+export function monthVerdict(free: Pick<FreeToSpend, 'budget' | 'spent'>, forecast?: Pick<MonthForecast, 'end'>, bucketsOver = 0): Verdict {
   if (free.budget <= 0) return { text: 'Set a budget to begin.', tone: 'good' };
   if (free.spent > free.budget) return { text: 'Over budget this month.', tone: 'bad' };
-  if (!forecast) return { text: 'You’re on track.', tone: 'good' };
-  if (forecast.end.mid > free.budget) return { text: 'Heading over budget.', tone: 'warn' };
-  if (forecast.end.high > free.budget) return { text: 'On track, just barely.', tone: 'warn' };
+  if (forecast && forecast.end.mid > free.budget) return { text: 'Heading over budget.', tone: 'warn' };
+  if (forecast && forecast.end.high > free.budget) return { text: 'On track, just barely.', tone: 'warn' };
+  // Fine overall, but a bucket is past its limit (the overspending Savings shows): say both.
+  if (bucketsOver > 0) return { text: `On track overall, ${bucketsOver} bucket${bucketsOver === 1 ? '' : 's'} over.`, tone: 'warn' };
   return { text: 'You’re on track.', tone: 'good' };
 }
 

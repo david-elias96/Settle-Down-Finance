@@ -63,6 +63,10 @@ describe('monthVerdict', () => {
   it('says so when the likely finish is over', () => {
     expect(monthVerdict(free, end(3200, 3500))).toEqual({ text: 'Heading over budget.', tone: 'warn' });
   });
+  it('mentions buckets past their limit when the month is fine overall', () => {
+    expect(monthVerdict(free, end(2600, 2900), 1)).toEqual({ text: 'On track overall, 1 bucket over.', tone: 'warn' });
+    expect(monthVerdict(free, end(2600, 2900), 2).text).toBe('On track overall, 2 buckets over.');
+  });
   it('says so plainly once the budget is spent', () => {
     expect(monthVerdict({ budget: dollars(3000), spent: dollars(3001) }, end(3200, 3500))).toEqual({ text: 'Over budget this month.', tone: 'bad' });
   });

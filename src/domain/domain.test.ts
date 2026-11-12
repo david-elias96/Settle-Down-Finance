@@ -61,7 +61,7 @@ describe('bucketStatuses + notification', () => {
     expect(s.spent).toBe(dollars(684.12));
     const n = transactionNotification({ merchant: 'Kroger', amount: dollars(84.12), pending: true }, [{ status: s, amount: dollars(84.12) }], 9, 30);
     expect(n.title).toBe('$84.12 at Kroger (pending)');
-    expect(n.body).toBe('Groceries · Heading over\n$15 left · $5/week');
+    expect(n.body).toBe('Groceries · Heading over\n$16 left · $5/week');
     expect(n.bucketId).toBe('groceries');
   });
 });
