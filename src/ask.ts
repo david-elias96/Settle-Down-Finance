@@ -1,3 +1,4 @@
+import { backend } from '@/src/lib/backend';
 import { answerToText, bucketPace, previousMonth, topStores, shortDate, daysInMonth, findSubscriptions, formatCents, type AskAnswer, type WeeklyRecap, type TuneUp, type Trend, trendNote, type BucketStatus, type CutIdea, type Transaction } from '@/src/domain';
 
 export interface ChatTurn {
@@ -16,9 +17,6 @@ export class OutOfCreditsError extends Error {
   constructor(public credits?: CreditsLeft) { super('out_of_credits'); }
 }
 
-/** Set EXPO_PUBLIC_SUPABASE_URL to send questions to the `ask` backend function. */
-const API = process.env.EXPO_PUBLIC_SUPABASE_URL;
-
 export const SUGGESTED_QUESTIONS = [
   'How can I cut my spending this month?',
   'Am I on track this month?',
@@ -26,20 +24,27 @@ export const SUGGESTED_QUESTIONS = [
   'Which subscriptions am I paying for?',
 ];
 
+/**
+ * Answers a question. Signed in to a household: Claude answers through the `ask` function, which
+ * charges the household's credits. Without a backend (development previews): a few common
+ * questions are answered on the phone from the sample data.
+ */
 export async function ask(
   question: string,
   history: ChatTurn[],
-  ctx: { householdId?: string; accessToken?: string } & PreviewContext,
+  ctx: { householdId?: string | null } & PreviewContext,
 ): Promise<ChatTurn & { credits?: CreditsLeft }> {
-  if (API && ctx.householdId && ctx.accessToken) {
-    const res = await fetch(`${API}/functions/v1/ask`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ctx.accessToken}` },
-      body: JSON.stringify({ householdId: ctx.householdId, question, history: history.map(({ role, text }) => ({ role, text })) }),
+  if (backend) {
+    if (!ctx.householdId) throw new Error('Start your budget first, then ask away.');
+    const { data, error } = await backend.functions.invoke('ask', {
+      body: { householdId: ctx.householdId, question, history: history.map(({ role, text }) => ({ role, text })) },
     });
-    const data = await res.json();
-    if (res.status === 402) throw new OutOfCreditsError(data.credits);
-    if (!res.ok) throw new Error(data.error ?? 'Something went wrong');
+    if (error) {
+      const res = (error as { context?: Response }).context;
+      const detail = await res?.json?.().catch(() => null);
+      if (res?.status === 402) throw new OutOfCreditsError(detail?.credits);
+      throw new Error(detail?.error ?? 'Something went wrong. Please try again.');
+    }
     const answer = data.answer as AskAnswer;
     return { role: 'assistant', text: answerToText(answer), answer, credits: data.credits };
   }

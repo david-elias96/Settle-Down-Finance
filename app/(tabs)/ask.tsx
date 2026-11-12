@@ -10,12 +10,15 @@ import { Fonts } from '@/constants/Colors';
 import { ask, OutOfCreditsError, SUGGESTED_QUESTIONS, type ChatTurn } from '@/src/ask';
 import { CREDIT_PACK, creditsResetLabel } from '@/src/domain';
 import { useBudget } from '@/src/data/BudgetStore';
+import { useAuth } from '@/src/auth/AuthProvider';
+import { backend } from '@/src/lib/backend';
 
 export default function AskScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const tabBar = useContext(BottomTabBarHeightContext) ?? 0;
   const { statuses, cutIdeas, transactions, buckets, month, today, recap, tuneUps, trends, creditBalance, credits, useCredits, syncCredits, addCreditPack } = useBudget();
+  const auth = useAuth();
   const outOfCredits = creditBalance.total === 0;
   const { q } = useLocalSearchParams<{ q?: string }>();
   const [turns, setTurns] = useState<ChatTurn[]>([]);
@@ -27,14 +30,13 @@ export default function AskScreen() {
     const text = question.trim();
     if (!text || busy || outOfCredits) return;
     const history = turns;
-    const backend = !!process.env.EXPO_PUBLIC_SUPABASE_URL;
     // In preview mode the phone keeps the balance; with the backend, the server charges.
     if (!backend && !useCredits('ask')) return;
     setTurns([...history, { role: 'user', text }]);
     setDraft('');
     setBusy(true);
     try {
-      const answer = await ask(text, history, { statuses, cutIdeas, transactions, month, today, recap, tuneUps, trends });
+      const answer = await ask(text, history, { householdId: auth.householdId, statuses, cutIdeas, transactions, month, today, recap, tuneUps, trends });
       if (answer.credits) syncCredits(answer.credits);
       setTurns((ts) => [...ts, answer]);
     } catch (e) {
@@ -51,6 +53,11 @@ export default function AskScreen() {
   }
 
   function buyPack() {
+    // Signed in, credits are real: packs are bought through the App Store app (not yet released), never added free.
+    if (backend) {
+      Alert.alert('More credits', `Credit packs (${CREDIT_PACK.credits} for ${CREDIT_PACK.price}) will be available in the Settle Down iPhone app from the App Store. Your monthly credits reset ${creditsResetLabel(month)}.`);
+      return;
+    }
     Alert.alert(
       `Get ${CREDIT_PACK.credits} more credits for ${CREDIT_PACK.price}?`,
       'App Store purchases switch on with the first TestFlight build. For this preview, the credits are added free.',
