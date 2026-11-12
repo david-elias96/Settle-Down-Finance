@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AiMark, Display, HeroCard, IconChip, Label, ListRow, Row, Screen, Section, SettingsButton, StatTile, Tag, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { cancelRoute, findSubscriptions, formatCents, shortDate, type Subscription } from '@/src/domain';
+import { backend } from '@/src/lib/backend';
 
 const $ = (c: number) => formatCents(c, { showCents: false });
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -54,11 +55,14 @@ export default function SubscriptionsScreen() {
         {subs.map((s, i) => <SubscriptionRow key={s.vendor} s={s} last={i === subs.length - 1} />)}
       </Section>
 
-      <Section footer="A pretend service. Free, nothing real is touched.">
-        <ListRow title="Practice AI cancel" note="See how cancelling works" last
-          leading={<IconChip icon={{ ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' }} />}
-          onPress={() => router.push({ pathname: '/cancel', params: { demo: '1' } })} />
-      </Section>
+      {/* Development previews only: a pretend service to watch the agent on. */}
+      {!backend && (
+        <Section footer="A pretend service. Free, nothing real is touched.">
+          <ListRow title="Practice AI cancel" note="See how cancelling works" last
+            leading={<IconChip icon={{ ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' }} />}
+            onPress={() => router.push({ pathname: '/cancel', params: { demo: '1' } })} />
+        </Section>
+      )}
     </Screen>
   );
 }

@@ -9,6 +9,8 @@ import { agentBackendAvailable, startCancel } from '@/src/agent/client';
 import { PRACTICE_SITE_HTML, PRACTICE_SITE_URL } from '@/src/agent/practiceSite';
 import { useCancelAgent } from '@/src/agent/useCancelAgent';
 import { cancelRoute, CREDIT_COST, formatCents } from '@/src/domain';
+import { useAuth } from '@/src/auth/AuthProvider';
+import { backend } from '@/src/lib/backend';
 
 type Run = { demo: boolean; name: string; source: BrowserSource; domains: string[]; session?: { id: string; accessToken: string } };
 
@@ -18,7 +20,9 @@ export default function CancelScreen() {
   const [website, setWebsite] = useState('');
   const [run, setRun] = useState<Run | null>(null);
   const [starting, setStarting] = useState(false);
-  const isPractice = demo === '1';
+  const auth = useAuth();
+  // The practice site is for development previews; signed-in people cancel the real thing.
+  const isPractice = demo === '1' && !backend;
   const route = useMemo(() => (isPractice ? null : cancelRoute(vendor, website || undefined)), [vendor, website, isPractice]);
   const name = isPractice ? 'StreamCo (practice)' : route?.via === 'agent' ? route.guide.name : vendor;
 
@@ -33,16 +37,16 @@ export default function CancelScreen() {
     }
     if (isPractice) return practice();
     if (route?.via !== 'agent') return;
-    const accessToken: string | undefined = undefined; // set once sign-in is connected
-    const householdId: string | undefined = undefined;
-    if (!agentBackendAvailable(accessToken) || !householdId) {
-      Alert.alert('Almost there', `The agent can cancel ${route.guide.name} once sign-in is connected. Want to watch it on a practice site now?`, [
+    const accessToken = auth.session?.access_token;
+    if (!agentBackendAvailable(accessToken)) {
+      Alert.alert('Practice run', `Without the backend, the agent can only show how it would cancel ${route.guide.name} on a practice site.`, [
         { text: 'Not now', style: 'cancel' }, { text: 'Practice run', onPress: practice },
       ]);
       return;
     }
     setStarting(true);
     try {
+      const householdId = await auth.ensureHousehold();
       const s = await startCancel(accessToken!, householdId, vendor, website || undefined);
       setRun({ demo: false, name: s.serviceName, source: { uri: s.startUrl }, domains: s.domains, session: { id: s.sessionId, accessToken: accessToken! } });
     } catch (e) {
