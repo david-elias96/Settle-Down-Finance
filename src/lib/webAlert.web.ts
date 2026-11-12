@@ -1,5 +1,5 @@
 import { Alert } from 'react-native';
-import { browserAlert } from './webAlert';
+import { browserAlert } from './browserAlert';
 
 /**
  * react-native-web's Alert.alert does nothing, which would silently swallow every error and
