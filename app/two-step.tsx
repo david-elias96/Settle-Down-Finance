@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import * as Clipboard from 'expo-clipboard';
 import { Alert, Linking, Platform, Text, TextInput, View } from 'react-native';
@@ -36,7 +36,9 @@ export default function TwoStepScreen() {
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const finish = () => (then === 'connect-bank' ? router.replace('/connect-bank') : router.back());
+  // Signed in but not yet verified: no way around this screen except signing out.
+  const locked = auth.mustVerify && !enrolling;
+  const finish = () => (then === 'connect-bank' ? router.replace('/connect-bank') : router.canGoBack() ? router.back() : router.replace('/'));
   const run = async (fn: () => Promise<void>, failTitle: string) => {
     setBusy(true);
     try { await fn(); finish(); } catch (e) { Alert.alert(failTitle, (e as Error).message); } finally { setBusy(false); }
@@ -53,6 +55,7 @@ export default function TwoStepScreen() {
 
   return (
     <Screen keyboardDone>
+      <Stack.Screen options={{ headerBackVisible: !locked, gestureEnabled: !locked }} />
       <Intro title={enrolling ? 'Set up two-step verification' : 'Confirm it’s you'}>
         {enrolling
           ? 'Bank connections need a second step after sign-in. A passkey uses Face ID and only works with Settle Down, so it can’t be phished.'
@@ -110,11 +113,14 @@ export default function TwoStepScreen() {
         <>
           <Section title="6-digit code">
             <TextInput accessibilityLabel="6-digit code" value={code} onChangeText={setCode} placeholder="123456" placeholderTextColor={t.secondaryText}
-              style={[fieldStyle, { color: t.text, fontVariant: ['tabular-nums'], letterSpacing: 2 }]} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={6} />
+              style={[fieldStyle, { color: t.text, fontVariant: ['tabular-nums'], letterSpacing: 2 }]} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={6} autoFocus={!enrolling} />
           </Section>
           <Button title="Verify" disabled={busy || code.length < 6}
             onPress={() => run(() => auth.verifyAuthenticatorCode(code, enrollment?.factorId), 'That code didn’t work')} />
         </>
+      )}
+      {locked && (
+        <Button title="Sign out" variant="plain" onPress={async () => { await auth.signOut(); router.replace('/'); }} />
       )}
     </Screen>
   );

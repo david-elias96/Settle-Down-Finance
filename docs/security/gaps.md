@@ -24,12 +24,14 @@ Last reviewed: 2026-11-10.
 | Gap | Policy section |
 | --- | --- |
 | Register the phone's push token after sign-in (needed for retention notices and alerts) | 8 |
+| Lost second factor: no self-service recovery (recovery codes or a second passkey). Until then, after verifying identity by email, the Security Owner removes the factor in Supabase Auth → Users | 4 |
 
 ## Closed
 
 | Gap | Closed in |
 | --- | --- |
 | `daily-insights` accepted `Bearer undefined` when `CRON_SECRET` was not set | PR #12 (fails closed, constant-time compare) |
+| Second factor not required at sign-in once set up (aal1 sessions could read household data) | Migration 0010 (`is_member` requires AAL2 once a factor is verified), `requireMember` refuses aal1, app locks to the two-step screen |
 | No sign-in; no MFA before Plaid Link | PR #12: Sign in with Apple / email code, authenticator-app MFA; backend requires AAL2 for Link tokens and token exchange |
 | Session tokens storage | PR #12: Keychain via `expo-secure-store` (this device only, when unlocked) |
 | No consent before Plaid Link | PR #12: data-use notice screen; consent recorded in `plaid_consents` and required by the backend |

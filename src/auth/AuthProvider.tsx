@@ -181,9 +181,11 @@ function useAuthState() {
   const signOut = async () => { await backend?.auth.signOut(); await refresh(); };
 
   const linkGate = plaidLinkGate({ signedIn: !!session, aal, consents });
+  /** Signed in, has a second factor set up, but this session hasn't used it yet: the app stays locked. */
+  const mustVerify = !!session && hasFactor && aal !== 'aal2';
 
   return {
-    connected: !!backend, ready, session, householdId, ensureHousehold, email: session?.user.email ?? null, aal, hasFactor, hasPasskey, hasAuthenticatorApp, consents, linkGate,
+    connected: !!backend, ready, session, householdId, ensureHousehold, email: session?.user.email ?? null, aal, hasFactor, hasPasskey, hasAuthenticatorApp, consents, linkGate, mustVerify,
     signInWithApple, signInWithGoogle, sendEmailCode, verifyEmailCode, startAuthenticatorSetup, verifyAuthenticatorCode, addPasskey, verifyWithPasskey, acceptConsent, signOut, refresh,
   };
 }
