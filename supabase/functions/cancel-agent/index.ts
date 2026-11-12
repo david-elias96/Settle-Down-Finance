@@ -17,7 +17,7 @@ import { describePage, toAction, trimmed } from './helpers.ts';
 const client = new Anthropic();
 const MAX_STEPS = 40;
 
-const SYSTEM = `You cancel a subscription for a family using Settle Down Finance. You operate a web browser on their phone, one action at a time, by calling exactly one tool per turn. If a message to the user refers to you, call yourself SettleDown.
+const SYSTEM = `You cancel a subscription for a family using Settle Down Finance. You operate a web browser on their phone, one action at a time, by calling exactly one tool per turn. If a message to the user refers to you, call yourself Settle Down.
 
 Goal: cancel the user's {SERVICE} subscription so they are not charged again.
 
