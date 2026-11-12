@@ -40,10 +40,10 @@ export default function LinkBanksScreen() {
 
   return (
     <Screen>
-      <Intro title={linked ? 'Your banks are linked' : 'Link your banks'}>
+      <Intro title={linked ? 'Your banks are linked' : auth.isNewAccount ? 'Welcome! Your new account is ready' : 'Link your banks'}>
         {linked
           ? 'New purchases will sort into your buckets as they post. Link any other cards or accounts you spend from.'
-          : 'Settle Down builds your budget from your real spending. Link the checking accounts and cards you use, through Plaid.'}
+          : `${auth.isNewAccount ? 'Next, link your banks. ' : ''}Settle Down builds your budget from your real spending. Link the checking accounts and cards you use, through Plaid.`}
       </Intro>
 
       {banks == null ? (
