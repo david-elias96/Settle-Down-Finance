@@ -88,7 +88,7 @@ export default function TwoStepScreen() {
             {AUTHENTICATOR_APPS.map((app) => (
               <ListRow key={app.name} title={app.name} note="Copy key and open"
                 leading={<IconChip icon={{ ios: 'lock.shield.fill', android: 'shield', web: 'shield' }} />}
-                onPress={async () => { await copyKey(); await openAuthenticator(app, Platform.OS, Linking.openURL).catch(() => {}); }} />
+                onPress={async () => { await copyKey(); await openAuthenticator(app, Platform.OS, Linking).catch(() => Alert.alert(`Could not open ${app.name}`, 'The setup key is copied. Open your authenticator app and paste it.')); }} />
             ))}
             {Platform.OS === 'ios' && (
               <ListRow title="Apple Passwords" note="Adds it for you, no key needed"
