@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, View } from 'react-native';
 import { Button, Card, Intro, Label, Notice, Pill, Row, Screen, Section, useTheme } from '@/components/ui';
 import { useAuth } from '@/src/auth/AuthProvider';
+import { useBudget } from '@/src/data/BudgetStore';
 import { callFunction, PLAID_PRIVACY_URL, PRIVACY_POLICY_URL } from '@/src/lib/backend';
 
 /**
@@ -14,6 +15,7 @@ import { callFunction, PLAID_PRIVACY_URL, PRIVACY_POLICY_URL } from '@/src/lib/b
 export default function ConnectBankScreen() {
   const t = useTheme();
   const auth = useAuth();
+  const { reload } = useBudget();
   const [busy, setBusy] = useState(false);
 
   // Send the user to the step they're missing: sign in, then two-step verification.
@@ -39,6 +41,7 @@ export default function ConnectBankScreen() {
             const r = await callFunction<{ accounts: number }>('plaid-exchange', {
               householdId, publicToken: success.publicToken, institutionName: success.metadata.institution?.name ?? null,
             });
+            reload();
             Alert.alert('Bank connected', `${r.accounts} account${r.accounts === 1 ? '' : 's'} linked. New purchases will show up shortly.`);
             router.back();
           } catch (e) {

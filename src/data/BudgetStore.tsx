@@ -1,16 +1,86 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { AppState } from 'react-native';
 import { bucketStatuses, compareToLastMonth, forecastMonth, projectionInsight, previousMonth, CREDIT_COST, creditsLeft, daysInMonth, findInsights, overspendImpact, PLANS, spendCredits, waysToCut, type Account, type Allocation, type Member, type CreditReason, type CreditState, type Bucket, type SavingsGoal, type GoalFields, reorderGoals, type Transaction, applySplits, vendorKey, type BillSplit, type MerchantRule, type SplitSettings, weeklyRecap, findBills, billsByBucket, billsOutlook, withBills, budgetTuneUps, bucketTrends, smallPurchases, freeToSpend, monthVerdict, monthAhead } from '@/src/domain';
+import { useAuth } from '@/src/auth/AuthProvider';
+import { backend } from '@/src/lib/backend';
 import { demoAccounts, demoAllocations, demoBuckets, demoGoals, demoMembers, demoRules, demoSplits, demoTransactions } from './demo';
+import { householdWriter, loadHousehold, type HouseholdSnapshot } from './remote';
 
 /**
- * App state. Backed by demo data for now; will be swapped for Supabase queries
- * once the backend is connected, keeping the same shape for screens.
+ * App state. Once someone is signed in and belongs to a household, it's that household's real
+ * budget from Supabase, and every change is saved back. Otherwise (Expo Go, web, signed out)
+ * it's the sample data, so the app can still be tried. Screens see the same shape either way.
  */
 function useBudgetState() {
+  const auth = useAuth();
+  const live = !!backend && !!auth.session && !!auth.householdId;
+  const userId = auth.session?.user.id ?? null;
+
   const [buckets, setBuckets] = useState<Bucket[]>(demoBuckets);
-  const [rawTransactions] = useState<Transaction[]>(demoTransactions);
+  const [rawTransactions, setRawTransactions] = useState<Transaction[]>(demoTransactions);
   const [rawAllocations, setRawAllocations] = useState<Allocation[]>(demoAllocations);
   const [rules, setRules] = useState<MerchantRule[]>(demoRules);
+  const [splits, setSplits] = useState<SplitSettings>(demoSplits);
+  const [goals, setGoals] = useState<SavingsGoal[]>(demoGoals);
+  const [members, setMembers] = useState<Member[]>(demoMembers);
+  const [accounts, setAccounts] = useState<Account[]>(demoAccounts);
+  const [loading, setLoading] = useState(false);
+  /** Shown when loading or saving fails; cleared by the next successful load. */
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const bucketUuid = useRef(new Map<string, string>());
+
+  const apply = (d: HouseholdSnapshot) => {
+    bucketUuid.current = d.bucketUuid;
+    setBuckets(d.buckets); setRawTransactions(d.transactions); setRawAllocations(d.allocations); setRules(d.rules);
+    setSplits(d.splits); setGoals(d.goals); setMembers(d.members); setAccounts(d.accounts);
+    if (d.credits) setCredits(d.credits);
+  };
+
+  /** Loads the household's budget again (after linking a bank, on returning to the app, or after a failed save). */
+  const reload = useCallback(async () => {
+    if (!backend || !auth.householdId || !userId) return;
+    setLoading(true);
+    try {
+      apply(await loadHousehold(backend, auth.householdId, userId));
+      setSyncError(null);
+    } catch {
+      setSyncError("Couldn't load your budget. Check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth.householdId, userId]);
+
+  // Switch between sample and real data as people sign in and out.
+  useEffect(() => {
+    if (live) {
+      // Clear the sample data first so it never shows as theirs while loading.
+      apply({ buckets: [], transactions: [], allocations: [], rules: [], goals: [], splits: { byTransaction: {}, byVendor: {} }, members: [], accounts: [], credits: null, bucketUuid: new Map() });
+      reload();
+    } else {
+      apply({ buckets: demoBuckets, transactions: demoTransactions, allocations: demoAllocations, rules: demoRules, goals: demoGoals, splits: demoSplits, members: demoMembers, accounts: demoAccounts, credits: null, bucketUuid: new Map() });
+      setSyncError(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live, reload]);
+
+  // New purchases arrive through Plaid while the app is closed, so refresh on coming back.
+  useEffect(() => {
+    if (!live) return;
+    const sub = AppState.addEventListener('change', (state) => { if (state === 'active') reload(); });
+    return () => sub.remove();
+  }, [live, reload]);
+
+  const writer = live && backend ? householdWriter(backend, auth.householdId!, (id) => bucketUuid.current.get(id) ?? id) : null;
+  /** Saves a change made on screen. If it fails, reloads so the screen shows what's really saved. */
+  const save = (work: (w: NonNullable<typeof writer>) => Promise<unknown>) => {
+    if (!writer) return;
+    work(writer).catch(() => {
+      setSyncError("Couldn't save that change. Showing what's saved.");
+      reload();
+    });
+  };
+
   /**
    * Moves a purchase to another bucket. With `always`, the store gets a rule and its other
    * purchases that weren't placed by hand or by a receipt move too.
@@ -20,17 +90,23 @@ function useBudgetState() {
     if (!tx) return;
     const key = vendorKey(tx.merchant);
     const sameStore = new Set(rawTransactions.filter((t) => vendorKey(t.merchant) === key).map((t) => t.id));
-    setRawAllocations((all) => {
-      const movable = (a: Allocation) => a.transactionId === txId
-        || (always && sameStore.has(a.transactionId) && a.source !== 'user' && a.source !== 'receipt' && all.filter((b) => b.transactionId === a.transactionId).length === 1);
-      return all.map((a) => (movable(a) ? { transactionId: a.transactionId, bucketId, amount: a.amount, source: 'user' as const } : a))
-        // A receipt split collapses into one bucket.
-        .filter((a, i, arr) => a.transactionId !== txId || arr.findIndex((b) => b.transactionId === txId) === i)
-        .map((a) => (a.transactionId === txId ? { ...a, amount: tx.amount } : a));
-    });
+    const all = rawAllocations;
+    const movable = (a: Allocation) => a.transactionId === txId
+      || (always && sameStore.has(a.transactionId) && a.source !== 'user' && a.source !== 'receipt' && all.filter((b) => b.transactionId === a.transactionId).length === 1);
+    const moved = new Set(all.filter(movable).map((a) => a.transactionId));
+    const next = all.map((a) => (movable(a) ? { transactionId: a.transactionId, bucketId, amount: a.amount, source: 'user' as const } : a))
+      // A receipt split collapses into one bucket.
+      .filter((a, i, arr) => a.transactionId !== txId || arr.findIndex((b) => b.transactionId === txId) === i)
+      .map((a) => (a.transactionId === txId ? { ...a, amount: tx.amount } : a));
+    // A purchase that had no bucket yet gets one.
+    if (!next.some((a) => a.transactionId === txId)) { next.push({ transactionId: txId, bucketId, amount: tx.amount, source: 'user' }); moved.add(txId); }
+    setRawAllocations(next);
     if (always) setRules((rs) => [...rs.filter((r) => r.match !== key), { match: key, bucketId }]);
+    save(async (w) => {
+      await w.replaceAllocations([...moved], next);
+      if (always) await w.setRule(key, bucketId);
+    });
   };
-  const [splits, setSplits] = useState<SplitSettings>(demoSplits);
   // Everything downstream sees split bills at the household's share.
   const { transactions, allocations } = useMemo(() => applySplits(rawTransactions, rawAllocations, splits), [rawTransactions, rawAllocations, splits]);
   /** Split a bill (or stop splitting it). `everyCharge` applies it to every charge from that vendor. */
@@ -46,16 +122,33 @@ function useBudgetState() {
       else if (split) byTransaction[txId] = split;
       return { byTransaction, byVendor };
     });
+    save((w) => w.setBillSplit(txId, key, split, everyCharge));
   };
-  const [goals, setGoals] = useState<SavingsGoal[]>(demoGoals);
   /** New goals start as the least protected, so overspending draws from them before older goals. */
-  const addGoal = (fields: GoalFields) =>
-    setGoals((gs) => [...gs, { ...fields, id: `goal-${Date.now()}`, priority: Math.max(0, ...gs.map((g) => g.priority)) + 1 }]);
-  const updateGoal = (id: string, fields: GoalFields) =>
+  const addGoal = (fields: GoalFields) => {
+    const tempId = `goal-${Date.now()}`;
+    const priority = Math.max(0, ...goals.map((g) => g.priority)) + 1;
+    setGoals((gs) => [...gs, { ...fields, id: tempId, priority }]);
+    // Swap the temporary id for the saved one, so later edits reach the right row.
+    save(async (w) => {
+      const id = await w.addGoal({ ...fields, priority });
+      setGoals((gs) => gs.map((g) => (g.id === tempId ? { ...g, id } : g)));
+    });
+  };
+  const updateGoal = (id: string, fields: GoalFields) => {
     setGoals((gs) => gs.map((g) => (g.id === id ? { ...g, ...fields } : g)));
-  const deleteGoal = (id: string) => setGoals((gs) => gs.filter((g) => g.id !== id));
+    save((w) => w.updateGoal(id, fields));
+  };
+  const deleteGoal = (id: string) => {
+    setGoals((gs) => gs.filter((g) => g.id !== id));
+    save((w) => w.deleteGoal(id));
+  };
   /** `ids` from most protected to least. Overspending draws from the end of the list first. */
-  const setGoalOrder = (ids: string[]) => setGoals((gs) => reorderGoals(gs, ids));
+  const setGoalOrder = (ids: string[]) => {
+    const next = reorderGoals(goals, ids);
+    setGoals(next);
+    save((w) => w.setGoalPriorities(next));
+  };
   const month = new Date().toISOString().slice(0, 7);
 
   const today = new Date().getDate();
@@ -108,9 +201,7 @@ function useBudgetState() {
   const addCreditPack = (n: number) => setCredits((c) => ({ ...c, extra: c.extra + n }));
 
   // Household: members and the accounts each of them linked.
-  const [members] = useState<Member[]>(demoMembers);
-  const [accounts] = useState<Account[]>(demoAccounts);
-  const meId = 'me';
+  const meId = live && userId ? userId : 'me';
   /** "Sam's Capital One ··9012", or "Your Chase ··5678". */
   const accountLabel = (accountId: string) => {
     const a = accounts.find((x) => x.id === accountId);
@@ -126,13 +217,22 @@ function useBudgetState() {
   );
   const trends = useMemo(() => bucketTrends(buckets, transactions, allocations, month), [buckets, transactions, allocations, month]);
   const small = useMemo(() => smallPurchases(transactions, month), [transactions, month]);
-  const setBucketLimit = (bucketId: string, monthlyLimit: number) =>
+  const setBucketLimit = (bucketId: string, monthlyLimit: number) => {
     setBuckets((bs) => bs.map((b) => (b.id === bucketId ? { ...b, monthlyLimit } : b)));
+    save((w) => w.setBucketLimit(bucketId, monthlyLimit));
+  };
 
-  const addBucket = (name: string, monthlyLimit: number) =>
-    setBuckets((bs) => [...bs, { id: `custom-${Date.now()}`, name, icon: 'star.fill', monthlyLimit, isCustom: true }]);
+  const addBucket = (name: string, monthlyLimit: number) => {
+    const tempId = `custom-${Date.now()}`;
+    setBuckets((bs) => [...bs, { id: tempId, name, icon: 'star.fill', monthlyLimit, isCustom: true }]);
+    save(async (w) => {
+      const id = await w.addBucket(name, monthlyLimit, 'star.fill', buckets.length + 1);
+      bucketUuid.current.set(id, id);
+      setBuckets((bs) => bs.map((b) => (b.id === tempId ? { ...b, id } : b)));
+    });
+  };
 
-  return { month, today, buckets, transactions, allocations, setBillSplit, rules, moveToBucket, goals, addGoal, updateGoal, deleteGoal, setGoalOrder, statuses, impact, trend, forecast, insights, recap, bills, free, verdict, ahead, cutIdeas, tuneUps, trends, small, setBucketLimit, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack, members, accounts, meId, accountLabel };
+  return { live, loading, syncError, reload, month, today, buckets, transactions, allocations, setBillSplit, rules, moveToBucket, goals, addGoal, updateGoal, deleteGoal, setGoalOrder, statuses, impact, trend, forecast, insights, recap, bills, free, verdict, ahead, cutIdeas, tuneUps, trends, small, setBucketLimit, addBucket, credits, creditBalance, useCredits, syncCredits, addCreditPack, members, accounts, meId, accountLabel };
 }
 
 type BudgetState = ReturnType<typeof useBudgetState>;
