@@ -2,9 +2,10 @@ import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { router } from 'expo-router';
 import { BottomTabBarHeightContext } from 'expo-router/tabs';
-import { useContext, useEffect, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, View, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
+import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Dimensions, Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { scrollShift } from '@/src/lib/keyboard';
 import Colors, { Fonts } from '@/constants/Colors';
 import { useColorScheme } from './useColorScheme';
 
@@ -20,19 +21,44 @@ export const radius = { card: 22, control: 14, pill: 999 } as const;
  * large serif title (with an optional `action` such as the Settings gear) instead of a
  * navigation bar; pushed screens keep the native header and leave `title` out.
  */
-export function Screen({ children, title, eyebrow, action, overlay }: {
+export function Screen({ children, title, eyebrow, action, keyboardDone }: {
   children: ReactNode; title?: string; eyebrow?: string; action?: ReactNode;
-  /** Drawn over the scrolling content, e.g. <KeyboardDone />. */
-  overlay?: ReactNode;
+  /**
+   * For screens with text fields: show a Done bar on top of the keyboard (iOS number pads have
+   * no Return key) and scroll so the field being typed in sits just above it.
+   */
+  keyboardDone?: boolean;
 }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   // Floating tab bar: leave room so the last card scrolls clear of it.
   const tabBar = useContext(BottomTabBarHeightContext);
+  const scrollRef = useRef<{ scrollTo(o: { y: number; animated?: boolean }): void } | null>(null);
+  const offset = useRef(0);
+  const keyboard = useKeyboard(!!keyboardDone);
+
+  // Each time the keyboard appears or changes (including moving to another field), bring the
+  // focused field, and a little room for the button under it, above the keyboard and Done bar.
+  useEffect(() => {
+    if (keyboard.height == null) return;
+    const timer = setTimeout(() => {
+      const input = TextInput.State.currentlyFocusedInput?.() as unknown as { measureInWindow?(cb: (x: number, y: number, w: number, h: number) => void): void } | null;
+      input?.measureInWindow?.((_x, y, _w, h) => {
+        const visibleTop = insets.top + 56;
+        const visibleBottom = Dimensions.get('window').height - keyboard.height! - DONE_BAR_HEIGHT - space.m;
+        const shift = scrollShift({ fieldTop: y, fieldBottom: y + h, visibleTop, visibleBottom, extraBelow: 72 });
+        if (shift !== 0) scrollRef.current?.scrollTo({ y: Math.max(0, offset.current + shift), animated: true });
+      });
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [keyboard.height, keyboard.changes]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const keyboardRoom = keyboard.height != null ? keyboard.height + DONE_BAR_HEIGHT : 0;
   const scroll = (
-    <ScrollView style={{ backgroundColor: t.background }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"
+    <ScrollView ref={scrollRef as never} style={{ backgroundColor: t.background }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"
+      onScroll={(e) => { offset.current = e.nativeEvent.contentOffset.y; }} scrollEventThrottle={16}
       contentInsetAdjustmentBehavior={title ? 'never' : 'automatic'}
-      contentContainerStyle={{ paddingHorizontal: space.l, paddingTop: title ? insets.top + space.l : space.l, paddingBottom: (tabBar ?? 0) + space.xl, gap: space.xl }}>
+      contentContainerStyle={{ paddingHorizontal: space.l, paddingTop: title ? insets.top + space.l : space.l, paddingBottom: Math.max((tabBar ?? 0) + space.xl, keyboardRoom + space.xl), gap: space.xl }}>
       {title && (
         <View style={styles.titleRow}>
           <View style={{ flexShrink: 1 }}>
@@ -45,8 +71,8 @@ export function Screen({ children, title, eyebrow, action, overlay }: {
       {children}
     </ScrollView>
   );
-  if (!overlay) return scroll;
-  return <View style={{ flex: 1, backgroundColor: t.background }}>{scroll}{overlay}</View>;
+  if (!keyboardDone) return scroll;
+  return <View style={{ flex: 1, backgroundColor: t.background }}>{scroll}<KeyboardDone height={keyboard.height} /></View>;
 }
 
 /** Serif display text for big numbers and headings. */
@@ -449,22 +475,28 @@ export function Notice({ icon, title, children }: { icon?: SymbolViewProps['name
 /** A text field that sits in a card row, with a visible label above the value. */
 export const fieldStyle = { paddingHorizontal: space.l, paddingVertical: 15, fontSize: 17 } as const;
 
-/**
- * iOS number pads have no Return key. Pass <KeyboardDone /> as a Screen's `overlay`: while the
- * keyboard is up, a Done bar sits right on top of it and closes it.
- */
-export function KeyboardDone() {
-  const t = useTheme();
-  const [height, setHeight] = useState<number | null>(null);
+const DONE_BAR_HEIGHT = 46;
+
+/** The keyboard's height while it's up (null when down), and a count that ticks on every show/change. */
+function useKeyboard(enabled: boolean) {
+  const [state, setState] = useState<{ height: number | null; changes: number }>({ height: null, changes: 0 });
   useEffect(() => {
-    if (Platform.OS === 'web') return;
-    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => setHeight(e.endCoordinates.height));
-    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setHeight(null));
+    if (!enabled || Platform.OS === 'web') return;
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => setState((s) => ({ height: e.endCoordinates.height, changes: s.changes + 1 })));
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setState((s) => ({ height: null, changes: s.changes })));
     return () => { show.remove(); hide.remove(); };
-  }, []);
+  }, [enabled]);
+  return state;
+}
+
+/** A Done bar that sits right on top of the keyboard and closes it. Use Screen's `keyboardDone`. */
+function KeyboardDone({ height }: { height: number | null }) {
+  const t = useTheme();
   if (height == null) return null;
   return (
-    <View style={{ position: 'absolute', left: 0, right: 0, bottom: height, flexDirection: 'row', justifyContent: 'flex-end',
+    <View style={{ position: 'absolute', left: 0, right: 0, bottom: height, height: DONE_BAR_HEIGHT, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center',
       backgroundColor: t.card, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.separator }}>
       <Pressable onPress={() => Keyboard.dismiss()} accessibilityRole="button" accessibilityLabel="Done, close keyboard" hitSlop={8}
         style={({ pressed }) => ({ paddingHorizontal: space.l, paddingVertical: 11, opacity: pressed ? 0.5 : 1 })}>
