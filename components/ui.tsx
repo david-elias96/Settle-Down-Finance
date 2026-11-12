@@ -6,6 +6,7 @@ import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Dimensions, Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scrollShift } from '@/src/lib/keyboard';
+import { columnStyle, useLayout } from '@/src/lib/layout';
 import Colors, { Fonts } from '@/constants/Colors';
 import { useColorScheme } from './useColorScheme';
 
@@ -36,6 +37,7 @@ export function Screen({ children, title, eyebrow, action, keyboardDone }: {
   const scrollRef = useRef<{ scrollTo(o: { y: number; animated?: boolean }): void } | null>(null);
   const offset = useRef(0);
   const keyboard = useKeyboard(!!keyboardDone);
+  const { wide } = useLayout();
 
   // Each time the keyboard appears or changes (including moving to another field), bring the
   // focused field, and a little room for the button under it, above the keyboard and Done bar.
@@ -58,7 +60,7 @@ export function Screen({ children, title, eyebrow, action, keyboardDone }: {
     <ScrollView ref={scrollRef as never} style={{ backgroundColor: t.background }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"
       onScroll={(e) => { offset.current = e.nativeEvent.contentOffset.y; }} scrollEventThrottle={16}
       contentInsetAdjustmentBehavior={title ? 'never' : 'automatic'}
-      contentContainerStyle={{ paddingHorizontal: space.l, paddingTop: title ? insets.top + space.l : space.l, paddingBottom: Math.max((tabBar ?? 0) + space.xl, keyboardRoom + space.xl), gap: space.xl }}>
+      contentContainerStyle={[{ paddingHorizontal: space.l, paddingTop: title ? insets.top + (wide ? space.xxl : space.l) : (wide ? space.xl : space.l), paddingBottom: Math.max((tabBar ?? 0) + space.xl, keyboardRoom + space.xl), gap: space.xl }, columnStyle(wide)]}>
       {title && (
         <View style={styles.titleRow}>
           <View style={{ flexShrink: 1 }}>

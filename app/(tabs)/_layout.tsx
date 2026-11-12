@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { FloatingTabBar, type TabIcons } from '@/components/TabBar';
 import { useTheme } from '@/components/ui';
+import { useLayout } from '@/src/lib/layout';
 
 const ICONS: TabIcons = {
   index: { ios: 'house.fill', android: 'home', web: 'home' },
@@ -12,13 +13,15 @@ const ICONS: TabIcons = {
 
 /**
  * Each tab draws its own large serif title (see `Screen`), so the navigator's header is
- * hidden, and the tab bar is the floating pill in `components/TabBar`.
+ * hidden, and the tab bar is the floating pill in `components/TabBar` (a sidebar on the
+ * left in the desktop web app).
  */
 export default function TabLayout() {
   const t = useTheme();
+  const { sidebar } = useLayout();
   return (
     <Tabs tabBar={(props) => <FloatingTabBar {...props} icons={ICONS} />}
-      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: t.background } }}>
+      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: t.background }, tabBarPosition: sidebar ? 'left' : 'bottom' }}>
       <Tabs.Screen name="index" options={{ title: 'Budget' }} />
       <Tabs.Screen name="activity" options={{ title: 'Activity' }} />
       <Tabs.Screen name="subscriptions" options={{ title: 'Subscriptions' }} />
