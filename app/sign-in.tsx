@@ -88,6 +88,15 @@ export default function SignInScreen() {
       <Intro title="Welcome to Settle Down">
         Sign in to see your household's budget. New here? Signing in creates your account.
       </Intro>
+      {/* Right after "Delete my account": say it worked, and what signing in again means. */}
+      {auth.accountDeleted && (
+        <>
+          <Notice title="Your account was deleted" icon={{ ios: 'checkmark.circle.fill', android: 'check_circle', web: 'check_circle' }}>
+            Your banks were removed at Plaid and your data was deleted. Signing in again, even with the same Google account or email, starts a fresh, empty account.
+          </Notice>
+          <Button title="OK" variant="secondary" onPress={auth.clearAccountDeleted} />
+        </>
+      )}
       {apple && !sent && (
         <Button title="Sign in with Apple" icon={{ ios: 'apple.logo', android: 'login', web: 'login' }} disabled={busy}
           onPress={() => run(auth.signInWithApple)} style={{ backgroundColor: busy ? t.track : t.text }} textColor={t.background} />

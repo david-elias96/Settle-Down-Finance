@@ -1,7 +1,7 @@
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
-import { authRequest, backend, PASSKEY_ORIGINS, PASSKEY_RP_ID } from '@/src/lib/backend';
+import { authRequest, backend, callFunction, PASSKEY_ORIGINS, PASSKEY_RP_ID } from '@/src/lib/backend';
 import { createPasskey, getPasskey, passkeySupported } from '@/src/lib/passkey';
 import { handoffRedirect, oauthParams } from '@/src/lib/oauth';
 import { prefs } from '@/src/lib/prefs';
@@ -14,6 +14,10 @@ type Onboarding = 'unknown' | 'needed' | 'done';
 const onboardingKey = (userId: string) => `onboarding-done.${userId}`;
 /** An invite code opened before signing in, so the join page comes back after sign-in. */
 const PENDING_INVITE = 'pending-invite';
+/** Set after "Delete my account", so the sign-in screen can say the account is gone. Not personal data. */
+const ACCOUNT_DELETED = 'account-deleted';
+/** An account this young is new: the welcome says so (a deleted account's email makes a fresh one). */
+const NEW_ACCOUNT_MS = 15 * 60 * 1000;
 
 type Account = {
   currentLevel: Aal | null;
@@ -146,17 +150,20 @@ function useAuthState() {
    */
   const signInWithGoogle = async () => {
     if (!backend) throw friendlyError('Not connected');
+    // Google always asks which account to use, so signing in (or starting over after deleting an
+    // account) is a deliberate choice, not one silent tap on whichever account the browser remembers.
+    const queryParams = { prompt: 'select_account' };
     if (Platform.OS === 'web') {
       // Web app: the whole page goes to Google and comes back to /auth-callback?code=…, which
       // calls finishWebSignIn. The PKCE verifier waits in the encrypted session store.
-      const { error } = await backend.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth-callback` } });
+      const { error } = await backend.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth-callback`, queryParams } });
       if (error) throw error;
       return;
     }
     const [WebBrowser, Linking] = await Promise.all([import('expo-web-browser'), import('expo-linking')]);
     // Supabase sends the browser to our website, which hands the code back to this app address.
     const appReturn = Linking.createURL('auth-callback');
-    const { data, error } = await backend.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: handoffRedirect(appReturn), skipBrowserRedirect: true } });
+    const { data, error } = await backend.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: handoffRedirect(appReturn), skipBrowserRedirect: true, queryParams } });
     if (error) throw error;
     // A private (ephemeral) session skips iOS's "wants to use … to Sign In" alert. The trade-off:
     // it doesn't reuse a Google login from Safari, so people pick or type their Google account here.
@@ -323,6 +330,28 @@ function useAuthState() {
   }, [userId]);
 
     /** Signs out on this device only (other devices stay signed in). */
+  // Shown once on the sign-in screen after deleting an account.
+  const [accountDeleted, setAccountDeleted] = useState(false);
+  useEffect(() => { prefs.get(ACCOUNT_DELETED).then((v) => setAccountDeleted(v === '1')); }, []);
+  const clearAccountDeleted = () => { setAccountDeleted(false); prefs.remove(ACCOUNT_DELETED); };
+  // Signing in again (a fresh account) retires the message.
+  const signedInUser = session?.user.id;
+  useEffect(() => { if (signedInUser) { setAccountDeleted(false); prefs.remove(ACCOUNT_DELETED); } }, [signedInUser]);
+
+  /**
+   * Deletes the account (banks at Plaid, data and login, through the delete-account function),
+   * then signs out. The sign-in screen then says the account is gone and that signing in again
+   * starts a fresh, empty account.
+   */
+  const deleteAccount = async () => {
+    if (!backend || !session) throw friendlyError('Sign in first.');
+    await callFunction('delete-account', { confirm: 'DELETE' });
+    await prefs.set(ACCOUNT_DELETED, '1');
+    setAccountDeleted(true);
+    await backend.auth.signOut({ scope: 'local' }).catch(() => {});
+    await refresh();
+  };
+
   const signOut = async () => {
     // This phone stops getting the account's alerts once it's signed out.
     if (backend && session) await unregisterPushToken(backend, session.user.id).catch(() => {});
@@ -341,6 +370,9 @@ function useAuthState() {
     hasAuthenticatorApp: account.hasAuthenticatorApp, consents: account.consents, linkGate, passkeysAvailable,
     /** Signed in, and the welcome that asks them to link a bank should show. */
     needsOnboarding: stage === 'signed_in' && onboarding === 'needed',
+    /** Signed in to an account created in the last few minutes (first sign-in). */
+    isNewAccount: !!session && Date.now() - new Date(session.user.created_at).getTime() < NEW_ACCOUNT_MS,
+    accountDeleted, clearAccountDeleted, deleteAccount,
     appleAvailable, signInWithApple, signInWithGoogle, finishWebSignIn, sendEmailCode, verifyEmailCode,
     startAuthenticatorSetup, verifyAuthenticatorCode, addPasskey, verifyWithPasskey, acceptConsent,
     ensureHousehold, finishOnboarding, signOut, refresh,

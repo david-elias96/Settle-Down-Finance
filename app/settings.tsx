@@ -39,8 +39,9 @@ export default function SettingsScreen() {
       'This removes your linked banks at Plaid and permanently deletes your data. Shared household data stays for the other members. This cannot be undone.', [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Delete', style: 'destructive', onPress: async () => {
-          try { await callFunction('delete-account', { confirm: 'DELETE' }); await auth.signOut(); Alert.alert('Account deleted', 'Your data has been deleted.'); }
-          catch (e) { Alert.alert('Could not delete account', (e as Error).message); }
+          // Signs out afterwards; the sign-in screen then explains the account is gone.
+          try { await auth.deleteAccount(); }
+          catch { Alert.alert('Could not delete account', 'Nothing was deleted. Check your connection and try again.'); }
         } },
       ]);
   };
