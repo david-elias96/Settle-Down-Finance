@@ -77,7 +77,7 @@ function useAuthState() {
     return true;
   };
 
-  /** Email sign-in: sends a 6-digit code (first factor). */
+  /** Email sign-in: sends a one-time code, 6 to 10 digits depending on the project's setting (first factor). */
   const sendEmailCode = async (email: string) => {
     if (!backend) throw new Error('Not connected');
     const { error } = await backend.auth.signInWithOtp({ email: email.trim() });
@@ -85,8 +85,12 @@ function useAuthState() {
   };
   const verifyEmailCode = async (email: string, code: string) => {
     if (!backend) throw new Error('Not connected');
-    const { error } = await backend.auth.verifyOtp({ email: email.trim(), token: code.trim(), type: 'email' });
-    if (error) throw error;
+    const token = code.replace(/\D/g, '');
+    const { error } = await backend.auth.verifyOtp({ email: email.trim(), token, type: 'email' });
+    if (!error) return;
+    // A brand-new account's first code can be a sign-up confirmation code; try it as one.
+    const { error: signupError } = await backend.auth.verifyOtp({ email: email.trim(), token, type: 'signup' });
+    if (signupError) throw new Error('That code didn’t work. Use the newest email, or ask for a new code.');
   };
 
   /** Starts authenticator-app setup. Returns the secret and an otpauth:// link for the authenticator. */
