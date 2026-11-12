@@ -5,6 +5,7 @@ import { authRequest, backend, PASSKEY_ORIGINS, PASSKEY_RP_ID } from '@/src/lib/
 import { createPasskey, getPasskey, passkeySupported } from '@/src/lib/passkey';
 import { handoffRedirect, oauthParams } from '@/src/lib/oauth';
 import { prefs } from '@/src/lib/prefs';
+import { registerPushToken, unregisterPushToken } from '@/src/notifications';
 import { CONSENT_NOTICE_VERSION, plaidLinkGate } from '@/src/domain';
 import { authStage, friendlyError, type Aal } from './flow';
 
@@ -309,8 +310,22 @@ function useAuthState() {
     if (session) await prefs.set(onboardingKey(session.user.id), '1');
   };
 
-  /** Signs out on this device only (other devices stay signed in). */
+  /** Turns on purchase alerts on this phone (asks for permission). */
+  const turnOnAlerts = async () => {
+    if (!backend || !session) throw friendlyError('Sign in first.');
+    return registerPushToken(backend, session.user.id, true);
+  };
+
+  // Keep this phone's push token current once alerts are allowed (tokens can change).
+  const userId = session?.user.id;
+  useEffect(() => {
+    if (backend && userId) registerPushToken(backend, userId, false).catch(() => {});
+  }, [userId]);
+
+    /** Signs out on this device only (other devices stay signed in). */
   const signOut = async () => {
+    // This phone stops getting the account's alerts once it's signed out.
+    if (backend && session) await unregisterPushToken(backend, session.user.id).catch(() => {});
     await backend?.auth.signOut({ scope: 'local' });
     await refresh();
   };
@@ -329,7 +344,7 @@ function useAuthState() {
     appleAvailable, signInWithApple, signInWithGoogle, finishWebSignIn, sendEmailCode, verifyEmailCode,
     startAuthenticatorSetup, verifyAuthenticatorCode, addPasskey, verifyWithPasskey, acceptConsent,
     ensureHousehold, finishOnboarding, signOut, refresh,
-    pendingInvite, setPendingInvite, acceptInvite, createInvite,
+    pendingInvite, setPendingInvite, acceptInvite, createInvite, turnOnAlerts,
   };
 }
 
