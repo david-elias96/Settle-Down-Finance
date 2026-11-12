@@ -39,7 +39,8 @@ const keychainStorage = {
 
 export const backend: SupabaseClient | null = url && anonKey && Platform.OS !== 'web'
   ? createClient(url, anonKey, {
-    auth: { storage: keychainStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
+    // PKCE: Google sign-in returns a one-time code to the app, never tokens in a URL.
+    auth: { storage: keychainStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false, flowType: 'pkce' },
   })
   : null;
 

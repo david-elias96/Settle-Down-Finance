@@ -14,6 +14,7 @@ Last reviewed: 2026-11-10.
 | Supabase: run migration `0008`, deploy the new functions (`plaid-unlink`, `delete-account`, `retention`), enable MFA (TOTP) and Apple + email OTP providers in Auth, turn on leaked-password protection | Consumer MFA; deletion | 4, 8 |
 | Supabase: set `CRON_SECRET`, and schedule `retention` daily and `daily-insights` each evening (Supabase Cron, sending `Authorization: Bearer <CRON_SECRET>`) | Retention policy enforced | 8 |
 | Passkeys: in Supabase Auth turn on MFA → WebAuthn; in `site/.well-known/apple-app-site-association` replace `APPLE_TEAM_ID` with your Apple Team ID (Apple Developer → Membership); redeploy the site; then build with EAS (the associated domain is in app.json) | Phishing-resistant consumer MFA | 4 |
+| Supabase Auth → URL Configuration: remove the `exp://**` redirect URL (only for Expo Go testing of Google sign-in) so only `settledown://auth-callback` remains | Access controls | 4 |
 | Move the Supabase project to the Pro plan before production (daily backups, no pausing) | Backups, availability | 7 |
 | GitHub: protect `main` (require pull request and the CI checks, block force-push); turn on Dependabot alerts, secret scanning and push protection | Vulnerability scanning; change management | 5, 6 |
 | On your Windows PC: confirm BitLocker, Microsoft Defender and automatic Windows Update are on; log it in [operations.md](operations.md) | Vulnerability scans on employee machines | 6, 9 |

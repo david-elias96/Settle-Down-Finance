@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { authRequest, backend, PASSKEY_ORIGINS, PASSKEY_RP_ID } from '@/src/lib/backend';
+import { oauthParams } from '@/src/lib/oauth';
 import { CONSENT_NOTICE_VERSION, plaidLinkGate } from '@/src/domain';
 
 type Aal = 'aal1' | 'aal2' | null;
@@ -52,6 +53,28 @@ function useAuthState() {
     if (!cred.identityToken) throw new Error('Apple did not return a sign-in token');
     const { error } = await backend.auth.signInWithIdToken({ provider: 'apple', token: cred.identityToken });
     if (error) throw error;
+  };
+
+  /**
+   * Sign in with Google (first factor) through Supabase in the system sign-in sheet. Google
+   * sends a one-time code back to the app (PKCE), which is exchanged for a session. Returns
+   * false if the person closed the sheet.
+   */
+  const signInWithGoogle = async () => {
+    if (!backend) throw new Error('Not connected');
+    const [WebBrowser, Linking] = await Promise.all([import('expo-web-browser'), import('expo-linking')]);
+    const redirectTo = Linking.createURL('auth-callback');
+    const { data, error } = await backend.auth.signInWithOAuth({ provider: 'google', options: { redirectTo, skipBrowserRedirect: true } });
+    if (error) throw error;
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+    if (result.type !== 'success') return false;
+    const params = oauthParams(result.url);
+    if (params.get('error')) throw new Error(params.get('error_description') ?? 'Google sign-in was not completed');
+    const code = params.get('code');
+    if (!code) throw new Error('Google sign-in did not return a code');
+    const { error: exchangeError } = await backend.auth.exchangeCodeForSession(code);
+    if (exchangeError) throw exchangeError;
+    return true;
   };
 
   /** Email sign-in: sends a 6-digit code (first factor). */
@@ -154,7 +177,7 @@ function useAuthState() {
 
   return {
     connected: !!backend, ready, session, householdId, ensureHousehold, email: session?.user.email ?? null, aal, hasFactor, hasPasskey, hasAuthenticatorApp, consents, linkGate,
-    signInWithApple, sendEmailCode, verifyEmailCode, startAuthenticatorSetup, verifyAuthenticatorCode, addPasskey, verifyWithPasskey, acceptConsent, signOut, refresh,
+    signInWithApple, signInWithGoogle, sendEmailCode, verifyEmailCode, startAuthenticatorSetup, verifyAuthenticatorCode, addPasskey, verifyWithPasskey, acceptConsent, signOut, refresh,
   };
 }
 
@@ -170,3 +193,4 @@ export function useAuth() {
   if (!v) throw new Error('useAuth must be used inside AuthProvider');
   return v;
 }
+
