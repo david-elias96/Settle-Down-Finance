@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AUTHENTICATOR_APPS, openAuthenticator, storeUrl } from './authenticators';
+import { AUTHENTICATOR_APPS, iconLookupUrl, iconsFromLookup, openAuthenticator, storeUrl } from './authenticators';
 
 const google = AUTHENTICATOR_APPS[0];
 
@@ -37,5 +37,21 @@ describe('openAuthenticator', () => {
       expect(a.scheme).toMatch(/^[a-z0-9]+:\/\/$/);
       expect(a.appStoreId).toMatch(/^\d+$/);
     }
+  });
+});
+
+describe('app icons', () => {
+  it('looks up every app in one request', () => {
+    expect(iconLookupUrl()).toBe('https://itunes.apple.com/lookup?id=388497605,983156458,1511601750,494168017');
+  });
+
+  it('keeps only https icons with an id', () => {
+    expect(iconsFromLookup({ results: [
+      { trackId: 388497605, artworkUrl512: 'https://is1.mzstatic.com/g.png' },
+      { trackId: 983156458, artworkUrl100: 'http://insecure/m.png' },
+      { artworkUrl512: 'https://no-id.png' },
+    ] })).toEqual({ '388497605': 'https://is1.mzstatic.com/g.png' });
+    expect(iconsFromLookup(null)).toEqual({});
+    expect(iconsFromLookup({ results: 'nope' })).toEqual({});
   });
 });

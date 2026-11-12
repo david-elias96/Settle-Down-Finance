@@ -2,8 +2,8 @@ import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { router } from 'expo-router';
 import { BottomTabBarHeightContext } from 'expo-router/tabs';
-import { useContext, type ReactNode } from 'react';
-import { ActivityIndicator, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, View, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
+import { useContext, useEffect, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, View, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors, { Fonts } from '@/constants/Colors';
 import { useColorScheme } from './useColorScheme';
@@ -20,13 +20,17 @@ export const radius = { card: 22, control: 14, pill: 999 } as const;
  * large serif title (with an optional `action` such as the Settings gear) instead of a
  * navigation bar; pushed screens keep the native header and leave `title` out.
  */
-export function Screen({ children, title, eyebrow, action }: { children: ReactNode; title?: string; eyebrow?: string; action?: ReactNode }) {
+export function Screen({ children, title, eyebrow, action, overlay }: {
+  children: ReactNode; title?: string; eyebrow?: string; action?: ReactNode;
+  /** Drawn over the scrolling content, e.g. <KeyboardDone />. */
+  overlay?: ReactNode;
+}) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   // Floating tab bar: leave room so the last card scrolls clear of it.
   const tabBar = useContext(BottomTabBarHeightContext);
-  return (
-    <ScrollView style={{ backgroundColor: t.background }}
+  const scroll = (
+    <ScrollView style={{ backgroundColor: t.background }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"
       contentInsetAdjustmentBehavior={title ? 'never' : 'automatic'}
       contentContainerStyle={{ paddingHorizontal: space.l, paddingTop: title ? insets.top + space.l : space.l, paddingBottom: (tabBar ?? 0) + space.xl, gap: space.xl }}>
       {title && (
@@ -41,6 +45,8 @@ export function Screen({ children, title, eyebrow, action }: { children: ReactNo
       {children}
     </ScrollView>
   );
+  if (!overlay) return scroll;
+  return <View style={{ flex: 1, backgroundColor: t.background }}>{scroll}{overlay}</View>;
 }
 
 /** Serif display text for big numbers and headings. */
@@ -444,21 +450,26 @@ export function Notice({ icon, title, children }: { icon?: SymbolViewProps['name
 export const fieldStyle = { paddingHorizontal: space.l, paddingVertical: 15, fontSize: 17 } as const;
 
 /**
- * iOS number pads have no Return key. Render this once on a screen and give the field
- * inputAccessoryViewID={KEYBOARD_DONE_ID}: a Done bar sits on top of the keypad and closes it.
+ * iOS number pads have no Return key. Pass <KeyboardDone /> as a Screen's `overlay`: while the
+ * keyboard is up, a Done bar sits right on top of it and closes it.
  */
-export const KEYBOARD_DONE_ID = 'keyboard-done';
 export function KeyboardDone() {
   const t = useTheme();
-  if (Platform.OS !== 'ios') return null;
+  const [height, setHeight] = useState<number | null>(null);
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => setHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setHeight(null));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
+  if (height == null) return null;
   return (
-    <InputAccessoryView nativeID={KEYBOARD_DONE_ID} backgroundColor={t.card}>
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.separator }}>
-        <Pressable onPress={() => Keyboard.dismiss()} accessibilityRole="button" accessibilityLabel="Done" hitSlop={8}
-          style={{ paddingHorizontal: space.l, paddingVertical: 10 }}>
-          <Text style={{ color: t.tint, fontSize: 17, fontWeight: '600' }}>Done</Text>
-        </Pressable>
-      </View>
-    </InputAccessoryView>
+    <View style={{ position: 'absolute', left: 0, right: 0, bottom: height, flexDirection: 'row', justifyContent: 'flex-end',
+      backgroundColor: t.card, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.separator }}>
+      <Pressable onPress={() => Keyboard.dismiss()} accessibilityRole="button" accessibilityLabel="Done, close keyboard" hitSlop={8}
+        style={({ pressed }) => ({ paddingHorizontal: space.l, paddingVertical: 11, opacity: pressed ? 0.5 : 1 })}>
+        <Text style={{ color: t.tint, fontSize: 17, fontWeight: '600' }}>Done</Text>
+      </Pressable>
+    </View>
   );
 }

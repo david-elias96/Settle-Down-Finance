@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, TextInput } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { Button, fieldStyle, Intro, KEYBOARD_DONE_ID, KeyboardDone, Label, Notice, radius, Screen, Section, useTheme } from '@/components/ui';
+import { Button, fieldStyle, Intro, KeyboardDone, Label, Notice, radius, Screen, Section, useTheme } from '@/components/ui';
 import { useAuth } from '@/src/auth/AuthProvider';
 
 /** Sign in with Apple, Google, or a one-time code sent by email. Two-step verification comes next. */
@@ -29,7 +29,7 @@ export default function SignInScreen() {
   }
 
   return (
-    <Screen>
+    <Screen overlay={<KeyboardDone />}>
       <Intro title="Sign in">
         Your budget is tied to your account. Next you'll confirm it's you with a passkey (Face ID) before any bank is connected.
       </Intro>
@@ -49,7 +49,7 @@ export default function SignInScreen() {
           style={[fieldStyle, { color: t.text, borderBottomWidth: sent ? StyleSheet.hairlineWidth : 0, borderBottomColor: t.separator }]} autoCapitalize="none" autoComplete="email" keyboardType="email-address" editable={!sent} />
         {sent && (
           <TextInput accessibilityLabel="Code from email" value={code} onChangeText={setCode} placeholder="12345678" placeholderTextColor={t.secondaryText}
-            style={[fieldStyle, { color: t.text, fontVariant: ['tabular-nums'], letterSpacing: 2 }]} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={10} inputAccessoryViewID={KEYBOARD_DONE_ID} returnKeyType="done" />
+            style={[fieldStyle, { color: t.text, fontVariant: ['tabular-nums'], letterSpacing: 2 }]} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={10} />
         )}
       </Section>
       <Button title={sent ? 'Sign in' : 'Email me a code'} disabled={busy || (sent ? code.replace(/\D/g, '').length < 6 : !email.includes('@'))}
@@ -60,7 +60,6 @@ export default function SignInScreen() {
         <Button title="Send a new code" variant="plain" disabled={busy}
           onPress={() => run(async () => { setCode(''); await auth.sendEmailCode(email); Alert.alert('New code sent', 'Check your email. Earlier codes no longer work.'); })} />
       )}
-      <KeyboardDone />
     </Screen>
   );
 }
