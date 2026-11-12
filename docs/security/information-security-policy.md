@@ -1,6 +1,6 @@
 # Settle Down Finance Information Security Policy
 
-Version 1.4 · Effective 2026-11-10 · Owner: Security Owner (founder)
+Version 1.5 · Effective 2026-11-12 · Owner: Security Owner (founder)
 
 > This is the repository copy of the policy submitted to Plaid. Engineering rules that follow from it are summarized in `CLAUDE.md`, and known gaps between this policy and the current code are tracked in [`gaps.md`](gaps.md). Change this file only through a reviewed pull request, and add a row to the revision history.
 
@@ -66,7 +66,7 @@ Access to production systems and consumer data is granted on least privilege, re
 
 **Application access (consumers).**
 
-- Users sign in through Supabase Auth with Sign in with Apple or a one-time code sent to their email. Before Plaid Link is surfaced, every user must also complete a second factor in that session, which raises it to assurance level AAL2 (Supabase Auth MFA). The default second factor is a passkey (WebAuthn/FIDO2, unlocked with Face ID or the device passcode), which is phishing-resistant because it is bound to settledownfinancial.com; a code from an authenticator app (TOTP) is offered as a fallback. The backend enforces this: it refuses to create a Plaid Link token or exchange a public token for a session below AAL2.
+- Users sign in through Supabase Auth with Sign in with Apple, Sign in with Google (OAuth with PKCE) or a one-time code sent to their email. Before Plaid Link is surfaced, every user must also complete a second factor in that session, which raises it to assurance level AAL2 (Supabase Auth MFA). The default second factor is a passkey (WebAuthn/FIDO2, unlocked with Face ID or the device passcode), which is phishing-resistant because it is bound to settledownfinancial.com; a code from an authenticator app (TOTP) is offered as a fallback. The backend enforces this: it refuses to create a Plaid Link token or exchange a public token for a session below AAL2.
 - Sessions are short-lived JSON Web Tokens with refresh tokens. On the phone they are stored only in the iOS Keychain (Expo SecureStore), never in plain storage.
 - Postgres row-level security is enabled on every table that holds household data, so a signed-in user can read and write only their own household's rows. New tables must enable row-level security in the same migration that creates them.
 - Plaid items and access-token references are not readable from the app at all. The app sees only display fields (institution name and link status) through a restricted view.
@@ -135,6 +135,7 @@ Consumer data goes only to the vendors listed below and only for the purpose sho
 | Anthropic (Claude API) | AI features: answers to questions, insights, bucket sorting, receipt reading, subscription-cancel assistant | Merchant names, amounts, dates and budget categories needed for the feature; receipt images; page text from the cancel assistant with typed values, emails and long numbers removed. Never Plaid tokens, account numbers or passwords. Under Anthropic's commercial terms, API data is not used to train models |
 | Expo | App builds and push delivery | Push token and notification text (merchant, amount, budget status) |
 | Apple | App distribution and push notifications | Push token and notification text |
+| Google | Sign in with Google (identity provider) | The user's name and email address from their Google account, only when they choose Google sign-in. No financial data |
 | Resend | Sending sign-in code emails from settledownfinancial.com | Email address and the one-time sign-in code. No financial data |
 | GitHub | Source code hosting | No consumer data |
 
@@ -198,6 +199,7 @@ People with access use secured devices, know this policy, and may depart from it
 
 | Version | Date | Change | Approved by |
 | --- | --- | --- | --- |
+| 1.5 | 2026-11-12 | Sign in with Google added as a sign-in option; Google added as a vendor | David Elias, Security Owner |
 | 1.4 | 2026-11-10 | Resend added as the email provider for sign-in codes | David Elias, Security Owner |
 | 1.3 | 2026-11-10 | Quarterly end-of-life software check | David Elias, Security Owner |
 | 1.2 | 2026-11-10 | Passkeys (phishing-resistant MFA) added as the default second factor before Plaid Link | David Elias, Security Owner |

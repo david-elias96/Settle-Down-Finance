@@ -63,6 +63,7 @@ When we delete data, the following happens at each vendor:
 - **Plaid:** `/item/remove` ends our access to the item. Plaid then handles its own copy under its End User Privacy Policy, which our privacy policy links to.
 - **Supabase:** deleted rows and Vault secrets are removed from the live database at once, and from backups when they expire.
 - **Anthropic (Claude API):** receives only the fields a feature needs, never tokens, account numbers or passwords. It keeps API data under its commercial retention terms and does not use it to train models.
+- **Google:** when someone signs in with Google, Google shares their name and email address with us; we keep the email with the account and delete it with the account. Google keeps its own sign-in records under its terms.
 - **Expo and Apple:** receive only push tokens and notification text. Push tokens are deleted with the account.
 - **Resend:** sends sign-in code emails, so it receives the email address and the one-time code. It keeps delivery logs under its own retention terms; we do not store emails there.
 
