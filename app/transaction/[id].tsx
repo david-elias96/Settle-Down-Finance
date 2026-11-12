@@ -2,7 +2,7 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
-import { BucketChip, Button, Display, IconChip, Label, ListRow, Screen, Section, Tag, useTheme } from '@/components/ui';
+import { BucketChip, Button, Display, Gone, IconChip, Label, ListRow, Screen, Section, Tag, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { dayHeading, formatCents, splitLabel, splitShare, splitWays } from '@/src/domain';
 
@@ -11,7 +11,7 @@ export default function TransactionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { transactions, allocations, buckets, accountLabel, setBillSplit, moveToBucket } = useBudget();
   const tx = transactions.find((x) => x.id === id);
-  if (!tx) return <Screen><Label secondary>This purchase no longer exists.</Label></Screen>;
+  if (!tx) return <Gone title="This purchase no longer exists">It may have been removed by your bank, or the link is old.</Gone>;
   const parts = allocations.filter((a) => a.transactionId === tx.id);
   const name = (bid: string) => buckets.find((b) => b.id === bid)?.name ?? 'Unassigned';
 
@@ -74,7 +74,8 @@ function MoveBucket({ current, merchant, split, buckets, onMove }: {
 }) {
   const t = useTheme();
   const [open, setOpen] = useState(false);
-  const [always, setAlways] = useState(true);
+  // Off by default: re-sorting every past and future purchase from a store is a bigger step than moving one.
+  const [always, setAlways] = useState(false);
   const [moved, setMoved] = useState<string | null>(null);
   const sep = { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.separator };
   return (
