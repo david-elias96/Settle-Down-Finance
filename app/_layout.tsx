@@ -1,5 +1,5 @@
 import { Fraunces_500Medium, Fraunces_600SemiBold, useFonts } from '@expo-google-fonts/fraunces';
-import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, type ErrorBoundaryProps } from 'expo-router';
+import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useSegments, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
@@ -8,7 +8,7 @@ import { Oops } from '@/components/Oops';
 import { Button, useTheme } from '@/components/ui';
 import { useColorScheme } from '@/components/useColorScheme';
 import { Fonts } from '@/constants/Colors';
-import { AuthProvider } from '@/src/auth/AuthProvider';
+import { AuthProvider, useAuth } from '@/src/auth/AuthProvider';
 import { BudgetProvider } from '@/src/data/BudgetStore';
 import { useNotificationRouting } from '@/src/notifications';
 
@@ -69,6 +69,7 @@ function RootLayoutNav() {
     <ThemeProvider value={theme}>
       <AuthProvider>
       <BudgetProvider>
+        <TwoStepGate />
         <Stack screenOptions={{
           headerShadowVisible: false,
           headerStyle: { backgroundColor: t.background },
@@ -100,4 +101,21 @@ function RootLayoutNav() {
       </AuthProvider>
     </ThemeProvider>
   );
+}
+
+/**
+ * Once two-step verification is set up, it's required at every sign-in: until this session has
+ * used it, every screen sends the person to the two-step screen. The database enforces the same
+ * rule (migration 0010), so this is about the experience, not the only lock.
+ */
+function TwoStepGate() {
+  const auth = useAuth();
+  const segments = useSegments();
+  const here = segments[0];
+  useEffect(() => {
+    if (!auth.ready || !auth.mustVerify) return;
+    if (here === 'two-step' || here === 'sign-in') return;
+    router.replace('/two-step');
+  }, [auth.ready, auth.mustVerify, here]);
+  return null;
 }
