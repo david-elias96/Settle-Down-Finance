@@ -22,13 +22,15 @@ export default function ConnectBankScreen() {
   /** Shown under the button while it works, so tapping Agree visibly does something. */
   const [status, setStatus] = useState<string | null>(null);
 
-  // Send the user to the step they're missing: sign in, then two-step verification.
+  // Send the user to the step they're missing: sign in, then two-step verification. Runs only
+  // when that step changes (linkGate is a new object on every render).
+  const missing = auth.linkGate.ok ? null : auth.linkGate.next;
   useEffect(() => {
     if (!auth.connected || !auth.ready) return;
-    if (auth.linkGate.ok || auth.linkGate.next === 'consent') return;
-    if (auth.linkGate.next === 'sign_in') router.replace('/sign-in');
+    if (!missing || missing === 'consent') return;
+    if (missing === 'sign_in') router.replace('/sign-in');
     else router.replace('/two-step?then=connect-bank');
-  }, [auth.connected, auth.ready, auth.linkGate, auth.hasFactor]);
+  }, [auth.connected, auth.ready, missing]);
 
   /** Set once a bank is linked: the screen shows it and a Continue button, whatever happens next. */
   const [linked, setLinked] = useState<string | null>(null);
