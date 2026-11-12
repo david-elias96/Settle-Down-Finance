@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page not found · Settle Down</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#F6F4EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0D1712" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>
+  @font-face { font-family: "Fraunces"; src: url("/assets/fonts/fraunces.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+  :root { --bg: #F6F4EE; --card: #FFFFFF; --text: #17221D; --muted: #56615A; --brand: #1F5B3F; --brand-ink: #FFFFFF; --soft: #E3F1E6; --hero: #1F5B3F; --glow: rgba(143,209,158,.45); --sun: rgba(246,192,78,.28); --shadow: 0 1px 2px rgba(23,34,29,.06), 0 18px 40px rgba(23,34,29,.12); color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #0D1712; --card: #16241D; --text: #E9EEEA; --muted: #A9B4AD; --brand: #8FD19E; --brand-ink: #0D1712; --soft: #1D3527; --hero: #1A3A2A; --glow: rgba(143,209,158,.18); --sun: rgba(246,192,78,.10); --shadow: 0 1px 2px rgba(0,0,0,.3), 0 18px 40px rgba(0,0,0,.4); color-scheme: dark; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; background: radial-gradient(60rem 30rem at 50% -10%, var(--glow), transparent 60%), radial-gradient(40rem 24rem at 90% 110%, var(--sun), transparent 60%), var(--bg); color: var(--text); font: 17px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; padding: 40px max(20px, env(safe-area-inset-right)) 40px max(20px, env(safe-area-inset-left)); }
+  main { width: 100%; max-width: 560px; text-align: center; display: grid; justify-items: center; gap: 22px; }
+  .home { width: clamp(180px, 42vw, 240px); aspect-ratio: 1; border-radius: 28%; background: var(--hero); box-shadow: var(--shadow); display: grid; place-items: center; animation: settle 4.5s ease-in-out infinite; }
+  .home svg { width: 100%; height: 100%; }
+  @keyframes settle { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-8px) rotate(-1.5deg); } }
+  @media (prefers-reduced-motion: reduce) { .home { animation: none; } }
+  h1 { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: clamp(32px, 6vw, 46px); line-height: 1.08; letter-spacing: -0.02em; margin: 10px 0 0; text-wrap: balance; }
+  p { margin: 0; color: var(--muted); max-width: 44ch; text-wrap: pretty; }
+  .detail { font-size: 14px; background: var(--soft); color: var(--text); border-radius: 12px; padding: 8px 14px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 6px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 24px; border-radius: 999px; font-weight: 600; text-decoration: none; }
+  .primary { background: var(--brand); color: var(--brand-ink); }
+  .secondary { background: var(--card); color: var(--brand); box-shadow: var(--shadow); }
+  .btn:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+  footer { font-size: 13px; color: var(--muted); }
+  footer a { color: var(--brand); }
+</style>
+</head>
+<body>
+<main>
+  <div class="home" role="img" aria-label="The Settle Down house, smiling">
+    <svg viewBox="0 0 1024 1024" aria-hidden="true"><g transform="translate(512 512) scale(1) translate(-512 -512)"><g transform="translate(-18,-60)">
+ <g fill="none" stroke="#F3F7EF" stroke-width="52" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M232 800V540L420 372L608 540V800"/><path d="M180 800H880"/>
+  <path d="M374 684Q420 724 466 684" stroke-width="26"/>
+  <path d="M338 604Q370 634 402 604" stroke-width="26"/><path d="M438 604Q470 634 502 604" stroke-width="26"/>
+ </g>
+ <circle cx="338" cy="662" r="18" fill="#F6C04E"/><circle cx="502" cy="662" r="18" fill="#F6C04E"/>
+ <g transform="translate(36,0)">
+  <path d="M720 560V800" stroke="#F3F7EF" stroke-width="52" stroke-linecap="round"/>
+  <g fill="#8FD19E"><circle cx="720" cy="350" r="72"/><circle cx="660" cy="418" r="72"/><circle cx="782" cy="418" r="72"/><circle cx="634" cy="500" r="62"/><circle cx="806" cy="500" r="62"/><circle cx="720" cy="486" r="88"/></g>
+ </g>
+</g></g></svg>
+  </div>
+  <h1>Oops! We couldn’t find that page.</h1>
+  <p>The link may be old, or the page may have moved. Everything else is right where you left it.</p>
+  
+  <div class="actions">
+    <a class="btn primary" href="/">Back to Settle Down</a>
+    <a class="btn secondary" href="/privacy/">Privacy policy</a>
+  </div>
+  <footer>Still stuck? Email <a href="mailto:admin@settledownfinancial.com">admin@settledownfinancial.com</a></footer>
+</main>
+
+</body>
+</html>

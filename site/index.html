@@ -286,7 +286,9 @@ footer .brand svg { width: 30px; height: 23px; }
   .waitlist .btn { width: 100%; }
 }
 </style>
-<script>document.documentElement.classList.add('js');</script>
+<script>document.documentElement.classList.add('js');
+// A sign-in that fails falls back to this page with the error in the URL; show the friendly error page instead.
+if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) location.replace('/oops/' + (location.hash || '#' + location.search.slice(1)));</script>
 </head>
 <body>
 

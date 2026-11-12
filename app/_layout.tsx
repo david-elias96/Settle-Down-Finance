@@ -1,20 +1,29 @@
 import { Fraunces_500Medium, Fraunces_600SemiBold, useFonts } from '@expo-google-fonts/fraunces';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
-import { useTheme } from '@/components/ui';
+import { Oops } from '@/components/Oops';
+import { Button, useTheme } from '@/components/ui';
 import { useColorScheme } from '@/components/useColorScheme';
 import { Fonts } from '@/constants/Colors';
 import { AuthProvider } from '@/src/auth/AuthProvider';
 import { BudgetProvider } from '@/src/data/BudgetStore';
 import { useNotificationRouting } from '@/src/notifications';
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
+/** Any crash on a screen lands here: the happy house, a calm message and a way to try again. */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  return (
+    <Oops title="Oops! Looks like something went wrong." detail={__DEV__ ? error.message : undefined}
+      actions={<>
+        <Button title="Try again" onPress={retry} />
+        <Button title="Back to my budget" variant="secondary" onPress={() => { router.replace('/'); retry(); }} />
+      </>}>
+      Nothing's lost. Your budget and bank data are safe; this screen just tripped over itself.
+    </Oops>
+  );
+}
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
