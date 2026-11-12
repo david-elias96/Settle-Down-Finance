@@ -4,6 +4,7 @@ import { Pressable, StyleSheet } from 'react-native';
 import { AheadCard, FreeCard, HeroCarousel, TrendCard } from '@/components/HomeCarousel';
 import { WeeklyRecapCard } from '@/components/WeeklyRecap';
 import { AiMark, BucketChip, Button, IconChip, Label, ListRow, Notice, PaceBar, Screen, Section, SettingsButton, useTheme } from '@/components/ui';
+import { useAuth } from '@/src/auth/AuthProvider';
 import { useBudget } from '@/src/data/BudgetStore';
 import { bucketPace, byAttention, daysInMonth, formatCents, paceTag, weeklyAllowance, type BucketStatus, type Insight } from '@/src/domain';
 
@@ -17,6 +18,14 @@ const $ = (c: number) => formatCents(c, { showCents: false });
 export default function BudgetScreen() {
   const { statuses, trend, forecast, month, today, insights, recap, tuneUps, trends, free, verdict, ahead, live, loading, syncError, transactions } = useBudget();
   const t = useTheme();
+  const auth = useAuth();
+  const [starting, setStarting] = useState(false);
+  // Signed in but not in a household yet: start one (people joining by invite link get theirs from the link).
+  const needsHousehold = auth.connected && !!auth.session && !auth.householdId;
+  const startBudget = async () => {
+    setStarting(true);
+    try { await auth.ensureHousehold(); } catch { /* the notice stays so they can try again */ } finally { setStarting(false); }
+  };
   const days = daysInMonth(month);
   const [showAll, setShowAll] = useState(false);
 
@@ -55,6 +64,14 @@ export default function BudgetScreen() {
 
   return (
     <Screen eyebrow={dateLabel} title={verdict.text} action={<SettingsButton />}>
+      {needsHousehold && (
+        <>
+          <Notice title="You're signed in" icon={{ ios: 'house.fill', android: 'home', web: 'home' }}>
+            This is still sample data. Start your own budget to switch to yours, or open the invite link from your partner to join theirs.
+          </Notice>
+          <Button title="Start our budget" onPress={startBudget} loading={starting} />
+        </>
+      )}
       {syncError && <Notice title={syncError} icon={{ ios: 'exclamationmark.triangle.fill', android: 'warning', web: 'warning' }} />}
       {live && !loading && !syncError && transactions.length === 0 && (
         <Notice title="No purchases yet" icon={{ ios: 'building.columns.fill', android: 'account_balance', web: 'account_balance' }}>
