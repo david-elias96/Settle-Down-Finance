@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { browserAlert } from './webAlert';
+import { browserAlert } from './browserAlert';
 
 const dialogs = (answers: boolean[] = []) => ({ alert: vi.fn(), confirm: vi.fn(() => answers.shift() ?? false) });
 
