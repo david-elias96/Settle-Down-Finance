@@ -3,7 +3,7 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { router } from 'expo-router';
 import { BottomTabBarHeightContext } from 'expo-router/tabs';
 import { useContext, type ReactNode } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
+import { ActivityIndicator, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, View, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors, { Fonts } from '@/constants/Colors';
 import { useColorScheme } from './useColorScheme';
@@ -442,3 +442,23 @@ export function Notice({ icon, title, children }: { icon?: SymbolViewProps['name
 
 /** A text field that sits in a card row, with a visible label above the value. */
 export const fieldStyle = { paddingHorizontal: space.l, paddingVertical: 15, fontSize: 17 } as const;
+
+/**
+ * iOS number pads have no Return key. Render this once on a screen and give the field
+ * inputAccessoryViewID={KEYBOARD_DONE_ID}: a Done bar sits on top of the keypad and closes it.
+ */
+export const KEYBOARD_DONE_ID = 'keyboard-done';
+export function KeyboardDone() {
+  const t = useTheme();
+  if (Platform.OS !== 'ios') return null;
+  return (
+    <InputAccessoryView nativeID={KEYBOARD_DONE_ID} backgroundColor={t.card}>
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.separator }}>
+        <Pressable onPress={() => Keyboard.dismiss()} accessibilityRole="button" accessibilityLabel="Done" hitSlop={8}
+          style={{ paddingHorizontal: space.l, paddingVertical: 10 }}>
+          <Text style={{ color: t.tint, fontSize: 17, fontWeight: '600' }}>Done</Text>
+        </Pressable>
+      </View>
+    </InputAccessoryView>
+  );
+}

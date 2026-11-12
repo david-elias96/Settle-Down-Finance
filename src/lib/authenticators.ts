@@ -24,13 +24,17 @@ export function storeUrl(app: AuthenticatorApp, os: string) {
     : `https://apps.apple.com/app/id${app.appStoreId}`;
 }
 
-/** Opens the app, or its store page when it isn't installed. Returns which one opened. */
-export async function openAuthenticator(app: AuthenticatorApp, os: string, open: (url: string) => Promise<unknown>): Promise<'app' | 'store'> {
+/**
+ * Opens the app, or its store page when it isn't installed. Returns which one opened.
+ * Takes the Linking object itself (not a bare openURL), because React Native's openURL needs
+ * `this`: passed on its own it throws, and both attempts fail without anything opening.
+ */
+export async function openAuthenticator(app: AuthenticatorApp, os: string, linking: { openURL(url: string): Promise<unknown> }): Promise<'app' | 'store'> {
   try {
-    await open(app.scheme);
+    await linking.openURL(app.scheme);
     return 'app';
   } catch {
-    await open(storeUrl(app, os));
+    await linking.openURL(storeUrl(app, os));
     return 'store';
   }
 }

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import * as Clipboard from 'expo-clipboard';
 import { Alert, Linking, Platform, Text, TextInput, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { Button, fieldStyle, IconChip, Intro, Label, ListRow, Screen, Section, useTheme } from '@/components/ui';
+import { Button, fieldStyle, IconChip, Intro, KEYBOARD_DONE_ID, KeyboardDone, Label, ListRow, Screen, Section, useTheme } from '@/components/ui';
 import { useAuth } from '@/src/auth/AuthProvider';
 import { AUTHENTICATOR_APPS, openAuthenticator } from '@/src/lib/authenticators';
 
@@ -88,7 +88,7 @@ export default function TwoStepScreen() {
             {AUTHENTICATOR_APPS.map((app) => (
               <ListRow key={app.name} title={app.name} note="Copy key and open"
                 leading={<IconChip icon={{ ios: 'lock.shield.fill', android: 'shield', web: 'shield' }} />}
-                onPress={async () => { await copyKey(); await openAuthenticator(app, Platform.OS, Linking.openURL).catch(() => {}); }} />
+                onPress={async () => { await copyKey(); await openAuthenticator(app, Platform.OS, Linking).catch(() => Alert.alert(`Could not open ${app.name}`, 'The setup key is copied. Open your authenticator app and paste it.')); }} />
             ))}
             {Platform.OS === 'ios' && (
               <ListRow title="Apple Passwords" note="Adds it for you, no key needed"
@@ -112,12 +112,13 @@ export default function TwoStepScreen() {
         <>
           <Section title="6-digit code">
             <TextInput accessibilityLabel="6-digit code" value={code} onChangeText={setCode} placeholder="123456" placeholderTextColor={t.secondaryText}
-              style={[fieldStyle, { color: t.text, fontVariant: ['tabular-nums'], letterSpacing: 2 }]} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={6} />
+              style={[fieldStyle, { color: t.text, fontVariant: ['tabular-nums'], letterSpacing: 2 }]} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={6} inputAccessoryViewID={KEYBOARD_DONE_ID} returnKeyType="done" />
           </Section>
           <Button title="Verify" disabled={busy || code.length < 6}
             onPress={() => run(() => auth.verifyAuthenticatorCode(code, enrollment?.factorId), 'That code didn’t work')} />
         </>
       )}
+      <KeyboardDone />
     </Screen>
   );
 }
