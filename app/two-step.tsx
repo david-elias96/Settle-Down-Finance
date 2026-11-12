@@ -48,6 +48,8 @@ export default function TwoStepScreen() {
   const finish = () => {
     if (then === 'connect-bank') router.replace('/connect-bank');
     // After sign-in, '/' lets the route guard pick the next screen: the bank welcome or the app.
+    // Signed in from an invite link: back to the join page.
+    else if (finishingSignIn && auth.pendingInvite) router.replace(`/join/${auth.pendingInvite}`);
     else if (finishingSignIn || !router.canGoBack()) router.replace('/');
     else router.back();
   };
