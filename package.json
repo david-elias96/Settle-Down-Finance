@@ -43,6 +43,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "build:web": "expo export -p web",
+    "deploy:web": "expo export -p web && npx wrangler pages deploy dist --project-name settledown-app --branch main",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "sync-domain": "node scripts/sync-domain.mjs",

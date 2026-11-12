@@ -1,6 +1,8 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { Platform } from 'react-native';
 import { authRequest, backend, PASSKEY_ORIGINS, PASSKEY_RP_ID } from '@/src/lib/backend';
+import { createPasskey, getPasskey, passkeySupported } from '@/src/lib/passkey';
 import { handoffRedirect, oauthParams } from '@/src/lib/oauth';
 import { CONSENT_NOTICE_VERSION, plaidLinkGate } from '@/src/domain';
 
@@ -62,6 +64,13 @@ function useAuthState() {
    */
   const signInWithGoogle = async () => {
     if (!backend) throw new Error('Not connected');
+    if (Platform.OS === 'web') {
+      // Web app: the whole page goes to Google and comes back to /auth-callback?code=…, which
+      // calls finishWebSignIn. The PKCE verifier waits in the encrypted session store.
+      const { error } = await backend.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth-callback` } });
+      if (error) throw error;
+      return false;
+    }
     const [WebBrowser, Linking] = await Promise.all([import('expo-web-browser'), import('expo-linking')]);
     // Supabase sends the browser to our website, which hands the code back to this app address.
     const appReturn = Linking.createURL('auth-callback');
@@ -78,6 +87,16 @@ function useAuthState() {
     const { error: exchangeError } = await backend.auth.exchangeCodeForSession(code);
     if (exchangeError) throw exchangeError;
     return true;
+  };
+
+  /** Web app: exchanges the code Google sign-in sent back. Returns whether a second factor exists. */
+  const finishWebSignIn = async (code: string) => {
+    if (!backend) throw new Error('Not connected');
+    const { error } = await backend.auth.exchangeCodeForSession(code);
+    if (error) throw error;
+    const { data } = await backend.auth.mfa.listFactors();
+    await refresh();
+    return !!data?.all.some((f) => f.status === 'verified');
   };
 
   /** Email sign-in: sends a one-time code, 6 to 10 digits depending on the project's setting (first factor). */
@@ -123,16 +142,15 @@ function useAuthState() {
    */
   const runPasskey = async (factorId: string) => {
     if (!backend) throw new Error('Not connected');
-    // Loaded lazily: the native passkey module exists only in development and TestFlight builds.
-    const { Passkey } = await import('react-native-passkey');
-    if (!Passkey.isSupported()) throw new Error('Passkeys need iOS 16 or later.');
+    // Native module in the app (development and TestFlight builds), WebAuthn in the web app.
+    if (!(await passkeySupported())) throw new Error('Passkeys need iOS 16 or later.');
     const challenge = await authRequest<{
       id: string;
       webauthn: { type: 'create' | 'request'; credential_options: { publicKey: any } };
     }>(`/factors/${factorId}/challenge`, { webauthn: { rpId: PASSKEY_RP_ID, rpOrigins: PASSKEY_ORIGINS } });
     const { type, credential_options } = challenge.webauthn;
-    const result = type === 'create' ? await Passkey.create(credential_options.publicKey) : await Passkey.get(credential_options.publicKey);
-    // supabase-js serializes the credential with toJSON(); the native module already returns JSON.
+    const result = type === 'create' ? await createPasskey(credential_options.publicKey) : await getPasskey(credential_options.publicKey);
+    // supabase-js serializes the credential with toJSON(); both helpers already return JSON.
     const { error } = await backend.auth.mfa.verify({
       factorId, challengeId: challenge.id,
       webauthn: { rpId: PASSKEY_RP_ID, rpOrigins: PASSKEY_ORIGINS, type, credential_response: { toJSON: () => result } as any },
@@ -184,7 +202,7 @@ function useAuthState() {
 
   return {
     connected: !!backend, ready, session, householdId, ensureHousehold, email: session?.user.email ?? null, aal, hasFactor, hasPasskey, hasAuthenticatorApp, consents, linkGate,
-    signInWithApple, signInWithGoogle, sendEmailCode, verifyEmailCode, startAuthenticatorSetup, verifyAuthenticatorCode, addPasskey, verifyWithPasskey, acceptConsent, signOut, refresh,
+    signInWithApple, signInWithGoogle, finishWebSignIn, sendEmailCode, verifyEmailCode, startAuthenticatorSetup, verifyAuthenticatorCode, addPasskey, verifyWithPasskey, acceptConsent, signOut, refresh,
   };
 }
 

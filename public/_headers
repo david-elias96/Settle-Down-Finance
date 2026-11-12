@@ -1,0 +1,25 @@
+# Cloudflare Pages headers for the web app (app.settledownfinancial.com). HTTPS only (policy section 5).
+# CSP: our own code only, plus Plaid's Link SDK. Data goes only to Supabase (and Plaid inside Link).
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.plaid.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.mzstatic.com; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.plaid.com https://itunes.apple.com; frame-src https://cdn.plaid.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin
+  Permissions-Policy: camera=(self), microphone=(), geolocation=(), payment=(), usb=(), publickey-credentials-create=(self), publickey-credentials-get=(self)
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+
+# New releases show up on the next open: never cache the page or the service worker itself.
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+/sw.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Content-Type: application/manifest+json
+  Cache-Control: no-cache
+
+# Bundles have content hashes in their names.
+/_expo/*
+  Cache-Control: public, max-age=31536000, immutable

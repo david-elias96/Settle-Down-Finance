@@ -6,7 +6,7 @@ import { requirePlaidLinkAllowed } from '../_shared/security.ts';
 import { PLAID_HISTORY_DAYS } from '../_shared/domain/index.ts';
 
 Deno.serve(handle(async (req) => {
-  const { householdId } = await req.json();
+  const { householdId, web } = await req.json();
   const { userId } = await requireMember(req, householdId);
   await requirePlaidLinkAllowed(req, userId);
   const data = await plaid('/link/token/create', {
@@ -17,7 +17,8 @@ Deno.serve(handle(async (req) => {
     country_codes: ['US'],
     language: 'en',
     webhook: `${Deno.env.get('SUPABASE_URL')}/functions/v1/plaid-webhook`,
-    redirect_uri: Deno.env.get('PLAID_REDIRECT_URI') || undefined,
+    // Banks that use OAuth return to this page: the web app's /connect-bank, or the iOS app's link.
+    redirect_uri: (web === true ? Deno.env.get('PLAID_WEB_REDIRECT_URI') : Deno.env.get('PLAID_REDIRECT_URI')) || undefined,
   });
   return json({ linkToken: data.link_token });
 }));
