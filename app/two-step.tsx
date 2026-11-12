@@ -5,6 +5,7 @@ import { Alert, Linking, Platform, Text, TextInput, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Button, fieldStyle, IconChip, Intro, Label, ListRow, Screen, Section, useTheme } from '@/components/ui';
 import { useAuth } from '@/src/auth/AuthProvider';
+import { AUTHENTICATOR_APPS, openAuthenticator } from '@/src/lib/authenticators';
 
 /**
  * Two-step verification (policy section 4), required before a bank can be linked.
@@ -24,6 +25,13 @@ export default function TwoStepScreen() {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showQr, setShowQr] = useState(false);
+
+  const copyKey = async () => {
+    if (!enrollment) return;
+    await Clipboard.setStringAsync(enrollment.secret);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
 
   const finish = () => (then === 'connect-bank' ? router.replace('/connect-bank') : router.back());
   const run = async (fn: () => Promise<void>, failTitle: string) => {
@@ -63,7 +71,7 @@ export default function TwoStepScreen() {
       {enrolling && useApp && enrollment && (
         <>
           <Section title="Add Settle Down to your authenticator"
-            footer="Works with any authenticator app: Google Authenticator, Microsoft Authenticator, 1Password, Authy, Apple Passwords and others.">
+            footer="Works with any authenticator app.">
             <View style={{ padding: 16, gap: 10 }}>
               <Label secondary style={{ fontSize: 14, lineHeight: 20 }}>
                 Copy this setup key, then in your authenticator app choose Add account → Enter a setup key, and paste it. Name it Settle Down.
@@ -73,11 +81,21 @@ export default function TwoStepScreen() {
                 {groupKey(enrollment.secret)}
               </Text>
               <Button title={copied ? 'Copied' : 'Copy setup key'} icon={{ ios: copied ? 'checkmark' : 'doc.on.doc', android: 'content_copy', web: 'content_copy' }}
-                onPress={async () => { await Clipboard.setStringAsync(enrollment.secret); setCopied(true); setTimeout(() => setCopied(false), 2500); }} />
+                onPress={copyKey} />
             </View>
           </Section>
-          <Section title="Other ways to add it">
-            <ListRow title={showQr ? 'Hide QR code' : 'Show QR code'} note="Scan it with an authenticator on another phone or tablet"
+          <Section title="Open your authenticator" footer="Tapping an app copies the setup key, then opens the app (or the App Store if you don't have it yet).">
+            {AUTHENTICATOR_APPS.map((app) => (
+              <ListRow key={app.name} title={app.name} note="Copy key and open"
+                leading={<IconChip icon={{ ios: 'lock.shield.fill', android: 'shield', web: 'shield' }} />}
+                onPress={async () => { await copyKey(); await openAuthenticator(app, Platform.OS, Linking.openURL).catch(() => {}); }} />
+            ))}
+            {Platform.OS === 'ios' && (
+              <ListRow title="Apple Passwords" note="Adds it for you, no key needed"
+                leading={<IconChip icon={{ ios: 'key.fill', android: 'key', web: 'key' }} />}
+                onPress={() => Linking.openURL(enrollment.uri).catch(() => Alert.alert('Could not open Passwords', 'Copy the setup key instead.'))} />
+            )}
+            <ListRow title={showQr ? 'Hide QR code' : 'Show QR code'} note="Scan it from another phone or tablet" last={!showQr} chevron={false}
               leading={<IconChip icon={{ ios: 'qrcode', android: 'qr_code', web: 'qr_code' }} />} onPress={() => setShowQr((v) => !v)} />
             {showQr && (
               <View style={{ alignItems: 'center', padding: 16 }} accessible accessibilityLabel="QR code for your authenticator app">
@@ -86,9 +104,6 @@ export default function TwoStepScreen() {
                 </View>
               </View>
             )}
-            <ListRow title="Open in this phone's default app" note={Platform.OS === 'ios' ? 'Usually Apple Passwords' : 'Your default authenticator'} last
-              leading={<IconChip icon={{ ios: 'arrow.up.forward.app', android: 'open_in_new', web: 'open_in_new' }} />}
-              onPress={() => Linking.openURL(enrollment.uri).catch(() => Alert.alert('No authenticator app found', 'Copy the setup key instead.'))} />
           </Section>
         </>
       )}

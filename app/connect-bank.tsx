@@ -1,3 +1,4 @@
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
@@ -32,6 +33,12 @@ export default function ConnectBankScreen() {
       if (!auth.linkGate.ok) await auth.acceptConsent();
       const householdId = await auth.ensureHousehold();
       const { linkToken } = await callFunction<{ linkToken: string }>('plaid-link-token', { householdId });
+      // Expo Go can't open Plaid (no native SDK). Getting this far still proves the backend is ready.
+      if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
+        Alert.alert('Almost there', 'Your account is ready for bank linking. Plaid itself only opens in the real app build (TestFlight or a development build), not in Expo Go.');
+        setBusy(false);
+        return;
+      }
       // Loaded lazily: Plaid's native SDK exists only in development and TestFlight builds.
       const { createPlaidLinkSession } = await import('react-native-plaid-link-sdk');
       const session = await createPlaidLinkSession({

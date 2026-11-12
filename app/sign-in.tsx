@@ -48,7 +48,7 @@ export default function SignInScreen() {
         <TextInput accessibilityLabel="Email" value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor={t.secondaryText}
           style={[fieldStyle, { color: t.text, borderBottomWidth: sent ? StyleSheet.hairlineWidth : 0, borderBottomColor: t.separator }]} autoCapitalize="none" autoComplete="email" keyboardType="email-address" editable={!sent} />
         {sent && (
-          <TextInput accessibilityLabel="Code from email" value={code} onChangeText={setCode} placeholder="123456" placeholderTextColor={t.secondaryText}
+          <TextInput accessibilityLabel="Code from email" value={code} onChangeText={setCode} placeholder="12345678" placeholderTextColor={t.secondaryText}
             style={[fieldStyle, { color: t.text, fontVariant: ['tabular-nums'], letterSpacing: 2 }]} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={10} />
         )}
       </Section>
