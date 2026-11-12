@@ -27,7 +27,7 @@ export default function ConnectBankScreen() {
     if (!auth.connected || !auth.ready) return;
     if (auth.linkGate.ok || auth.linkGate.next === 'consent') return;
     if (auth.linkGate.next === 'sign_in') router.replace('/sign-in');
-    else router.replace(auth.hasFactor ? '/two-step?then=connect-bank' : '/two-step?setup=1&then=connect-bank');
+    else router.replace('/two-step?then=connect-bank');
   }, [auth.connected, auth.ready, auth.linkGate, auth.hasFactor]);
 
   /** Sends Plaid's one-time public token to the backend, which keeps the access token in Vault. */

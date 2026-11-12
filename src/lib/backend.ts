@@ -1,4 +1,5 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient, processLock, type SupabaseClient } from '@supabase/supabase-js';
+import { AppState, Platform } from 'react-native';
 import { sessionStorage } from './sessionStorage';
 
 /**
@@ -16,9 +17,20 @@ const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 export const backend: SupabaseClient | null = url && anonKey
   ? createClient(url, anonKey, {
     // PKCE: Google sign-in returns a one-time code to the app, never tokens in a URL.
-    auth: { storage: sessionStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false, flowType: 'pkce' },
+    // processLock: one session read or refresh at a time, so two callers can't both spend the
+    // same single-use refresh token (which signs the person out).
+    auth: { storage: sessionStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false, flowType: 'pkce', lock: processLock },
   })
   : null;
+
+// In the iOS app, refresh the session only while the app is open: timers don't run in the
+// background, so a refresh due then happens as soon as the app comes back (Supabase's guidance
+// for React Native). Browsers handle this themselves.
+if (backend && Platform.OS !== 'web') {
+  const sync = (state: string | null | undefined) => (state === 'active' ? backend.auth.startAutoRefresh() : backend.auth.stopAutoRefresh());
+  sync(AppState.currentState);
+  AppState.addEventListener('change', sync);
+}
 
 /** Calls an edge function as the signed-in user. Throws with the function's error message. */
 export async function callFunction<T = unknown>(name: string, body: Record<string, unknown>): Promise<T> {

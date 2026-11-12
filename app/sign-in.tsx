@@ -1,11 +1,21 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, TextInput } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Button, fieldStyle, Intro, Label, Notice, radius, Screen, Section, useTheme } from '@/components/ui';
 import { useAuth } from '@/src/auth/AuthProvider';
+import { authErrorMessage, EMAIL_RESEND_SECONDS, looksLikeEmail, retryAfterSeconds } from '@/src/auth/flow';
+import { prefs } from '@/src/lib/prefs';
 
-/** Sign in with Apple, Google, or a one-time code sent by email. Two-step verification comes next. */
+/** The address a code was sent to, kept so coming back from Mail (or a web-app reload) keeps their place. */
+const PENDING_EMAIL = 'sign-in.pending-email';
+/** Codes expire, so after this the pending address is forgotten. */
+const PENDING_FOR_MS = 15 * 60 * 1000;
+
+/**
+ * Sign in with Apple, Google, or a one-time code sent by email. This screen never navigates:
+ * once a session exists, the route guard in app/_layout.tsx opens the next step (two-step
+ * verification for accounts that have it, the "Link your banks" welcome, or the app).
+ */
 export default function SignInScreen() {
   const t = useTheme();
   const auth = useAuth();
@@ -13,13 +23,54 @@ export default function SignInScreen() {
   const [code, setCode] = useState('');
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [apple, setApple] = useState(false);
+  /** When a new code may be requested (ms since epoch). */
+  const [resendAt, setResendAt] = useState(0);
+  const [now, setNow] = useState(Date.now());
 
-  const sendCode = async () => { await auth.sendEmailCode(email); setSent(true); };
+  useEffect(() => { auth.appleAvailable().then(setApple); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pick up where they left off if they went to Mail for the code.
+  useEffect(() => {
+    prefs.get(PENDING_EMAIL).then((raw) => {
+      if (!raw) return;
+      try {
+        const p = JSON.parse(raw) as { email: string; at: number };
+        if (Date.now() - p.at < PENDING_FOR_MS && looksLikeEmail(p.email)) {
+          setEmail(p.email); setSent(true); setResendAt(p.at + EMAIL_RESEND_SECONDS * 1000);
+        } else prefs.remove(PENDING_EMAIL);
+      } catch { prefs.remove(PENDING_EMAIL); }
+    });
+  }, []);
+
+  const waiting = Math.max(0, Math.ceil((resendAt - now) / 1000));
+  useEffect(() => {
+    if (!waiting) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [waiting > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
-    try { await fn(); } catch (e) { Alert.alert('Sign-in failed', (e as Error).message); } finally { setBusy(false); }
+    try { await fn(); } catch (e) {
+      const wait = retryAfterSeconds(e);
+      if (wait) { setResendAt(Date.now() + wait * 1000); setNow(Date.now()); }
+      const msg = authErrorMessage(e);
+      if (msg) Alert.alert('Sign-in didn’t work', msg);
+    } finally { setBusy(false); }
   };
-  const done = () => router.replace(auth.hasFactor ? '/two-step' : '/two-step?setup=1');
+
+  const sendCode = async () => {
+    await auth.sendEmailCode(email);
+    const at = Date.now();
+    setSent(true); setCode(''); setResendAt(at + EMAIL_RESEND_SECONDS * 1000); setNow(at);
+    await prefs.set(PENDING_EMAIL, JSON.stringify({ email: email.trim().toLowerCase(), at }));
+  };
+  const verify = async () => {
+    await auth.verifyEmailCode(email, code);
+    await prefs.remove(PENDING_EMAIL);
+  };
+  const changeEmail = () => { setSent(false); setCode(''); setResendAt(0); prefs.remove(PENDING_EMAIL); };
 
   if (!auth.connected) {
     return (
@@ -29,37 +80,47 @@ export default function SignInScreen() {
     );
   }
 
+  const codeDigits = code.replace(/\D/g, '').length;
+  const emailOk = looksLikeEmail(email);
+
   return (
     <Screen keyboardDone>
-      <Intro title="Sign in">
-        Your budget is tied to your account. Next you'll confirm it's you with a passkey (Face ID) before any bank is connected.
+      <Intro title="Welcome to Settle Down">
+        Sign in to see your household's budget. New here? Signing in creates your account.
       </Intro>
-      {Platform.OS === 'ios' && (
+      {apple && !sent && (
         <Button title="Sign in with Apple" icon={{ ios: 'apple.logo', android: 'login', web: 'login' }} disabled={busy}
-          onPress={() => run(async () => { await auth.signInWithApple(); done(); })} style={{ backgroundColor: busy ? t.track : t.text }} textColor={t.background} />
+          onPress={() => run(auth.signInWithApple)} style={{ backgroundColor: busy ? t.track : t.text }} textColor={t.background} />
       )}
-      <Pressable accessibilityRole="button" disabled={busy}
-        onPress={() => run(async () => { if (await auth.signInWithGoogle()) done(); })}
-        accessibilityLabel="Continue with Google"
-        style={({ pressed }) => [styles.google, { backgroundColor: t.card, borderColor: t.separator, opacity: busy ? 0.5 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
-        <GoogleMark />
-        <Label style={{ fontSize: 17, fontWeight: '600' }}>Continue with Google</Label>
-      </Pressable>
-      <Section title="Or use your email" footer={sent ? 'Enter the code we emailed you. Only the newest email works.' : "We'll email you a sign-in code."}>
-        <TextInput accessibilityLabel="Email" value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor={t.secondaryText}
-          style={[fieldStyle, { color: t.text, borderBottomWidth: sent ? StyleSheet.hairlineWidth : 0, borderBottomColor: t.separator }]} autoCapitalize="none" autoComplete="email" keyboardType="email-address" editable={!sent} returnKeyType="send" onSubmitEditing={() => { if (email.includes('@') && !busy) run(sendCode); }} />
-        {sent && (
+      {!sent && (
+        <Pressable accessibilityRole="button" disabled={busy} onPress={() => run(auth.signInWithGoogle)}
+          accessibilityLabel="Continue with Google"
+          style={({ pressed }) => [styles.google, { backgroundColor: t.card, borderColor: t.separator, opacity: busy ? 0.5 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
+          <GoogleMark />
+          <Label style={{ fontSize: 17, fontWeight: '600' }}>Continue with Google</Label>
+        </Pressable>
+      )}
+      <Section title={sent ? `Code sent to ${email.trim()}` : 'Or use your email'}
+        footer={sent ? 'Enter the code from the newest email. It can take a minute to arrive; check spam too.' : "We'll email you a sign-in code. No password needed."}>
+        {!sent ? (
+          <TextInput accessibilityLabel="Email" value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor={t.secondaryText}
+            style={[fieldStyle, { color: t.text }]} autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="emailAddress"
+            keyboardType="email-address" returnKeyType="send" onSubmitEditing={() => { if (emailOk && !busy) run(sendCode); }} />
+        ) : (
           <TextInput accessibilityLabel="Code from email" value={code} onChangeText={setCode} placeholder="12345678" placeholderTextColor={t.secondaryText}
-            style={[fieldStyle, { color: t.text, fontVariant: ['tabular-nums'], letterSpacing: 2 }]} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={10} autoFocus />
+            style={[fieldStyle, { color: t.text, fontVariant: ['tabular-nums'], letterSpacing: 2 }]} keyboardType="number-pad"
+            textContentType="oneTimeCode" autoComplete="one-time-code" maxLength={10} autoFocus
+            returnKeyType="done" onSubmitEditing={() => { if (codeDigits >= 6 && !busy) run(verify); }} />
         )}
       </Section>
-      <Button title={sent ? 'Sign in' : 'Email me a code'} disabled={busy || (sent ? code.replace(/\D/g, '').length < 6 : !email.includes('@'))}
-        onPress={() => run(async () => {
-          if (!sent) await sendCode(); else { await auth.verifyEmailCode(email, code); done(); }
-        })} />
+      <Button title={sent ? 'Sign in' : 'Email me a code'} loading={busy} disabled={busy || (sent ? codeDigits < 6 : !emailOk)}
+        onPress={() => run(sent ? verify : sendCode)} />
       {sent && (
-        <Button title="Send a new code" variant="plain" disabled={busy}
-          onPress={() => run(async () => { setCode(''); await auth.sendEmailCode(email); Alert.alert('New code sent', 'Check your email. Earlier codes no longer work.'); })} />
+        <>
+          <Button title={waiting ? `Send a new code in ${waiting}s` : 'Send a new code'} variant="plain" disabled={busy || waiting > 0}
+            onPress={() => run(async () => { await sendCode(); Alert.alert('New code sent', 'Check your email. Earlier codes no longer work.'); })} />
+          <Button title="Use a different email" variant="plain" disabled={busy} onPress={changeEmail} />
+        </>
       )}
     </Screen>
   );

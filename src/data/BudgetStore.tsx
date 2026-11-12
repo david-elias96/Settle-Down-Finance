@@ -6,24 +6,30 @@ import { backend } from '@/src/lib/backend';
 import { demoAccounts, demoAllocations, demoBuckets, demoGoals, demoMembers, demoRules, demoSplits, demoTransactions } from './demo';
 import { householdWriter, loadHousehold, type HouseholdSnapshot } from './remote';
 
+/** Nothing yet: a signed-in person before their household's budget has loaded, or with no household. */
+const EMPTY: HouseholdSnapshot = { buckets: [], transactions: [], allocations: [], rules: [], goals: [], splits: { byTransaction: {}, byVendor: {} }, members: [], accounts: [], credits: null, bucketUuid: new Map() };
+const DEMO: HouseholdSnapshot = { buckets: demoBuckets, transactions: demoTransactions, allocations: demoAllocations, rules: demoRules, goals: demoGoals, splits: demoSplits, members: demoMembers, accounts: demoAccounts, credits: null, bucketUuid: new Map() };
+
 /**
  * App state. Once someone is signed in and belongs to a household, it's that household's real
- * budget from Supabase, and every change is saved back. Otherwise (Expo Go, web, signed out)
- * it's the sample data, so the app can still be tried. Screens see the same shape either way.
+ * budget from Supabase, and every change is saved back. The sample data is only for development
+ * previews without backend settings (Expo Go with no .env); any build connected to the backend
+ * starts empty and never shows it.
  */
 function useBudgetState() {
   const auth = useAuth();
   const live = !!backend && !!auth.session && !!auth.householdId;
   const userId = auth.session?.user.id ?? null;
+  const start = backend ? EMPTY : DEMO;
 
-  const [buckets, setBuckets] = useState<Bucket[]>(demoBuckets);
-  const [rawTransactions, setRawTransactions] = useState<Transaction[]>(demoTransactions);
-  const [rawAllocations, setRawAllocations] = useState<Allocation[]>(demoAllocations);
-  const [rules, setRules] = useState<MerchantRule[]>(demoRules);
-  const [splits, setSplits] = useState<SplitSettings>(demoSplits);
-  const [goals, setGoals] = useState<SavingsGoal[]>(demoGoals);
-  const [members, setMembers] = useState<Member[]>(demoMembers);
-  const [accounts, setAccounts] = useState<Account[]>(demoAccounts);
+  const [buckets, setBuckets] = useState<Bucket[]>(start.buckets);
+  const [rawTransactions, setRawTransactions] = useState<Transaction[]>(start.transactions);
+  const [rawAllocations, setRawAllocations] = useState<Allocation[]>(start.allocations);
+  const [rules, setRules] = useState<MerchantRule[]>(start.rules);
+  const [splits, setSplits] = useState<SplitSettings>(start.splits);
+  const [goals, setGoals] = useState<SavingsGoal[]>(start.goals);
+  const [members, setMembers] = useState<Member[]>(start.members);
+  const [accounts, setAccounts] = useState<Account[]>(start.accounts);
   const [loading, setLoading] = useState(false);
   /** Shown when loading or saving fails; cleared by the next successful load. */
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -51,16 +57,11 @@ function useBudgetState() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.householdId, userId]);
 
-  // Switch between sample and real data as people sign in and out.
+  // Load the household's budget when someone signs in; clear it when they sign out, so the next
+  // person on this device never sees it.
   useEffect(() => {
-    if (live) {
-      // Clear the sample data first so it never shows as theirs while loading.
-      apply({ buckets: [], transactions: [], allocations: [], rules: [], goals: [], splits: { byTransaction: {}, byVendor: {} }, members: [], accounts: [], credits: null, bucketUuid: new Map() });
-      reload();
-    } else {
-      apply({ buckets: demoBuckets, transactions: demoTransactions, allocations: demoAllocations, rules: demoRules, goals: demoGoals, splits: demoSplits, members: demoMembers, accounts: demoAccounts, credits: null, bucketUuid: new Map() });
-      setSyncError(null);
-    }
+    apply(backend ? EMPTY : DEMO);
+    if (live) reload(); else setSyncError(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live, reload]);
 
@@ -187,7 +188,7 @@ function useBudgetState() {
   }, [forecast, trend, buckets, month, insightInput]);
 
   // AI credits. Kept on the phone for the preview; the backend is the source of truth once connected.
-  const [credits, setCredits] = useState<CreditState>({ period: month, allowance: PLANS.monthly.monthlyCredits, usedThisMonth: 6, extra: 0 });
+  const [credits, setCredits] = useState<CreditState>({ period: month, allowance: PLANS.monthly.monthlyCredits, usedThisMonth: backend ? 0 : 6, extra: 0 });
   const creditBalance = creditsLeft(credits, month);
   /** Spends credits for an AI action; false when there aren't enough. */
   const useCredits = (reason: CreditReason) => {

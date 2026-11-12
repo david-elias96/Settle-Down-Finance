@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useRef, useState, type ComponentRef, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useLayout } from '@/src/lib/layout';
 import { SpendingTrend } from '@/components/SpendingTrend';
 import { Display, HeroCard, space, useTheme } from '@/components/ui';
 import {
@@ -21,7 +22,8 @@ const weekday = (date: string) => new Date(`${date}T12:00:00Z`).getUTCDay();
  */
 export function HeroCarousel({ pages }: { pages: { key: string; label: string; node: ReactNode }[] }) {
   const t = useTheme();
-  const { width } = useWindowDimensions();
+  // Pages are as wide as the screen's content column (the full screen on phones).
+  const { contentWidth: width } = useLayout();
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const [index, setIndex] = useState(0);
   // Every card is as tall as the tallest one, so the page below doesn't jump while swiping.

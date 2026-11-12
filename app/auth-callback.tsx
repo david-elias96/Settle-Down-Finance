@@ -26,7 +26,7 @@ function WebAuthCallback() {
     if (!code || !auth.ready) return;
     let done = false;
     auth.finishWebSignIn(code)
-      .then((hasFactor) => { if (!done) router.replace(hasFactor ? '/two-step' : '/two-step?setup=1'); })
+      .then(() => { if (!done) router.replace('/'); }) // the route guard picks two-step, the bank welcome or the app
       .catch(() => { if (!done) setFailed('That sign-in link expired or was already used. Please try again.'); });
     return () => { done = true; };
   }, [code, auth.ready]); // eslint-disable-line react-hooks/exhaustive-deps
