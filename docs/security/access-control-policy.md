@@ -57,7 +57,7 @@ Only the Security Owner may hold owner or admin roles. Adding a second admin req
 
 - Users sign in with Sign in with Apple or a one-time email code.
 - Before Plaid Link is shown, every user must also complete a second factor, raising the session to MFA assurance level 2. The default is a passkey (WebAuthn/FIDO2 with Face ID or device passcode), which is phishing-resistant because it only works with settledownfinancial.com. An authenticator app (TOTP) is available as a fallback. The backend refuses to create a Plaid Link token or exchange a public token for any session below that level.
-- App sessions are short-lived JSON Web Tokens stored only in the iOS Keychain (this device only, available when unlocked).
+- App sessions are short-lived JSON Web Tokens stored only in the iOS Keychain (this device only, available when unlocked). In the web app they are encrypted under a non-extractable browser key on that device (information security policy section 4).
 
 **Non-human (service) identities.**
 

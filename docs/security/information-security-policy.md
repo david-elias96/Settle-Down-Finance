@@ -1,6 +1,6 @@
 # Settle Down Finance Information Security Policy
 
-Version 1.5 · Effective 2026-11-12 · Owner: Security Owner (founder)
+Version 1.6 · Effective 2026-11-12 · Owner: Security Owner (founder)
 
 > This is the repository copy of the policy submitted to Plaid. Engineering rules that follow from it are summarized in `CLAUDE.md`, and known gaps between this policy and the current code are tracked in [`gaps.md`](gaps.md). Change this file only through a reviewed pull request, and add a row to the revision history.
 
@@ -67,7 +67,7 @@ Access to production systems and consumer data is granted on least privilege, re
 **Application access (consumers).**
 
 - Users sign in through Supabase Auth with Sign in with Apple, Sign in with Google (OAuth with PKCE) or a one-time code sent to their email. Before Plaid Link is surfaced, every user must also complete a second factor in that session, which raises it to assurance level AAL2 (Supabase Auth MFA). The default second factor is a passkey (WebAuthn/FIDO2, unlocked with Face ID or the device passcode), which is phishing-resistant because it is bound to settledownfinancial.com; a code from an authenticator app (TOTP) is offered as a fallback. The backend enforces this: it refuses to create a Plaid Link token or exchange a public token for a session below AAL2.
-- Sessions are short-lived JSON Web Tokens with refresh tokens. On the phone they are stored only in the iOS Keychain (Expo SecureStore), never in plain storage.
+- Sessions are short-lived JSON Web Tokens with refresh tokens. In the iOS app they are stored only in the iOS Keychain (Expo SecureStore), never in plain storage. In the installable web app (app.settledownfinancial.com, added to the home screen until the App Store release) the browser has no Keychain, so the session is encrypted with AES-256-GCM under a key the browser generates as non-extractable (its bytes can never be read out or copied off the device) and kept in that site's IndexedDB; never in localStorage. The web app uses the same sign-in, the same server-enforced AAL2 second factor before Plaid Link, and the same passkeys (WebAuthn, bound to settledownfinancial.com).
 - Postgres row-level security is enabled on every table that holds household data, so a signed-in user can read and write only their own household's rows. New tables must enable row-level security in the same migration that creates them.
 - Plaid items and access-token references are not readable from the app at all. The app sees only display fields (institution name and link status) through a restricted view.
 - Every edge function called by the app verifies the user's session and household membership before it reads or writes data with the service role. Functions called by Plaid verify the Plaid webhook signature (ES256 JWT, body SHA-256 hash, 5-minute maximum age). Scheduled functions require a secret that is checked before any work is done.
@@ -81,13 +81,14 @@ Consumer data is encrypted in transit with TLS 1.2 or higher and at rest with AE
 
 - All traffic between the app, the backend, Plaid, Anthropic, Expo and Apple uses HTTPS with TLS 1.2 or higher. Plain HTTP is never used for any API call.
 - iOS App Transport Security stays on. No exceptions are added to the app configuration.
+- The web app is served only over HTTPS with HSTS and a strict Content Security Policy: it runs only its own code plus Plaid's Link script, connects only to Supabase and Plaid, cannot be framed, and does not allow eval. Its service worker caches only the app's own code and icons, never budget or bank data. Edge functions send CORS headers only to the web app's own origin.
 - The app talks only to the Supabase API. It never calls Plaid's API directly and never receives a Plaid access token or client secret.
 
 **At rest.**
 
 - The Supabase Postgres database, its backups and Supabase Storage are encrypted at rest with AES-256 by the hosting provider.
 - Plaid access tokens are additionally encrypted in Supabase Vault (authenticated encryption, key held outside the database). The application tables store only the Vault secret id. The functions that store and read tokens are callable only by the service role, not by app users.
-- On the phone, session tokens are kept in the iOS Keychain, and the device's data protection encrypts app storage.
+- On the phone, session tokens are kept in the iOS Keychain, and the device's data protection encrypts app storage. In the web app they are encrypted with a non-extractable AES-256-GCM key in the browser's storage for that site (see section 4).
 - Receipt photos are sent to the backend for reading and are not stored after the scan.
 
 **Secrets.**
@@ -137,6 +138,7 @@ Consumer data goes only to the vendors listed below and only for the purpose sho
 | Apple | App distribution and push notifications | Push token and notification text |
 | Google | Sign in with Google (identity provider) | The user's name and email address from their Google account, only when they choose Google sign-in. No financial data |
 | Resend | Sending sign-in code emails from settledownfinancial.com | Email address and the one-time sign-in code. No financial data |
+| Cloudflare | Hosting for the website and the web app (static files), and the website's waitlist | Waitlist email addresses only. The web app's budget and bank data go directly between the user's device and Supabase, never through Cloudflare |
 | GitHub | Source code hosting | No consumer data |
 
 A new vendor may receive consumer data only after the Security Owner reviews its security (a SOC 2 Type II or ISO 27001 report where available), confirms it will not sell or train on the data, records it in this table, and updates the privacy policy. Vendor reports are reviewed again each year.
@@ -199,6 +201,7 @@ People with access use secured devices, know this policy, and may depart from it
 
 | Version | Date | Change | Approved by |
 | --- | --- | --- | --- |
+| 1.6 | 2026-11-12 | Installable web app (PWA) at app.settledownfinancial.com: session storage, CSP and CORS rules; Cloudflare listed as a vendor | David Elias, Security Owner |
 | 1.5 | 2026-11-12 | Sign in with Google added as a sign-in option; Google added as a vendor | David Elias, Security Owner |
 | 1.4 | 2026-11-10 | Resend added as the email provider for sign-in codes | David Elias, Security Owner |
 | 1.3 | 2026-11-10 | Quarterly end-of-life software check | David Elias, Security Owner |

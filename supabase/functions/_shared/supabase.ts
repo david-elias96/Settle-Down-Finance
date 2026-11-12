@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { allowedOrigins, corsHeaders } from './cors.ts';
 
 /** Service-role client: bypasses RLS. Only use after checking the caller's household. */
 export const admin: SupabaseClient = createClient(
@@ -26,14 +27,24 @@ export class HttpError extends Error {
   constructor(public status: number, message: string, public extra: Record<string, unknown> = {}) { super(message); }
 }
 
+const WEB_ORIGINS = allowedOrigins(Deno.env.get('APP_WEB_ORIGINS'));
+
 export function handle(fn: (req: Request) => Promise<Response>) {
   return async (req: Request) => {
+    // The web app's browser asks first (CORS preflight); only our own web origin is allowed.
+    const cors = corsHeaders(req.headers.get('Origin'), WEB_ORIGINS);
+    if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+    let res: Response;
     try {
-      return await fn(req);
+      res = await fn(req);
     } catch (e) {
-      if (e instanceof HttpError) return json({ error: e.message, ...e.extra }, e.status);
-      console.error(e);
-      return json({ error: 'Internal error' }, 500);
+      if (e instanceof HttpError) res = json({ error: e.message, ...e.extra }, e.status);
+      else {
+        console.error(e);
+        res = json({ error: 'Internal error' }, 500);
+      }
     }
+    for (const [k, v] of Object.entries(cors)) res.headers.set(k, v);
+    return res;
   };
 }

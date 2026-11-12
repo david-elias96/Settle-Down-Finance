@@ -35,6 +35,7 @@ This policy expands section 8 of the Settle Down Finance Information Security Po
 | Application and auth logs | Supabase and other providers | Provider default | Rolled off on the provider's schedule. Logs never contain tokens, secrets, account numbers or full request bodies |
 | Backups | Supabase | Provider default, no more than 30 days | Expire on the provider's schedule; deleted data is gone from backups once they expire |
 | Data on the user's phone (session in Keychain, cached screens) | User's iPhone | While the app is signed in | Cleared at sign-out, account deletion or app removal |
+| Web app on the user's device (encrypted session; cached app code, no budget or bank data) | Browser storage for app.settledownfinancial.com | While the web app is signed in | Session cleared at sign-out or account deletion; everything cleared when the home-screen app is removed or site data is cleared |
 
 Data is kept longer only when the law requires it (section 6).
 

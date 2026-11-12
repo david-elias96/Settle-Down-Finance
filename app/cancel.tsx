@@ -25,6 +25,12 @@ export default function CancelScreen() {
   const practice = () => setRun({ demo: true, name: 'StreamCo', source: { html: PRACTICE_SITE_HTML, baseUrl: PRACTICE_SITE_URL }, domains: ['practice.settledownfinancial.com'] });
 
   async function start() {
+    // The assistant drives the service's site inside an in-app browser, which only the iPhone
+    // app has. The web app's security policy (no eval, no third-party frames) rules it out there.
+    if (Platform.OS === 'web') {
+      Alert.alert('Cancel from the iPhone app', 'The cancel assistant needs the iPhone app, coming to the App Store. On the web app, cancel on the service’s own website for now.');
+      return;
+    }
     if (isPractice) return practice();
     if (route?.via !== 'agent') return;
     const accessToken: string | undefined = undefined; // set once sign-in is connected

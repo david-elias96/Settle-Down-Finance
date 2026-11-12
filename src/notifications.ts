@@ -6,10 +6,12 @@ import { Platform } from 'react-native';
 /** iOS notification category for transaction alerts; adds buttons when the alert is pressed and held. */
 export const TRANSACTION_CATEGORY = 'transaction';
 
-Notifications.setNotificationHandler({
-  // Show alerts even while the app is open.
-  handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
-});
+// Show alerts even while the app is open. (iOS app only: the web app has no push alerts yet.)
+if (Platform.OS !== 'web') {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
+  });
+}
 
 function openFromNotification(response: Notifications.NotificationResponse) {
   const data = response.notification.request.content.data as { bucketId?: string; transactionId?: string } | undefined;

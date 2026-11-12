@@ -11,6 +11,8 @@ import { Fonts } from '@/constants/Colors';
 import { AuthProvider } from '@/src/auth/AuthProvider';
 import { BudgetProvider } from '@/src/data/BudgetStore';
 import { useNotificationRouting } from '@/src/notifications';
+import { registerServiceWorker } from '@/src/lib/pwa';
+import { installWebAlert } from '@/src/lib/webAlert';
 
 /** Any crash on a screen lands here: the happy house, a calm message and a way to try again. */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
@@ -32,6 +34,10 @@ export const unstable_settings = {
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+// Web app only (no-ops in the iOS app): real alert dialogs, and the offline app shell.
+installWebAlert();
+registerServiceWorker();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -95,6 +101,7 @@ function RootLayoutNav() {
           <Stack.Screen name="sign-in" options={{ presentation: 'modal', title: 'Sign in' }} />
           <Stack.Screen name="two-step" options={{ title: 'Two-step verification', headerBackTitle: 'Back' }} />
           <Stack.Screen name="connect-bank" options={{ title: 'Link a bank', headerBackTitle: 'Back' }} />
+          <Stack.Screen name="auth-callback" options={{ title: 'Signing in', headerBackVisible: false }} />
         </Stack>
       </BudgetProvider>
       </AuthProvider>

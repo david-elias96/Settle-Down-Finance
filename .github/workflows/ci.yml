@@ -27,7 +27,7 @@ jobs:
       - uses: denoland/setup-deno@v2
         with: { deno-version: v2.x }
       - working-directory: supabase/functions
-        run: deno check */index.ts && deno test cancel-agent
+        run: deno check */index.ts && deno test cancel-agent _shared/cors_test.ts
   vulnerabilities:
     runs-on: ubuntu-latest
     steps:

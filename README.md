@@ -41,7 +41,20 @@ npx supabase functions deploy       # all functions; settings in supabase/config
 
 ## Backend secrets (Supabase → Edge Functions → Secrets)
 
-`PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV` (`sandbox` | `production`), `ANTHROPIC_API_KEY`, `CRON_SECRET` (required by `daily-insights`), optional `EXPO_ACCESS_TOKEN`, `PLAID_REDIRECT_URI`.
+`PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV` (`sandbox` | `production`), `ANTHROPIC_API_KEY`, `CRON_SECRET` (required by `daily-insights`), optional `EXPO_ACCESS_TOKEN`, `PLAID_REDIRECT_URI` (iOS app), `PLAID_WEB_REDIRECT_URI` (web app, `https://app.settledownfinancial.com/connect-bank`), `APP_WEB_ORIGINS` (web origins allowed by CORS; defaults to `https://app.settledownfinancial.com`).
+
+## Web app (installable PWA)
+
+Until the App Store release, the same app runs in Safari and installs to the iPhone home screen from **app.settledownfinancial.com** (Share → Add to Home Screen). It is the Expo web build (`web.output: "single"`), hosted on Cloudflare Pages (project `settledown-app`).
+
+```bash
+npm run build:web     # → dist/ (uses EXPO_PUBLIC_* from .env)
+npm run deploy:web    # build + upload to Cloudflare Pages
+```
+
+- `public/` is copied into `dist/`: `index.html` (home-screen meta tags, launch screens), `manifest.webmanifest`, `sw.js` (caches only the app's own code), `_headers` (CSP, HSTS), icons and launch screens. Regenerate icons with `python scripts/render-pwa-assets.py`.
+- Web-only code lives in `*.web.ts(x)` files next to the native version: session storage (`src/lib/sessionStorage.web.ts`, encrypted IndexedDB instead of the Keychain), passkeys (WebAuthn), Plaid Link (web SDK), dialogs and the service worker.
+- Not on the web yet: push alerts (needs Web Push), Sign in with Apple, and the subscription-cancel assistant (needs the iPhone app's in-app browser).
 
 ## Security
 

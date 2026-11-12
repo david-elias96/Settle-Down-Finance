@@ -2,7 +2,7 @@ import * as Notifications from 'expo-notifications';
 import { Link, router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable } from 'react-native';
+import { Alert, Platform, Pressable } from 'react-native';
 import { Label, Pill, Row, Screen, Section } from '@/components/ui';
 import { useAuth } from '@/src/auth/AuthProvider';
 import { backend, callFunction, PRIVACY_POLICY_URL } from '@/src/lib/backend';
@@ -92,7 +92,7 @@ export default function SettingsScreen() {
         ))}
         <Pressable onPress={() => router.push('/connect-bank')} accessibilityRole="button">
           <Row icon={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }} title="Link a bank account"
-            subtitle={auth.connected ? 'Through Plaid, after two-step verification' : 'Coming with the TestFlight build'} last />
+            subtitle={auth.connected ? 'Through Plaid, after two-step verification' : 'Turns on once sign-in is connected'} last />
         </Pressable>
       </Section>
       <Section title="Account and privacy" footer="Deleting your account removes your banks at Plaid and deletes your data within 30 days.">
@@ -132,11 +132,17 @@ export default function SettingsScreen() {
         <Row icon={{ ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' }} title="AI credits"
           right={<Label secondary>{creditBalance.monthly} of {credits.allowance}{creditBalance.extra ? ` + ${creditBalance.extra}` : ''}</Label>} last />
       </Section>
-      <Section title="Notifications" footer="Lock your phone after tapping Send. The alert arrives in 3 seconds.">
-        <Pressable onPress={sendPreview} accessibilityRole="button">
-          <Row icon={{ ios: 'bell.badge.fill', android: 'notifications', web: 'notifications' }} title="Send a sample transaction alert" right={<Pill>Send</Pill>} last />
-        </Pressable>
-      </Section>
+      {Platform.OS === 'web' ? (
+        <Section title="Notifications" footer="Purchase alerts on the home-screen web app come in a later update. Until then, new purchases show up in Activity.">
+          <Row icon={{ ios: 'bell.badge.fill', android: 'notifications', web: 'notifications' }} title="Transaction alerts" subtitle="Coming to the web app" last />
+        </Section>
+      ) : (
+        <Section title="Notifications" footer="Lock your phone after tapping Send. The alert arrives in 3 seconds.">
+          <Pressable onPress={sendPreview} accessibilityRole="button">
+            <Row icon={{ ios: 'bell.badge.fill', android: 'notifications', web: 'notifications' }} title="Send a sample transaction alert" right={<Pill>Send</Pill>} last />
+          </Pressable>
+        </Section>
+      )}
     </Screen>
   );
 }

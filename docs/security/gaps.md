@@ -17,12 +17,14 @@ Last reviewed: 2026-11-10.
 | Before launch: remove the `exp://**` redirect URL in Supabase Auth → URL Configuration, and the `exp://` pattern in `site/auth-callback/index.html` (both only for Expo Go testing of Google sign-in), so sign-in only returns to `settledown://auth-callback` | Access controls | 4 |
 | Move the Supabase project to the Pro plan before production (daily backups, no pausing) | Backups, availability | 7 |
 | GitHub: protect `main` (require pull request and the CI checks, block force-push); turn on Dependabot alerts, secret scanning and push protection | Vulnerability scanning; change management | 5, 6 |
+| Web app: in Supabase Auth → URL Configuration add `https://app.settledownfinancial.com/**`; set the edge-function secret `PLAID_WEB_REDIRECT_URI=https://app.settledownfinancial.com/connect-bank` and add the same URL in Plaid Dashboard → Allowed redirect URIs; redeploy the functions (CORS for the web app) | Access controls; OAuth banks in Plaid Link | 4 |
 | On your Windows PC: confirm BitLocker, Microsoft Defender and automatic Windows Update are on; log it in [operations.md](operations.md) | Vulnerability scans on employee machines | 6, 9 |
 
 ## Code still to build
 
 | Gap | Policy section |
 | --- | --- |
+| Web app: purchase alerts need Web Push (VAPID keys, a push subscription per device, sending from the backend); until then the web app has no push alerts | 8 |
 | Register the phone's push token after sign-in (needed for retention notices and alerts) | 8 |
 
 ## Closed
