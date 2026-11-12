@@ -496,8 +496,7 @@ function KeyboardDone({ height }: { height: number | null }) {
   const t = useTheme();
   if (height == null) return null;
   return (
-    <View style={{ position: 'absolute', left: 0, right: 0, bottom: height, height: DONE_BAR_HEIGHT, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center',
-      backgroundColor: t.card, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.separator }}>
+    <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: height, height: DONE_BAR_HEIGHT, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
       <Pressable onPress={() => Keyboard.dismiss()} accessibilityRole="button" accessibilityLabel="Done, close keyboard" hitSlop={8}
         style={({ pressed }) => ({ paddingHorizontal: space.l, paddingVertical: 11, opacity: pressed ? 0.5 : 1 })}>
         <Text style={{ color: t.tint, fontSize: 17, fontWeight: '600' }}>Done</Text>
