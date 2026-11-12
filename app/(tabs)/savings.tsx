@@ -5,7 +5,9 @@ import { useBudget } from '@/src/data/BudgetStore';
 import { formatCents, goalForecast } from '@/src/domain';
 
 export default function SavingsScreen() {
-  const { impact, month } = useBudget();
+  const { impact, month, statuses } = useBudget();
+  // Same count as the home headline ("On track overall, 1 bucket over").
+  const bucketsOver = statuses.filter((st) => st.overBy > 0).length;
   const t = useTheme();
   const $ = (c: number) => formatCents(c, { showCents: false });
   const over = impact.totalOverspend;
@@ -34,7 +36,7 @@ export default function SavingsScreen() {
             leading={<IconChip icon={{ ios: 'checkmark.shield.fill', android: 'verified_user', web: 'verified_user' }} />} />
         ) : (
           <View style={{ padding: 16, gap: 12 }}>
-            <Label style={{ fontSize: 17, fontWeight: '600' }}>{formatCents(over)} over budget. Here's where it comes from:</Label>
+            <Label style={{ fontSize: 17, fontWeight: '600' }}>{$(over)} over in {bucketsOver} bucket{bucketsOver === 1 ? '' : 's'}. Here's what covers it:</Label>
             {/* One bar, split by what absorbs the overspending. */}
             <View style={[styles.stack, { backgroundColor: t.track }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
               {parts.map((p) => (

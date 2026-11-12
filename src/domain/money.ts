@@ -6,9 +6,12 @@ export function formatCents(c: Cents, opts: { showCents?: boolean } = {}): strin
   const showCents = opts.showCents ?? true;
   const sign = c < 0 ? '-' : '';
   const abs = Math.abs(c);
+  // Whole dollars round to the nearest dollar ($40.65 → $41), so an amount shown with cents on
+  // one screen and without on another never disagrees by more than rounding.
+  if (!showCents) return `${sign}$${Math.round(abs / 100).toLocaleString('en-US')}`;
   const whole = Math.floor(abs / 100).toLocaleString('en-US');
   const frac = String(abs % 100).padStart(2, '0');
-  return `${sign}$${whole}${showCents ? `.${frac}` : ''}`;
+  return `${sign}$${whole}.${frac}`;
 }
 
 export const monthOf = (isoDate: string) => isoDate.slice(0, 7);

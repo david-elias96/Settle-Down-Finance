@@ -1,7 +1,7 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 import { BucketGauge } from '@/components/BucketGauge';
-import { Card, Label, ListRow, Screen, Section, StatTile, Tag } from '@/components/ui';
+import { Card, Gone, Label, ListRow, Screen, Section, StatTile, Tag } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { bucketPace, daysInMonth, formatCents, paceTag, shortDate, weeklyAllowance } from '@/src/domain';
 
@@ -10,7 +10,7 @@ export default function BucketScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { statuses, transactions, allocations, month, today } = useBudget();
   const status = statuses.find((s) => s.bucket.id === id);
-  if (!status) return <Screen><Label secondary>This bucket no longer exists.</Label></Screen>;
+  if (!status) return <Gone title="This bucket no longer exists">It may have been removed, or the link is old.</Gone>;
 
   const days = daysInMonth(month);
   const pace = bucketPace(status, today, days);

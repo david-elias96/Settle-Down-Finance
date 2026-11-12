@@ -20,15 +20,21 @@ export default function AskScreen() {
   const { statuses, cutIdeas, transactions, buckets, month, today, recap, tuneUps, trends, creditBalance, credits, useCredits, syncCredits, addCreditPack } = useBudget();
   const auth = useAuth();
   const outOfCredits = creditBalance.total === 0;
+  // Nothing to answer from yet: don't let a question spend a credit on "you've spent $0".
+  const noData = transactions.length === 0;
+  const locked = outOfCredits || noData;
   const { q } = useLocalSearchParams<{ q?: string }>();
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
+  /** Set the moment a question goes out, so a double tap can't send (and charge) twice. */
+  const sending = useRef(false);
 
   async function send(question: string) {
     const text = question.trim();
-    if (!text || busy || outOfCredits) return;
+    if (!text || busy || sending.current || locked) return;
+    sending.current = true;
     const history = turns;
     // In preview mode the phone keeps the balance; with the backend, the server charges.
     if (!backend && !useCredits('ask')) return;
@@ -48,6 +54,7 @@ export default function AskScreen() {
       }
       setTurns((ts) => [...ts, { role: 'assistant', text: `Sorry, that didn't work: ${(e as Error).message}` }]);
     } finally {
+      sending.current = false;
       setBusy(false);
     }
   }
@@ -68,7 +75,7 @@ export default function AskScreen() {
   // Opened from the home screen with a question ready to go.
   useEffect(() => { if (q) send(q); }, [q]);
 
-  const canSend = !!draft.trim() && !busy && !outOfCredits;
+  const canSend = !!draft.trim() && !busy && !locked;
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: t.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -79,7 +86,13 @@ export default function AskScreen() {
           <SettingsButton />
         </View>
 
-        {turns.length === 0 && (
+        {turns.length === 0 && noData && (
+          <Card padded>
+            <Label style={{ fontSize: 16, fontWeight: '600' }}>Ask works once purchases come in</Label>
+            <Label secondary style={{ fontSize: 14, lineHeight: 20, marginTop: 4 }}>Link a bank and Ask can answer from your own buckets and purchases. No credits are used until then.</Label>
+          </Card>
+        )}
+        {turns.length === 0 && !noData && (
           <View style={{ gap: 12, marginTop: 8 }}>
             <Label secondary style={{ fontSize: 15, lineHeight: 21, paddingHorizontal: 4 }}>
               Ask anything about your spending. Answers use your own buckets and purchases.
@@ -111,7 +124,7 @@ export default function AskScreen() {
         {busy && (
           <View style={styles.working} accessibilityLiveRegion="polite">
             <ActivityIndicator color={t.tint} />
-            <Label secondary style={{ fontSize: 14 }}>SettleDown is working</Label>
+            <Label secondary style={{ fontSize: 14 }}>Settle Down is working</Label>
           </View>
         )}
       </ScrollView>
@@ -136,7 +149,7 @@ export default function AskScreen() {
           )}
         </View>
         <View style={[styles.inputBar, { backgroundColor: t.card, boxShadow: `0 1px 2px ${t.shadow}, 0 8px 24px ${t.shadow}` }]}>
-          <TextInput accessibilityLabel="Ask a question" value={draft} onChangeText={setDraft} placeholder={outOfCredits ? 'Out of credits this month' : 'Ask a question…'} editable={!outOfCredits} placeholderTextColor={t.secondaryText}
+          <TextInput accessibilityLabel="Ask a question" value={draft} onChangeText={setDraft} placeholder={outOfCredits ? 'Out of credits this month' : noData ? 'Link a bank to start asking' : 'Ask a question…'} editable={!locked} placeholderTextColor={t.secondaryText}
             style={[styles.input, { color: t.text }]} onSubmitEditing={() => send(draft)}
             returnKeyType="send" multiline={false} maxLength={500} />
           <Pressable onPress={() => send(draft)} disabled={!canSend} accessibilityRole="button" accessibilityLabel="Send" accessibilityState={{ disabled: !canSend }}

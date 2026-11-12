@@ -62,7 +62,8 @@ export default function ActivityScreen() {
 
   const set = (patch: Partial<TransactionFilter>) => { setFilter((f) => ({ ...f, ...patch })); setOpen(null); setSearch(''); };
   const vendorLabel = vendors.find((v) => v.value === filter.vendor)?.label ?? filter.vendor;
-  const active = filter.month !== null || filter.bucketId !== null || filter.vendor !== null;
+  // "Clear filters" only when something differs from the default view (this month, everything in it).
+  const active = filter.month !== currentMonth || filter.bucketId !== null || filter.vendor !== null;
 
   const options: { list: Option[]; selected: string | null; allLabel: string; all: { count: number; total: number }; pick: (v: string | null) => void } | null =
     open === 'month' ? { list: months, selected: filter.month, allLabel: 'All months', all: allFor('month'), pick: (v) => set({ month: v }) }
@@ -89,7 +90,7 @@ export default function ActivityScreen() {
           {chipButtons}
         </View>
         {active && (
-          <Button small variant="secondary" title="Clear filters" icon={{ ios: 'xmark', android: 'close', web: 'close' }} onPress={() => setFilter(NO_FILTER)} style={{ alignSelf: 'flex-start' }} />
+          <Button small variant="secondary" title="Clear filters" icon={{ ios: 'xmark', android: 'close', web: 'close' }} onPress={() => setFilter({ ...NO_FILTER, month: currentMonth })} style={{ alignSelf: 'flex-start' }} />
         )}
       </View>
 
@@ -122,7 +123,14 @@ export default function ActivityScreen() {
         )}
       </Modal>
 
-      {items.length === 0 && <Section><Row title="No purchases match these filters" last /></Section>}
+      {transactions.length === 0 ? (
+        <>
+          <Section footer="Purchases from your linked banks and cards appear here as they post, usually within a day.">
+            <Row title="No purchases yet" subtitle="Purchases show up here after you link a bank." last />
+          </Section>
+          <Button title="Link a bank" icon={{ ios: 'plus', android: 'add', web: 'add' }} onPress={() => router.push('/connect-bank')} />
+        </>
+      ) : items.length === 0 && <Section><Row title="No purchases match these filters" last /></Section>}
       {groupByDay(items).map(([date, group]) => (
         <Section key={date} quiet title={dayHeading(date, todayIso)}>
           {group.map(({ tx, parts, amount }, i) => {

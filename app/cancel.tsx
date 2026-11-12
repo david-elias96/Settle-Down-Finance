@@ -8,7 +8,8 @@ import { Button, Card, Display, Glass, IconChip, Intro, Label, ListRow, Notice, 
 import { agentBackendAvailable, startCancel } from '@/src/agent/client';
 import { PRACTICE_SITE_HTML, PRACTICE_SITE_URL } from '@/src/agent/practiceSite';
 import { useCancelAgent } from '@/src/agent/useCancelAgent';
-import { cancelRoute, CREDIT_COST, formatCents } from '@/src/domain';
+import { cancelRoute, CREDIT_COST, findSubscriptions, formatCents, vendorKey } from '@/src/domain';
+import { useBudget } from '@/src/data/BudgetStore';
 import { useAuth } from '@/src/auth/AuthProvider';
 import { backend } from '@/src/lib/backend';
 
@@ -21,6 +22,10 @@ export default function CancelScreen() {
   const [run, setRun] = useState<Run | null>(null);
   const [starting, setStarting] = useState(false);
   const auth = useAuth();
+  const { transactions } = useBudget();
+  // Only the household's own subscriptions can be cancelled from here, so a link can't put any
+  // name or price it likes on this screen, and bills (insurance, phone, rent) never get here.
+  const sub = useMemo(() => findSubscriptions(transactions).find((x) => vendorKey(x.vendor) === vendorKey(vendor)), [transactions, vendor]);
   // The practice site is for development previews; signed-in people cancel the real thing.
   const isPractice = demo === '1' && !backend;
   const route = useMemo(() => (isPractice ? null : cancelRoute(vendor, website || undefined)), [vendor, website, isPractice]);
@@ -57,7 +62,15 @@ export default function CancelScreen() {
   }
 
   if (run) return <AgentRun run={run} />;
-  return <Start name={name} amount={amount ? Number(amount) : undefined} practice={isPractice} route={route} vendor={vendor}
+  if (!isPractice && !sub) {
+    return (
+      <Screen>
+        <Notice title="We couldn't find that subscription">Open Subscriptions and tap Cancel next to the one you want to stop.</Notice>
+        <Button title="Go to Subscriptions" onPress={() => router.replace('/subscriptions')} />
+      </Screen>
+    );
+  }
+  return <Start name={name} amount={isPractice ? (amount ? Number(amount) : undefined) : sub?.amount} practice={isPractice} route={route} vendor={vendor}
     website={website} setWebsite={setWebsite} onStart={start} starting={starting} />;
 }
 
@@ -85,12 +98,12 @@ function Start({ name, amount, practice, route, vendor, website, setWebsite, onS
       ) : (
         <>
           <Section title="How it works">
-            <Step icon={{ ios: 'lock.fill', android: 'lock', web: 'lock' }} text="You sign in yourself, right on the service's own page. SettleDown never sees or stores your password." />
-            <Step icon={{ ios: 'hand.raised.fill', android: 'back_hand', web: 'back_hand' }} text="SettleDown skips the “stay for 50% off” offers and never buys or changes anything else." />
+            <Step icon={{ ios: 'lock.fill', android: 'lock', web: 'lock' }} text="You sign in yourself, right on the service's own page. Settle Down never sees or stores your password." />
+            <Step icon={{ ios: 'hand.raised.fill', android: 'back_hand', web: 'back_hand' }} text="Settle Down skips the “stay for 50% off” offers and never buys or changes anything else." />
             <Step icon={{ ios: 'checkmark.seal.fill', android: 'verified', web: 'verified' }} text="Nothing is cancelled until you approve the final step." last />
           </Section>
           {needsSite && (
-            <Section title="Website" footer={`We don't have ${vendor} on file yet. Enter its website and SettleDown will find the cancel page there.`}>
+            <Section title="Website" footer={`We don't have ${vendor} on file yet. Enter its website and Settle Down will find the cancel page there.`}>
               <TextInput accessibilityLabel="Website" value={website} onChangeText={setWebsite} placeholder="e.g. acmegym.com" placeholderTextColor={t.secondaryText}
                 autoCapitalize="none" autoCorrect={false} keyboardType="url" style={[fieldStyle, { color: t.text }]} />
             </Section>
@@ -171,7 +184,7 @@ function AgentRun({ run }: { run: Run }) {
           <>
             <View style={{ flex: 1, gap: 2 }}>
               <Label style={{ color: t.heroText, fontWeight: '700', fontSize: 15 }}>Your turn</Label>
-              <Label style={{ color: t.heroMuted, fontSize: 14, lineHeight: 19 }}>{phase.message} SettleDown can't see what you type.</Label>
+              <Label style={{ color: t.heroMuted, fontSize: 14, lineHeight: 19 }}>{phase.message} Settle Down can't see what you type.</Label>
             </View>
             <Button small title="Done" onPress={agent.userDone} style={{ backgroundColor: t.heroText }} textColor={t.hero} />
           </>
@@ -179,7 +192,7 @@ function AgentRun({ run }: { run: Run }) {
           <>
             <ActivityIndicator color={t.tint} />
             <View style={{ flex: 1, gap: 1 }}>
-              <Label secondary style={{ fontSize: 12, fontWeight: '500' }}>SettleDown is working</Label>
+              <Label secondary style={{ fontSize: 12, fontWeight: '500' }}>Settle Down is working</Label>
               <Label style={{ fontSize: 15, fontWeight: '600' }}>{phase.status}</Label>
             </View>
           </>
@@ -187,14 +200,14 @@ function AgentRun({ run }: { run: Run }) {
       </View>
       <View style={{ flex: 1 }}>
         <AgentBrowser ref={browser} source={run.source} allowedDomains={run.domains} userControl={userTurn} onPageLoaded={agent.onPageLoaded} />
-        {/* The page is hands-off while SettleDown works, so taps don't fight with it. */}
+        {/* The page is hands-off while Settle Down works, so taps don't fight with it. */}
         {!userTurn && <View style={StyleSheet.absoluteFill} pointerEvents="auto" />}
       </View>
       {phase.name === 'confirm' && (
         <View style={[styles.sheetWrap, { bottom: Math.max(space.m, insets.bottom) }]}>
           <Glass corner={28} style={styles.sheet}>
             <Display size={24}>Cancel {run.name}?</Display>
-            <Label secondary style={styles.body}>This is the last step. SettleDown will click “{phase.button}” on {run.name}'s site.</Label>
+            <Label secondary style={styles.body}>This is the last step. Settle Down will click “{phase.button}” on {run.name}'s site.</Label>
             <View style={{ gap: space.s, marginTop: space.xs }}>
               <Button variant="destructive" title="Yes, cancel it" onPress={() => agent.confirm(true)} />
               <Button variant="secondary" title="Keep my subscription" onPress={() => agent.confirm(false)} />

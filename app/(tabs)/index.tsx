@@ -62,6 +62,40 @@ export default function BudgetScreen() {
         : router.push({ pathname: '/activity', params: { vendor: i.vendor ?? i.card.label, at: String(Date.now()) } }))} />
   );
 
+  // A new account (or a household before its first bank): no cards built from numbers that don't
+  // exist yet, just the next step. Buckets still show so limits can be set ahead of time.
+  const noData = transactions.length === 0 && !loading;
+  if (noData) {
+    return (
+      <Screen eyebrow={dateLabel} title="Welcome to Settle Down" action={<SettingsButton />}>
+        {syncError && <Notice title={syncError} icon={{ ios: 'exclamationmark.triangle.fill', android: 'warning', web: 'warning' }} />}
+        {needsHousehold ? (
+          <>
+            <Notice title="Start your budget" icon={{ ios: 'house.fill', android: 'home', web: 'home' }}>
+              Set up your household's budget to start sorting purchases into buckets. Joining a partner's budget instead? Open the invite link they sent you.
+            </Notice>
+            <Button title="Start our budget" onPress={startBudget} loading={starting} />
+          </>
+        ) : (
+          <>
+            <Notice title="Link a bank to get started" icon={{ ios: 'building.columns.fill', android: 'account_balance', web: 'account_balance' }}>
+              Your purchases sort into buckets as they post, and this screen fills in with what's left to spend, bills ahead and how the month is going.
+            </Notice>
+            <Button title="Link a bank" icon={{ ios: 'plus', android: 'add', web: 'add' }} onPress={() => router.push('/connect-bank')} />
+          </>
+        )}
+        {sorted.length > 0 && (
+          <Section title="Your buckets" footer="Tap a bucket to see it. Limits can be tuned once a few weeks of purchases are in.">
+            {sorted.map((st, i) => bucketRow(st, i === sorted.length - 1))}
+          </Section>
+        )}
+        {!needsHousehold && (
+          <Button variant="secondary" title="Add custom bucket" icon={{ ios: 'plus', android: 'add', web: 'add' }} onPress={() => router.push('/new-bucket')} />
+        )}
+      </Screen>
+    );
+  }
+
   return (
     <Screen eyebrow={dateLabel} title={verdict.text} action={<SettingsButton />}>
       {needsHousehold && (
@@ -73,11 +107,6 @@ export default function BudgetScreen() {
         </>
       )}
       {syncError && <Notice title={syncError} icon={{ ios: 'exclamationmark.triangle.fill', android: 'warning', web: 'warning' }} />}
-      {live && !loading && !syncError && transactions.length === 0 && (
-        <Notice title="No purchases yet" icon={{ ios: 'building.columns.fill', android: 'account_balance', web: 'account_balance' }}>
-          Connect a bank in Settings and your purchases will show up here as they post.
-        </Notice>
-      )}
       <HeroCarousel pages={[
         { key: 'free', label: 'Free to spend', node: <FreeCard free={free} days={recap.days} month={month} /> },
         { key: 'trend', label: 'Trend', node: <TrendCard trend={trend} forecast={forecast} month={month} /> },

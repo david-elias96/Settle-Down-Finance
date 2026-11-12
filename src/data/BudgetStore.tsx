@@ -174,7 +174,9 @@ function useBudgetState() {
   const recap = useMemo(() => weeklyRecap({ transactions, allocations, buckets, end: todayIso }), [transactions, allocations, buckets, todayIso]);
   // The home screen's one number, its headline, and the path of bills through month end.
   const free = useMemo(() => freeToSpend(statuses, bills.bills, transactions, month, today), [statuses, bills, transactions, month, today]);
-  const verdict = useMemo(() => monthVerdict(free, forecast), [free, forecast]);
+  // The same over-limit buckets that the Savings tab counts as overspending.
+  const bucketsOver = statuses.filter((st) => st.overBy > 0).length;
+  const verdict = useMemo(() => monthVerdict(free, forecast, bucketsOver), [free, forecast, bucketsOver]);
   const ahead = useMemo(() => monthAhead(bills.bills, free, month, today), [bills, free, month, today]);
   // The month-end outlook always leads the Insights card.
   const insights = useMemo(() => {

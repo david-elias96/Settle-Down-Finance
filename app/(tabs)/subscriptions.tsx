@@ -15,8 +15,8 @@ const daysUntil = (date: string) => Math.round((Date.parse(`${date}T12:00:00Z`) 
  */
 export default function SubscriptionsScreen() {
   const t = useTheme();
-  const { transactions } = useBudget();
-  const subs = findSubscriptions(transactions);
+  const { transactions, month, today } = useBudget();
+  const subs = findSubscriptions(transactions, `${month}-${String(today).padStart(2, '0')}`);
   const monthly = subs.reduce((s, x) => s + x.amount, 0);
   const raised = subs.filter((s) => s.amount > s.previousAmount);
   const next = [...subs].sort((a, b) => a.nextDate.localeCompare(b.nextDate))[0];

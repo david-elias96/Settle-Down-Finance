@@ -159,19 +159,42 @@ export function nextMonthlyDate(date: string): string {
   return `${ny}-${String(nm).padStart(2, '0')}-${String(Math.min(d, last)).padStart(2, '0')}`;
 }
 
+/** The next charge on or after `today` ("YYYY-MM-DD"), stepping a monthly date forward from `from`. */
+export function nextChargeOnOrAfter(from: string, today: string): string {
+  let next = nextMonthlyDate(from);
+  // A charge that should have come already (late, or not posted yet) is expected next month.
+  for (let i = 0; next < today && i < 120; i++) next = nextMonthlyDate(next);
+  return next;
+}
+
+/** Plaid categories for bills: housing, utilities, phone and internet, loans. */
+const BILL_CATEGORIES = new Set(['RENT_AND_UTILITIES', 'LOAN_PAYMENTS']);
+/** Bills Plaid files elsewhere (insurance under general services, phone plans, utilities, rent). */
+const BILL_NAMES = /insurance|state farm|geico|progressive|allstate|liberty mutual|nationwide|farmers ins|usaa|mortgage|apartments|\brent\b|property management|power|electric|energy|water|utilit|gas co|verizon|at&t|t-mobile|sprint|comcast|xfinity|spectrum|\bcox\b/i;
+
+/**
+ * A bill rather than a subscription: rent, utilities, phone, insurance, loans. These repeat
+ * monthly too, but people don't cancel them from a budgeting app, so they never get a Cancel.
+ */
+export function isBill(tx: Pick<Transaction, 'merchant' | 'plaidCategory'>): boolean {
+  if (tx.plaidCategory && (BILL_CATEGORIES.has(tx.plaidCategory) || tx.plaidCategory.includes('INSURANCE'))) return true;
+  return BILL_NAMES.test(tx.merchant);
+}
+
 /**
  * Charges from the same vendor in consecutive months at a similar amount (within 15%). Shopping categories are skipped.
- * One charge per month at most, so groceries and gas aren't mistaken for subscriptions.
+ * One charge per month at most, so groceries and gas aren't mistaken for subscriptions. With
+ * `today`, the next charge date is never in the past.
  */
-export function findSubscriptions(transactions: Transaction[]): Subscription[] {
+export function findSubscriptions(transactions: Transaction[], today?: string): Subscription[] {
   const byVendor = new Map<string, Transaction[]>();
   for (const tx of transactions) {
     if (tx.amount <= 0) continue;
     // Monthly shopping trips (Target, Costco, gas) aren't subscriptions, unless it's a
     // known subscription service billed under a shopping category.
     if (tx.plaidCategory && SHOPPING.has(tx.plaidCategory) && !cancelRoute(tx.merchant)) continue;
-    // Rent, utilities and loan payments repeat monthly too, but they're bills, not subscriptions.
-    if (tx.plaidCategory === 'RENT_AND_UTILITIES' || tx.plaidCategory === 'LOAN_PAYMENTS') continue;
+    // Rent, utilities, phone, insurance and loans repeat monthly too, but they're bills, not subscriptions.
+    if (isBill(tx)) continue;
     const v = vendorKey(tx.merchant);
     byVendor.set(v, [...(byVendor.get(v) ?? []), tx]);
   }
@@ -190,7 +213,7 @@ export function findSubscriptions(transactions: Transaction[]): Subscription[] {
     const run = sorted.slice(start);
     subs.push({
       vendor: last.merchant.trim(), amount: last.amount, previousAmount: prev.amount, lastDate: last.date,
-      firstDate: run[0].date, charges: run.length, paidSoFar: run.reduce((s, t) => s + t.amount, 0), nextDate: nextMonthlyDate(last.date),
+      firstDate: run[0].date, charges: run.length, paidSoFar: run.reduce((s, t) => s + t.amount, 0), nextDate: today ? nextChargeOnOrAfter(last.date, today) : nextMonthlyDate(last.date),
     });
   }
   return subs.sort((a, b) => b.amount - a.amount);
