@@ -67,7 +67,9 @@ function useAuthState() {
     const appReturn = Linking.createURL('auth-callback');
     const { data, error } = await backend.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: handoffRedirect(appReturn), skipBrowserRedirect: true } });
     if (error) throw error;
-    const result = await WebBrowser.openAuthSessionAsync(data.url, appReturn);
+    // A private (ephemeral) session skips iOS's "wants to use … to Sign In" alert. The trade-off:
+    // it doesn't reuse a Google login from Safari, so people pick or type their Google account here.
+    const result = await WebBrowser.openAuthSessionAsync(data.url, appReturn, { preferEphemeralSession: true });
     if (result.type !== 'success') return false;
     const params = oauthParams(result.url);
     if (params.get('error')) throw new Error(params.get('error_description') ?? 'Google sign-in was not completed');
