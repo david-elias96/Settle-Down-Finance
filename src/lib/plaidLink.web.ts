@@ -45,8 +45,9 @@ export async function openPlaidLink({ token, householdId, receivedRedirectUri }:
   return new Promise((resolve) => {
     const finish = (r: PlaidLinkResult) => {
       try { window.sessionStorage.removeItem(RESUME); } catch { /* ignore */ }
-      handler.destroy();
+      // Resolve first: if Plaid's cleanup throws, linking must still finish.
       resolve(r);
+      setTimeout(() => { try { handler.destroy(); } catch { /* already gone */ } }, 0);
     };
     const handler = window.Plaid!.create({
       token,
