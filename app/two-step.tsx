@@ -1,6 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
+import * as Clipboard from 'expo-clipboard';
 import { Alert, Linking, Platform, Text, TextInput, View } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 import { Button, fieldStyle, IconChip, Intro, Label, ListRow, Screen, Section, useTheme } from '@/components/ui';
 import { useAuth } from '@/src/auth/AuthProvider';
 
@@ -20,6 +22,8 @@ export default function TwoStepScreen() {
   const [enrollment, setEnrollment] = useState<{ factorId: string; secret: string; uri: string } | null>(null);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showQr, setShowQr] = useState(false);
 
   const finish = () => (then === 'connect-bank' ? router.replace('/connect-bank') : router.back());
   const run = async (fn: () => Promise<void>, failTitle: string) => {
@@ -57,15 +61,36 @@ export default function TwoStepScreen() {
       )}
 
       {enrolling && useApp && enrollment && (
-        <Section title="Authenticator app">
-          <ListRow title="Add to authenticator app" note="Opens the app with Settle Down filled in"
-            leading={<IconChip icon={{ ios: 'key.fill', android: 'key', web: 'key' }} />}
-            onPress={() => Linking.openURL(enrollment.uri).catch(() => Alert.alert('No authenticator app found', 'Enter the setup key by hand instead.'))} />
-          <View style={{ padding: 16, gap: 6 }}>
-            <Label secondary style={{ fontSize: 13 }}>Or enter this setup key by hand (press and hold to copy)</Label>
-            <Text selectable style={{ fontSize: 15, lineHeight: 22, color: t.text, fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }), letterSpacing: 0.5 }}>{enrollment.secret}</Text>
-          </View>
-        </Section>
+        <>
+          <Section title="Add Settle Down to your authenticator"
+            footer="Works with any authenticator app: Google Authenticator, Microsoft Authenticator, 1Password, Authy, Apple Passwords and others.">
+            <View style={{ padding: 16, gap: 10 }}>
+              <Label secondary style={{ fontSize: 14, lineHeight: 20 }}>
+                Copy this setup key, then in your authenticator app choose Add account → Enter a setup key, and paste it. Name it Settle Down.
+              </Label>
+              <Text selectable accessibilityLabel={`Setup key ${enrollment.secret.split('').join(' ')}`}
+                style={{ fontSize: 17, lineHeight: 26, color: t.text, fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }), letterSpacing: 1 }}>
+                {groupKey(enrollment.secret)}
+              </Text>
+              <Button title={copied ? 'Copied' : 'Copy setup key'} icon={{ ios: copied ? 'checkmark' : 'doc.on.doc', android: 'content_copy', web: 'content_copy' }}
+                onPress={async () => { await Clipboard.setStringAsync(enrollment.secret); setCopied(true); setTimeout(() => setCopied(false), 2500); }} />
+            </View>
+          </Section>
+          <Section title="Other ways to add it">
+            <ListRow title={showQr ? 'Hide QR code' : 'Show QR code'} note="Scan it with an authenticator on another phone or tablet"
+              leading={<IconChip icon={{ ios: 'qrcode', android: 'qr_code', web: 'qr_code' }} />} onPress={() => setShowQr((v) => !v)} />
+            {showQr && (
+              <View style={{ alignItems: 'center', padding: 16 }} accessible accessibilityLabel="QR code for your authenticator app">
+                <View style={{ padding: 12, backgroundColor: '#FFFFFF', borderRadius: 12 }}>
+                  <QRCode value={enrollment.uri} size={180} color="#17221D" backgroundColor="#FFFFFF" />
+                </View>
+              </View>
+            )}
+            <ListRow title="Open in this phone's default app" note={Platform.OS === 'ios' ? 'Usually Apple Passwords' : 'Your default authenticator'} last
+              leading={<IconChip icon={{ ios: 'arrow.up.forward.app', android: 'open_in_new', web: 'open_in_new' }} />}
+              onPress={() => Linking.openURL(enrollment.uri).catch(() => Alert.alert('No authenticator app found', 'Copy the setup key instead.'))} />
+          </Section>
+        </>
       )}
 
       {showCodeEntry && (!enrolling || enrollment) && (
@@ -80,4 +105,9 @@ export default function TwoStepScreen() {
       )}
     </Screen>
   );
+}
+
+/** "JBSW Y3DP EHPK 3PXP": a setup key in groups of four, easier to read and check. */
+function groupKey(secret: string) {
+  return secret.replace(/(.{4})/g, '$1 ').trim();
 }
