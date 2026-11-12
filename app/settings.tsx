@@ -99,7 +99,7 @@ export default function SettingsScreen() {
         {auth.session ? (
           <>
             <Row icon={{ ios: 'person.crop.circle', android: 'person', web: 'person' }} title={auth.email ?? 'Signed in'} subtitle="Signed in" />
-            <Pressable onPress={() => router.push(auth.hasFactor ? '/two-step' : '/two-step?setup=1')} accessibilityRole="button">
+            <Pressable onPress={() => router.push('/two-step')} accessibilityRole="button">
               <Row icon={{ ios: 'lock.shield.fill', android: 'security', web: 'security' }} title="Two-step verification"
                 right={<Label secondary>{auth.hasPasskey ? 'Passkey' : auth.hasFactor ? 'Authenticator app' : 'Set up'}</Label>} />
             </Pressable>
@@ -119,7 +119,7 @@ export default function SettingsScreen() {
           <Row icon={{ ios: 'doc.text.fill', android: 'description', web: 'description' }} title="Privacy policy" right={<Pill>Read</Pill>} />
         </Pressable>
         {auth.session && (
-          <Pressable onPress={() => auth.signOut()} accessibilityRole="button">
+          <Pressable onPress={() => Alert.alert('Sign out?', 'You can sign back in any time. Your budget stays saved.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Sign out', style: 'destructive', onPress: () => { auth.signOut(); } }])} accessibilityRole="button">
             <Row icon={{ ios: 'rectangle.portrait.and.arrow.right', android: 'logout', web: 'logout' }} title="Sign out" />
           </Pressable>
         )}

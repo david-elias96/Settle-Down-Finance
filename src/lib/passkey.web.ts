@@ -4,9 +4,16 @@
  * app also work on app.settledownfinancial.com, and a look-alike domain can't use them.
  */
 import { creationOptions, credentialJson, requestOptions } from './webauthnJson';
+import { PASSKEY_RP_ID } from './backend';
 
+/**
+ * Passkeys work only on our own domain (the relying party), so not on preview addresses such as
+ * settledown-app.pages.dev. There the app offers the authenticator app instead.
+ */
 export async function passkeySupported() {
-  return typeof window !== 'undefined' && !!window.PublicKeyCredential && !!navigator.credentials;
+  if (typeof window === 'undefined' || !window.PublicKeyCredential || !navigator.credentials) return false;
+  const host = window.location.hostname;
+  return host === PASSKEY_RP_ID || host.endsWith(`.${PASSKEY_RP_ID}`);
 }
 
 export async function createPasskey(publicKey: any): Promise<unknown> {

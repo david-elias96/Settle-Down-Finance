@@ -1,75 +1,142 @@
-import type { Session } from '@supabase/supabase-js';
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 import { authRequest, backend, PASSKEY_ORIGINS, PASSKEY_RP_ID } from '@/src/lib/backend';
 import { createPasskey, getPasskey, passkeySupported } from '@/src/lib/passkey';
 import { handoffRedirect, oauthParams } from '@/src/lib/oauth';
+import { prefs } from '@/src/lib/prefs';
 import { CONSENT_NOTICE_VERSION, plaidLinkGate } from '@/src/domain';
+import { authStage, friendlyError, type Aal } from './flow';
 
-type Aal = 'aal1' | 'aal2' | null;
+/** Whether the "Link your banks" welcome shows after sign-in. Decided once per account. */
+type Onboarding = 'unknown' | 'needed' | 'done';
+const onboardingKey = (userId: string) => `onboarding-done.${userId}`;
+
+type Account = {
+  currentLevel: Aal | null;
+  nextLevel: Aal | null;
+  hasPasskey: boolean;
+  hasAuthenticatorApp: boolean;
+  consents: string[];
+  householdId: string | null;
+  /** Banks linked to the household; null until known. */
+  linkedBanks: number | null;
+};
+const SIGNED_OUT: Account = { currentLevel: null, nextLevel: null, hasPasskey: false, hasAuthenticatorApp: false, consents: [], householdId: null, linkedBanks: null };
 
 function useAuthState() {
   const [session, setSession] = useState<Session | null>(null);
-  const [aal, setAal] = useState<Aal>(null);
-  const [hasFactor, setHasFactor] = useState(false);
-  const [hasPasskey, setHasPasskey] = useState(false);
-  const [hasAuthenticatorApp, setHasAuthenticatorApp] = useState(false);
-  const [consents, setConsents] = useState<string[]>([]);
-  const [householdId, setHouseholdId] = useState<string | null>(null);
+  const [account, setAccount] = useState<Account>(SIGNED_OUT);
+  const [onboarding, setOnboarding] = useState<Onboarding>('unknown');
   const [ready, setReady] = useState(!backend);
+  const [passkeysAvailable, setPasskeysAvailable] = useState(false);
+  /** Only the newest refresh may write state, so a slow older one can't undo a newer one. */
+  const seq = useRef(0);
+  const userRef = useRef<string | null>(null);
 
+  useEffect(() => { passkeySupported().then(setPasskeysAvailable, () => setPasskeysAvailable(false)); }, []);
+
+  /** Reads the session and everything sign-in depends on. A query that fails keeps the last known value. */
   const refresh = useCallback(async () => {
     if (!backend) return;
+    const mine = ++seq.current;
     const { data } = await backend.auth.getSession();
-    setSession(data.session);
-    if (!data.session) { setAal(null); setHasFactor(false); setHasPasskey(false); setHasAuthenticatorApp(false); setConsents([]); setHouseholdId(null); return; }
-    const [{ data: level }, { data: factors }, { data: rows }, { data: membership }] = await Promise.all([
+    if (mine !== seq.current) return;
+    const s = data.session;
+    if (!s) {
+      userRef.current = null;
+      setSession(null); setAccount(SIGNED_OUT); setOnboarding('unknown');
+      return;
+    }
+    const newUser = userRef.current !== s.user.id;
+    userRef.current = s.user.id;
+    const [level, factors, consentRows, membership, welcomed] = await Promise.all([
       backend.auth.mfa.getAuthenticatorAssuranceLevel(),
       backend.auth.mfa.listFactors(),
       backend.from('plaid_consents').select('notice_version'),
-      backend.from('household_members').select('household_id').eq('user_id', data.session.user.id).order('joined_at').limit(1).maybeSingle(),
+      backend.from('household_members').select('household_id').eq('user_id', s.user.id).order('joined_at').limit(1).maybeSingle(),
+      prefs.get(onboardingKey(s.user.id)),
     ]);
-    setHouseholdId(membership?.household_id ?? null);
-    setAal((level?.currentLevel as Aal) ?? 'aal1');
-    const passkey = !!factors?.webauthn?.some((f) => f.status === 'verified');
-    const totp = !!factors?.totp.some((f) => f.status === 'verified');
-    setHasPasskey(passkey);
-    setHasAuthenticatorApp(totp);
-    setHasFactor(passkey || totp);
-    setConsents((rows ?? []).map((r) => r.notice_version));
+    const householdId = membership.error ? undefined : (membership.data?.household_id ?? null);
+    const banks = householdId
+      ? await backend.from('linked_institutions').select('id', { count: 'exact', head: true }).eq('household_id', householdId)
+      : null;
+    if (mine !== seq.current) return;
+
+    const linkedNow = householdId === null ? 0 : banks && !banks.error ? banks.count ?? 0 : null;
+    setAccount((prev) => {
+      const base = newUser ? SIGNED_OUT : prev;
+      return {
+        // The level comes from the session itself; if it can't be read, keep what we knew rather than dropping to aal1.
+        currentLevel: level.error ? base.currentLevel : (level.data?.currentLevel as Aal) ?? null,
+        nextLevel: level.error ? base.nextLevel : (level.data?.nextLevel as Aal) ?? null,
+        hasPasskey: factors.error ? base.hasPasskey : !!factors.data?.webauthn?.some((f) => f.status === 'verified'),
+        hasAuthenticatorApp: factors.error ? base.hasAuthenticatorApp : !!factors.data?.totp.some((f) => f.status === 'verified'),
+        consents: consentRows.error ? base.consents : (consentRows.data ?? []).map((r) => r.notice_version),
+        householdId: householdId === undefined ? base.householdId : householdId,
+        linkedBanks: linkedNow ?? base.linkedBanks,
+      };
+    });
+    setSession(s);
+    // The welcome is decided once per account: shown when the household has no banks yet and
+    // the person hasn't finished it before. Linking a bank doesn't close it; Done does.
+    setOnboarding((prev) => {
+      if (!newUser && prev !== 'unknown') return prev;
+      if (welcomed) return 'done';
+      if (linkedNow == null) return 'unknown';
+      return linkedNow === 0 ? 'needed' : 'done';
+    });
   }, []);
 
   useEffect(() => {
     if (!backend) return;
-    refresh().finally(() => setReady(true));
-    const { data } = backend.auth.onAuthStateChange(() => { refresh(); });
+    refresh().catch(() => {}).finally(() => setReady(true));
+    const { data } = backend.auth.onAuthStateChange((event: AuthChangeEvent, s) => {
+      // A routine token refresh changes nothing we show; just keep the newer session.
+      if (event === 'TOKEN_REFRESHED') { if (s) setSession(s); return; }
+      // Supabase holds a lock while it calls us: run other auth calls after it returns, or they wait forever.
+      setTimeout(() => { refresh().catch(() => {}); }, 0);
+    });
     return () => data.subscription.unsubscribe();
   }, [refresh]);
 
-  /** Sign in with Apple (first factor). Needs a development or TestFlight build. */
+  /** Sign in with Apple (first factor). iOS only; needs a development or TestFlight build. */
+  const appleAvailable = async () => {
+    if (Platform.OS !== 'ios' || !backend) return false;
+    try {
+      const Apple = await import('expo-apple-authentication');
+      return await Apple.isAvailableAsync();
+    } catch {
+      return false; // Expo Go without the native module
+    }
+  };
   const signInWithApple = async () => {
-    if (!backend) throw new Error('Not connected');
+    if (!backend) throw friendlyError('Not connected');
     // Loaded lazily so Expo Go previews, which lack the native module, still start.
-    const Apple = await import('expo-apple-authentication');
-    const cred = await Apple.signInAsync({ requestedScopes: [Apple.AppleAuthenticationScope.EMAIL] });
-    if (!cred.identityToken) throw new Error('Apple did not return a sign-in token');
-    const { error } = await backend.auth.signInWithIdToken({ provider: 'apple', token: cred.identityToken });
+    const [Apple, Crypto] = await Promise.all([import('expo-apple-authentication'), import('expo-crypto')]);
+    // Apple signs a hash of this one-time value into its token, and Supabase checks it against the
+    // raw value, so a token taken from somewhere else can't be replayed here.
+    const nonce = Crypto.randomUUID();
+    const hashedNonce = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, nonce);
+    const cred = await Apple.signInAsync({ requestedScopes: [Apple.AppleAuthenticationScope.EMAIL], nonce: hashedNonce });
+    if (!cred.identityToken) throw friendlyError('Apple didn’t finish signing you in. Please try again.');
+    const { error } = await backend.auth.signInWithIdToken({ provider: 'apple', token: cred.identityToken, nonce });
     if (error) throw error;
   };
 
   /**
    * Sign in with Google (first factor) through Supabase in the system sign-in sheet. Google
-   * sends a one-time code back to the app (PKCE), which is exchanged for a session. Returns
-   * false if the person closed the sheet.
+   * sends a one-time code back to the app (PKCE), which is exchanged for a session. Closing the
+   * sheet just returns; the route guard takes it from there once a session exists.
    */
   const signInWithGoogle = async () => {
-    if (!backend) throw new Error('Not connected');
+    if (!backend) throw friendlyError('Not connected');
     if (Platform.OS === 'web') {
       // Web app: the whole page goes to Google and comes back to /auth-callback?code=…, which
       // calls finishWebSignIn. The PKCE verifier waits in the encrypted session store.
       const { error } = await backend.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth-callback` } });
       if (error) throw error;
-      return false;
+      return;
     }
     const [WebBrowser, Linking] = await Promise.all([import('expo-web-browser'), import('expo-linking')]);
     // Supabase sends the browser to our website, which hands the code back to this app address.
@@ -79,45 +146,46 @@ function useAuthState() {
     // A private (ephemeral) session skips iOS's "wants to use … to Sign In" alert. The trade-off:
     // it doesn't reuse a Google login from Safari, so people pick or type their Google account here.
     const result = await WebBrowser.openAuthSessionAsync(data.url, appReturn, { preferEphemeralSession: true });
-    if (result.type !== 'success') return false;
+    if (result.type !== 'success') return;
     const params = oauthParams(result.url);
-    if (params.get('error')) throw new Error(params.get('error_description') ?? 'Google sign-in was not completed');
+    if (params.get('error')) throw friendlyError('Google sign-in wasn’t finished. Please try again.');
     const code = params.get('code');
-    if (!code) throw new Error('Google sign-in did not return a code');
+    if (!code) throw friendlyError('Google sign-in wasn’t finished. Please try again.');
     const { error: exchangeError } = await backend.auth.exchangeCodeForSession(code);
     if (exchangeError) throw exchangeError;
-    return true;
+    await refresh();
   };
 
-  /** Web app: exchanges the code Google sign-in sent back. Returns whether a second factor exists. */
+  /** Web app: exchanges the code Google sign-in sent back. The route guard picks the next screen. */
   const finishWebSignIn = async (code: string) => {
-    if (!backend) throw new Error('Not connected');
+    if (!backend) throw friendlyError('Not connected');
     const { error } = await backend.auth.exchangeCodeForSession(code);
     if (error) throw error;
-    const { data } = await backend.auth.mfa.listFactors();
     await refresh();
-    return !!data?.all.some((f) => f.status === 'verified');
   };
 
   /** Email sign-in: sends a one-time code, 6 to 10 digits depending on the project's setting (first factor). */
   const sendEmailCode = async (email: string) => {
-    if (!backend) throw new Error('Not connected');
-    const { error } = await backend.auth.signInWithOtp({ email: email.trim() });
+    if (!backend) throw friendlyError('Not connected');
+    const { error } = await backend.auth.signInWithOtp({ email: email.trim().toLowerCase() });
     if (error) throw error;
   };
   const verifyEmailCode = async (email: string, code: string) => {
-    if (!backend) throw new Error('Not connected');
+    if (!backend) throw friendlyError('Not connected');
     const token = code.replace(/\D/g, '');
-    const { error } = await backend.auth.verifyOtp({ email: email.trim(), token, type: 'email' });
-    if (!error) return;
-    // A brand-new account's first code can be a sign-up confirmation code; try it as one.
-    const { error: signupError } = await backend.auth.verifyOtp({ email: email.trim(), token, type: 'signup' });
-    if (signupError) throw new Error('That code didn’t work. Use the newest email, or ask for a new code.');
+    const address = email.trim().toLowerCase();
+    const { error } = await backend.auth.verifyOtp({ email: address, token, type: 'email' });
+    if (error) {
+      // A brand-new account's first code can be a sign-up confirmation code; try it as one.
+      const { error: signupError } = await backend.auth.verifyOtp({ email: address, token, type: 'signup' });
+      if (signupError) throw error;
+    }
+    await refresh();
   };
 
   /** Starts authenticator-app setup. Returns the secret and an otpauth:// link for the authenticator. */
   const startAuthenticatorSetup = async () => {
-    if (!backend) throw new Error('Not connected');
+    if (!backend) throw friendlyError('Not connected');
     // Drop any half-finished setup first, so the user can retry.
     const { data: existing } = await backend.auth.mfa.listFactors();
     for (const f of existing?.all ?? []) if (f.status === 'unverified') await backend.auth.mfa.unenroll({ factorId: f.id });
@@ -128,10 +196,10 @@ function useAuthState() {
 
   /** Verifies a code from the authenticator app: finishes setup, or steps an existing session up to AAL2. */
   const verifyAuthenticatorCode = async (code: string, factorId?: string) => {
-    if (!backend) throw new Error('Not connected');
+    if (!backend) throw friendlyError('Not connected');
     const id = factorId ?? (await backend.auth.mfa.listFactors()).data?.totp.find((f) => f.status === 'verified')?.id;
-    if (!id) throw new Error('Set up two-step verification first');
-    const { error } = await backend.auth.mfa.challengeAndVerify({ factorId: id, code: code.trim() });
+    if (!id) throw friendlyError('Set up two-step verification first.');
+    const { error } = await backend.auth.mfa.challengeAndVerify({ factorId: id, code: code.replace(/\D/g, '') });
     if (error) throw error;
     await refresh();
   };
@@ -141,9 +209,9 @@ function useAuthState() {
    * bound to settledownfinancial.com, so a look-alike site can't use it.
    */
   const runPasskey = async (factorId: string) => {
-    if (!backend) throw new Error('Not connected');
+    if (!backend) throw friendlyError('Not connected');
     // Native module in the app (development and TestFlight builds), WebAuthn in the web app.
-    if (!(await passkeySupported())) throw new Error('Passkeys need iOS 16 or later.');
+    if (!(await passkeySupported())) throw Object.assign(friendlyError('Passkeys aren’t available here. Use an authenticator app instead.'), { passkeyUnavailable: true });
     const challenge = await authRequest<{
       id: string;
       webauthn: { type: 'create' | 'request'; credential_options: { publicKey: any } };
@@ -161,48 +229,73 @@ function useAuthState() {
 
   /** Creates a passkey as this account's second factor and verifies it (session becomes AAL2). */
   const addPasskey = async () => {
-    if (!backend) throw new Error('Not connected');
+    if (!backend) throw friendlyError('Not connected');
     const { data: existing } = await backend.auth.mfa.listFactors();
     for (const f of existing?.all ?? []) if (f.status === 'unverified') await backend.auth.mfa.unenroll({ factorId: f.id });
     const { data, error } = await backend.auth.mfa.enroll({ factorType: 'webauthn', friendlyName: 'Passkey' } as any);
     if (error) throw error;
-    await runPasskey(data.id);
+    try {
+      await runPasskey(data.id);
+    } catch (e) {
+      // Don't leave a half-made passkey behind (it would block trying again).
+      await backend.auth.mfa.unenroll({ factorId: data.id }).catch(() => {});
+      throw e;
+    }
   };
 
   /** Steps this session up to AAL2 with the existing passkey. */
   const verifyWithPasskey = async () => {
-    if (!backend) throw new Error('Not connected');
+    if (!backend) throw friendlyError('Not connected');
     const { data } = await backend.auth.mfa.listFactors();
     const factor = data?.webauthn?.find((f) => f.status === 'verified');
-    if (!factor) throw new Error('No passkey set up yet');
+    if (!factor) throw friendlyError('No passkey set up yet.');
     await runPasskey(factor.id);
   };
 
   /** Records that the user accepted the current data-use notice shown before Plaid Link. */
   const acceptConsent = async () => {
-    if (!backend) throw new Error('Not connected');
-    const { error } = await backend.from('plaid_consents').upsert({ user_id: session!.user.id, notice_version: CONSENT_NOTICE_VERSION }, { ignoreDuplicates: true });
+    if (!backend || !session) throw friendlyError('Not connected');
+    const { error } = await backend.from('plaid_consents').upsert({ user_id: session.user.id, notice_version: CONSENT_NOTICE_VERSION }, { ignoreDuplicates: true });
     if (error) throw error;
     await refresh();
   };
 
   /** The user's household, created (with the default buckets) on first use. */
   const ensureHousehold = async () => {
-    if (!backend) throw new Error('Not connected');
-    if (householdId) return householdId;
+    if (!backend) throw friendlyError('Not connected');
+    if (account.householdId) return account.householdId;
     const { data, error } = await backend.rpc('create_household', { household_name: 'Our budget' });
     if (error) throw error;
-    setHouseholdId(data as string);
+    setAccount((a) => ({ ...a, householdId: data as string, linkedBanks: 0 }));
     return data as string;
   };
 
-  const signOut = async () => { await backend?.auth.signOut(); await refresh(); };
+  /** Closes the "Link your banks" welcome for good (on this device). */
+  const finishOnboarding = async () => {
+    setOnboarding('done');
+    if (session) await prefs.set(onboardingKey(session.user.id), '1');
+  };
 
-  const linkGate = plaidLinkGate({ signedIn: !!session, aal, consents });
+  /** Signs out on this device only (other devices stay signed in). */
+  const signOut = async () => {
+    await backend?.auth.signOut({ scope: 'local' });
+    await refresh();
+  };
+
+  const stage = authStage({ connected: !!backend, ready, signedIn: !!session, currentLevel: account.currentLevel, nextLevel: account.nextLevel });
+  const aal = session ? account.currentLevel ?? 'aal1' : null;
+  const hasFactor = account.hasPasskey || account.hasAuthenticatorApp;
+  const linkGate = plaidLinkGate({ signedIn: !!session, aal, consents: account.consents });
 
   return {
-    connected: !!backend, ready, session, householdId, ensureHousehold, email: session?.user.email ?? null, aal, hasFactor, hasPasskey, hasAuthenticatorApp, consents, linkGate,
-    signInWithApple, signInWithGoogle, finishWebSignIn, sendEmailCode, verifyEmailCode, startAuthenticatorSetup, verifyAuthenticatorCode, addPasskey, verifyWithPasskey, acceptConsent, signOut, refresh,
+    connected: !!backend, ready, stage, session, email: session?.user.email ?? null, aal,
+    householdId: account.householdId, linkedBanks: account.linkedBanks, hasFactor, hasPasskey: account.hasPasskey,
+    hasAuthenticatorApp: account.hasAuthenticatorApp, consents: account.consents, linkGate, passkeysAvailable,
+    /** Signed in, and the welcome that asks them to link a bank should show. */
+    needsOnboarding: stage === 'signed_in' && onboarding === 'needed',
+    appleAvailable, signInWithApple, signInWithGoogle, finishWebSignIn, sendEmailCode, verifyEmailCode,
+    startAuthenticatorSetup, verifyAuthenticatorCode, addPasskey, verifyWithPasskey, acceptConsent,
+    ensureHousehold, finishOnboarding, signOut, refresh,
   };
 }
 
@@ -218,4 +311,3 @@ export function useAuth() {
   if (!v) throw new Error('useAuth must be used inside AuthProvider');
   return v;
 }
-
