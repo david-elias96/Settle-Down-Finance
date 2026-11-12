@@ -100,6 +100,8 @@ function AppStack() {
   // Typed as Href: the generated route list only picks up new screens on the next dev-server start.
   const home = (stage === 'signed_out' ? '/sign-in'
     : stage === 'step_up' ? '/two-step'
+    // Signed in from an invite link: finish joining before anything else.
+    : stage === 'signed_in' && auth.pendingInvite ? `/join/${auth.pendingInvite}`
     : stage === 'signed_in' && auth.needsOnboarding ? '/link-banks'
     : '/') as Href;
 

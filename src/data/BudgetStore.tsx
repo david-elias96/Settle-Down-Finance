@@ -187,7 +187,8 @@ function useBudgetState() {
     return [...(outlook ? [outlook] : []), ...findInsights(insightInput)];
   }, [forecast, trend, buckets, month, insightInput]);
 
-  // AI credits. Kept on the phone for the preview; the backend is the source of truth once connected.
+  // AI credits. Signed in, they come from the server (credit_balances) and each answer returns the
+  // new balance; only development previews keep them on the phone.
   const [credits, setCredits] = useState<CreditState>({ period: month, allowance: PLANS.monthly.monthlyCredits, usedThisMonth: backend ? 0 : 6, extra: 0 });
   const creditBalance = creditsLeft(credits, month);
   /** Spends credits for an AI action; false when there aren't enough. */
@@ -199,7 +200,8 @@ function useBudgetState() {
   /** Mirrors the balance the backend returns with each answer. */
   const syncCredits = (left: { monthly: number; extra: number }) =>
     setCredits((c) => ({ ...c, period: month, usedThisMonth: Math.max(0, c.allowance - left.monthly), extra: left.extra }));
-  const addCreditPack = (n: number) => setCredits((c) => ({ ...c, extra: c.extra + n }));
+  /** Preview only: with the backend, credits are only ever added by the server (purchases). */
+  const addCreditPack = (n: number) => { if (!backend) setCredits((c) => ({ ...c, extra: c.extra + n })); };
 
   // Household: members and the accounts each of them linked.
   const meId = live && userId ? userId : 'me';

@@ -5,12 +5,15 @@ import { authRequest, backend, PASSKEY_ORIGINS, PASSKEY_RP_ID } from '@/src/lib/
 import { createPasskey, getPasskey, passkeySupported } from '@/src/lib/passkey';
 import { handoffRedirect, oauthParams } from '@/src/lib/oauth';
 import { prefs } from '@/src/lib/prefs';
+import { registerPushToken, unregisterPushToken } from '@/src/notifications';
 import { CONSENT_NOTICE_VERSION, plaidLinkGate } from '@/src/domain';
 import { authStage, friendlyError, type Aal } from './flow';
 
 /** Whether the "Link your banks" welcome shows after sign-in. Decided once per account. */
 type Onboarding = 'unknown' | 'needed' | 'done';
 const onboardingKey = (userId: string) => `onboarding-done.${userId}`;
+/** An invite code opened before signing in, so the join page comes back after sign-in. */
+const PENDING_INVITE = 'pending-invite';
 
 type Account = {
   currentLevel: Aal | null;
@@ -33,7 +36,15 @@ function useAuthState() {
   /** Only the newest refresh may write state, so a slow older one can't undo a newer one. */
   const seq = useRef(0);
   const userRef = useRef<string | null>(null);
+  const householdRef = useRef<string | null>(null);
+  const [pendingInvite, setPendingInviteState] = useState<string | null>(null);
 
+  useEffect(() => { prefs.get(PENDING_INVITE).then((c) => { if (c && /^[A-Z0-9]{8}$/.test(c)) setPendingInviteState(c); }); }, []);
+  /** Remembers (or forgets) an invite code across sign-in. */
+  const setPendingInvite = async (code: string | null) => {
+    setPendingInviteState(code);
+    if (code) await prefs.set(PENDING_INVITE, code); else await prefs.remove(PENDING_INVITE);
+  };
   useEffect(() => { passkeySupported().then(setPasskeysAvailable, () => setPasskeysAvailable(false)); }, []);
 
   /** Reads the session and everything sign-in depends on. A query that fails keeps the last known value. */
@@ -45,6 +56,7 @@ function useAuthState() {
     const s = data.session;
     if (!s) {
       userRef.current = null;
+      householdRef.current = null;
       setSession(null); setAccount(SIGNED_OUT); setOnboarding('unknown');
       return;
     }
@@ -64,6 +76,9 @@ function useAuthState() {
     if (mine !== seq.current) return;
 
     const linkedNow = householdId === null ? 0 : banks && !banks.error ? banks.count ?? 0 : null;
+    // Joining someone else's household (an invite) decides the welcome again: theirs may have banks.
+    const joinedHousehold = !!householdId && !!householdRef.current && householdId !== householdRef.current;
+    if (householdId !== undefined) householdRef.current = householdId;
     setAccount((prev) => {
       const base = newUser ? SIGNED_OUT : prev;
       return {
@@ -81,7 +96,7 @@ function useAuthState() {
     // The welcome is decided once per account: shown when the household has no banks yet and
     // the person hasn't finished it before. Linking a bank doesn't close it; Done does.
     setOnboarding((prev) => {
-      if (!newUser && prev !== 'unknown') return prev;
+      if (!newUser && !joinedHousehold && prev !== 'unknown') return prev;
       if (welcomed) return 'done';
       if (linkedNow == null) return 'unknown';
       return linkedNow === 0 ? 'needed' : 'done';
@@ -270,14 +285,47 @@ function useAuthState() {
     return data as string;
   };
 
+  /** Joins a household with an invite code (the invited person, signed in). */
+  const acceptInvite = async (code: string, displayName: string) => {
+    if (!backend) throw friendlyError('Not connected');
+    const { error } = await backend.rpc('accept_invite', { p_code: code, p_display_name: displayName.trim() || null });
+    // The database's own messages here are written for people ("This invite has expired…").
+    if (error) throw friendlyError(/expired|already used|sign in/i.test(error.message) ? error.message : 'Couldn’t join with that invite. Ask for a new one.');
+    await setPendingInvite(null);
+    await refresh();
+  };
+
+  /** Creates a single-use invite code for this household (valid 7 days). */
+  const createInvite = async () => {
+    if (!backend) throw friendlyError('Not connected');
+    const householdId = await ensureHousehold();
+    const { data, error } = await backend.rpc('create_invite', { p_household: householdId });
+    if (error || typeof data !== 'string') throw friendlyError('Couldn’t make an invite. Check your connection and try again.');
+    return data;
+  };
+
   /** Closes the "Link your banks" welcome for good (on this device). */
   const finishOnboarding = async () => {
     setOnboarding('done');
     if (session) await prefs.set(onboardingKey(session.user.id), '1');
   };
 
-  /** Signs out on this device only (other devices stay signed in). */
+  /** Turns on purchase alerts on this phone (asks for permission). */
+  const turnOnAlerts = async () => {
+    if (!backend || !session) throw friendlyError('Sign in first.');
+    return registerPushToken(backend, session.user.id, true);
+  };
+
+  // Keep this phone's push token current once alerts are allowed (tokens can change).
+  const userId = session?.user.id;
+  useEffect(() => {
+    if (backend && userId) registerPushToken(backend, userId, false).catch(() => {});
+  }, [userId]);
+
+    /** Signs out on this device only (other devices stay signed in). */
   const signOut = async () => {
+    // This phone stops getting the account's alerts once it's signed out.
+    if (backend && session) await unregisterPushToken(backend, session.user.id).catch(() => {});
     await backend?.auth.signOut({ scope: 'local' });
     await refresh();
   };
@@ -296,6 +344,7 @@ function useAuthState() {
     appleAvailable, signInWithApple, signInWithGoogle, finishWebSignIn, sendEmailCode, verifyEmailCode,
     startAuthenticatorSetup, verifyAuthenticatorCode, addPasskey, verifyWithPasskey, acceptConsent,
     ensureHousehold, finishOnboarding, signOut, refresh,
+    pendingInvite, setPendingInvite, acceptInvite, createInvite, turnOnAlerts,
   };
 }
 

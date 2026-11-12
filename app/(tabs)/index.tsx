@@ -66,8 +66,8 @@ export default function BudgetScreen() {
     <Screen eyebrow={dateLabel} title={verdict.text} action={<SettingsButton />}>
       {needsHousehold && (
         <>
-          <Notice title="You're signed in" icon={{ ios: 'house.fill', android: 'home', web: 'home' }}>
-            This is still sample data. Start your own budget to switch to yours, or open the invite link from your partner to join theirs.
+          <Notice title="Start your budget" icon={{ ios: 'house.fill', android: 'home', web: 'home' }}>
+            Set up your household's budget to start sorting purchases into buckets. Joining a partner's budget instead? Open the invite link they sent you.
           </Notice>
           <Button title="Start our budget" onPress={startBudget} loading={starting} />
         </>

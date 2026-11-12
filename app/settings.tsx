@@ -34,7 +34,7 @@ export default function SettingsScreen() {
     ]);
 
   const deleteAccount = () => {
-    if (!auth.session) return Alert.alert('Preview', 'Account deletion turns on once sign-in is connected.');
+    if (!auth.session) return;
     Alert.alert('Delete your account?',
       'This removes your linked banks at Plaid and permanently deletes your data. Shared household data stays for the other members. This cannot be undone.', [
         { text: 'Cancel', style: 'cancel' },
@@ -45,12 +45,30 @@ export default function SettingsScreen() {
       ]);
   };
 
-  // Preview of the push the backend will send when Plaid reports a new transaction.
+  // Purchase alerts: this phone's push token goes to the backend, which alerts on new purchases.
+  const [alerts, setAlerts] = useState<'on' | 'off'>('off');
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    Notifications.getPermissionsAsync().then((p) => setAlerts(p.granted ? 'on' : 'off')).catch(() => {});
+  }, []);
+  async function turnOnAlerts() {
+    try {
+      const r = await auth.turnOnAlerts();
+      if (r === 'on') setAlerts('on');
+      else if (r === 'denied') Alert.alert('Notifications are off', 'Turn them on for Settle Down in iOS Settings → Notifications, then try again.');
+      else Alert.alert('Not available yet', 'Purchase alerts turn on in the App Store build of Settle Down.');
+    } catch {
+      Alert.alert('Couldn’t turn on alerts', 'Check your connection and try again.');
+    }
+  }
+
+  // Development previews: a sample of the push the backend sends when Plaid reports a purchase.
   async function sendPreview() {
     const { granted } = await Notifications.requestPermissionsAsync();
     if (!granted) return Alert.alert('Notifications are off', 'Enable them in iOS Settings to get transaction alerts.');
     // The most recent purchase this month.
     const tx = [...transactions].filter((t) => t.date.startsWith(month)).sort((a, b) => b.date.localeCompare(a.date))[0];
+    if (!tx) return Alert.alert('No purchases yet', 'A sample alert needs at least one purchase this month.');
     const parts = allocations.filter((a) => a.transactionId === tx.id)
       .map((a) => ({ amount: a.amount, status: statuses.find((s) => s.bucket.id === a.bucketId)! }));
     const now = new Date();
@@ -92,7 +110,7 @@ export default function SettingsScreen() {
         ))}
         <Pressable onPress={() => router.push('/connect-bank')} accessibilityRole="button">
           <Row icon={{ ios: 'plus.circle.fill', android: 'add_circle', web: 'add_circle' }} title="Link a bank account"
-            subtitle={auth.connected ? 'Through Plaid, after two-step verification' : 'Turns on once sign-in is connected'} last />
+            subtitle={auth.connected ? 'Through Plaid, after two-step verification' : 'Needs the backend (development preview)'} last />
         </Pressable>
       </Section>
       <Section title="Account and privacy" footer="Deleting your account removes your banks at Plaid and deletes your data within 30 days.">
@@ -135,6 +153,13 @@ export default function SettingsScreen() {
       {Platform.OS === 'web' ? (
         <Section title="Notifications" footer="Purchase alerts on the home-screen web app come in a later update. Until then, new purchases show up in Activity.">
           <Row icon={{ ios: 'bell.badge.fill', android: 'notifications', web: 'notifications' }} title="Transaction alerts" subtitle="Coming to the web app" last />
+        </Section>
+      ) : auth.connected ? (
+        <Section title="Notifications" footer="An alert for each new purchase, with how much is left in its bucket.">
+          <Pressable onPress={turnOnAlerts} accessibilityRole="button">
+            <Row icon={{ ios: 'bell.badge.fill', android: 'notifications', web: 'notifications' }} title="Purchase alerts"
+              right={alerts === 'on' ? <Label secondary>On</Label> : <Pill>Turn on</Pill>} last />
+          </Pressable>
         </Section>
       ) : (
         <Section title="Notifications" footer="Lock your phone after tapping Send. The alert arrives in 3 seconds.">

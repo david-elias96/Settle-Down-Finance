@@ -8,7 +8,7 @@ export const agentBackendAvailable = (accessToken?: string) => !!(API && accessT
 async function call<T>(accessToken: string, body: object): Promise<T> {
   const res = await fetch(`${API}/functions/v1/cancel-agent`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    headers: { 'Content-Type': 'application/json', apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '', Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify(body),
   });
   const data = await res.json();
