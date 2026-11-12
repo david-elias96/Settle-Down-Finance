@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { oauthParams } from './oauth';
+import { handoffRedirect, oauthParams } from './oauth';
 
 describe('oauthParams', () => {
   it('reads the PKCE code from the query', () => {
@@ -12,5 +12,12 @@ describe('oauthParams', () => {
   });
   it('is empty when there are no parameters', () => {
     expect([...oauthParams('settledown://auth-callback').keys()]).toEqual([]);
+  });
+});
+
+describe('handoffRedirect', () => {
+  it('sends Supabase to our website with the app address encoded', () => {
+    expect(handoffRedirect('exp://abc.on.expo.app/--/auth-callback'))
+      .toBe('https://settledownfinancial.com/auth-callback/?app=exp%3A%2F%2Fabc.on.expo.app%2F--%2Fauth-callback');
   });
 });

@@ -38,3 +38,20 @@ export async function openAuthenticator(app: AuthenticatorApp, os: string, linki
     return 'store';
   }
 }
+
+/** Apple's public App Store lookup; returns each app's real icon. */
+export function iconLookupUrl(apps: AuthenticatorApp[] = AUTHENTICATOR_APPS) {
+  return `https://itunes.apple.com/lookup?id=${apps.map((a) => a.appStoreId).join(',')}`;
+}
+
+/** App Store id → icon URL, from a lookup response. Unknown or malformed entries are skipped. */
+export function iconsFromLookup(json: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  const results = (json as { results?: unknown[] } | null)?.results;
+  if (!Array.isArray(results)) return out;
+  for (const r of results as { trackId?: number; artworkUrl512?: string; artworkUrl100?: string }[]) {
+    const url = r?.artworkUrl512 ?? r?.artworkUrl100;
+    if (r?.trackId && typeof url === 'string' && url.startsWith('https://')) out[String(r.trackId)] = url;
+  }
+  return out;
+}
