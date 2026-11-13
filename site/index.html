@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-signup="waitlist">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Settle Down · A calm family budget for iPhone</title>
-<meta name="description" content="Settle Down links your family's accounts, sorts every purchase into buckets, and tells you where you stand the moment you spend. Coming soon to iPhone.">
+<title>Settle Down · A calm family budget. Try it free for 14 days</title>
+<meta name="description" content="Settle Down links your family's accounts, sorts every purchase into buckets, and tells you where you stand the moment you spend. Try it free for 14 days.">
 <meta name="theme-color" content="#F6F4EE" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0D1712" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -285,6 +285,160 @@ footer .brand svg { width: 30px; height: 23px; }
   .waitlist input { width: 100%; height: 48px; flex: none; text-align: center; }
   .waitlist .btn { width: 100%; }
 }
+
+/* ---- Funnel additions ---- */
+/* Signup mode: html[data-signup="open"] shows trial buttons; "waitlist" shows the waitlist form instead. */
+html[data-signup="open"] .when-waitlist, html[data-signup="waitlist"] .when-open { display: none !important; }
+.btn-lg { height: 56px; padding: 0 28px; font-size: 17px; }
+.btn-ghost { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1.5px var(--rule); }
+.btn-ghost:hover { box-shadow: inset 0 0 0 1.5px var(--muted); }
+.btn svg { width: 18px; height: 18px; }
+.ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 36px; }
+.reassure { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 18px; padding-left: 4px; font-size: 14px; color: var(--muted); }
+.reassure span { display: inline-flex; align-items: center; gap: 6px; }
+.reassure span::before { content: ""; width: 16px; height: 16px; flex: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='10' fill='%238FD19E'/%3E%3Cpath d='M6 10.2l2.7 2.7L14 7.6' fill='none' stroke='%231F5B3F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px 16px no-repeat; }
+
+/* Tour: a phone that flips through the real screens, with tabs */
+section.tour { padding: 104px 0 24px; }
+.tour-grid { display: grid; grid-template-columns: .95fr 1.05fr; gap: 64px; align-items: center; }
+.tour-grid > * { min-width: 0; }
+.tabs { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 5px; border-radius: 999px; margin-bottom: 32px; }
+.tabs button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 15px; font-weight: 600; padding: 9px 16px; border-radius: 999px; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--brand); color: var(--brand-ink); }
+.tour-copy h3 { font-size: clamp(26px, 3vw, 34px); margin-bottom: 14px; }
+.tour-copy .lede { font-size: 18px; }
+.tour-copy ul { list-style: none; padding: 0; margin: 22px 0 0; }
+.tour-copy li { position: relative; padding-left: 32px; margin-bottom: 10px; color: var(--muted); }
+.tour-copy li::before { content: ""; position: absolute; left: 0; top: calc((1.6em - 20px) / 2); width: 20px; height: 20px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='10' fill='%238FD19E'/%3E%3Cpath d='M6 10.2l2.7 2.7L14 7.6' fill='none' stroke='%231F5B3F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 20px 20px no-repeat; }
+.tour-copy li strong { color: var(--text); }
+.tour .shot { position: relative; display: flex; justify-content: center; padding: 48px 0; border-radius: 44px; background: var(--bg-2); overflow: hidden; isolation: isolate; }
+.tour .shot::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(340px 300px at 24% 22%, var(--glow-leaf), transparent 70%), radial-gradient(300px 260px at 84% 84%, var(--glow-sun), transparent 70%); }
+.tour .phone { width: 280px; }
+.tour .phone img { transition: opacity .35s ease; }
+.tour .phone img.swap { opacity: 0; }
+.tour-progress { display: flex; gap: 6px; margin-top: 28px; max-width: 320px; }
+.tour-progress i { flex: 1; height: 4px; border-radius: 2px; background: var(--rule); overflow: hidden; position: relative; }
+.tour-progress i.done::after, .tour-progress i.on::after { content: ""; position: absolute; inset: 0; background: var(--brand); border-radius: 2px; }
+.tour-progress i.on::after { animation: fill 6s linear both; transform-origin: left; }
+.tour.paused .tour-progress i.on::after { animation: none; transform: none; }
+@keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* Try it: the free-to-spend number */
+section.try { padding: 96px 0 24px; }
+.try-card { display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: var(--card); border-radius: 36px; box-shadow: var(--shadow); overflow: hidden; }
+.try-form { padding: 44px; }
+.try-form h2 { font-size: clamp(28px, 3.4vw, 38px); margin-bottom: 12px; }
+.try-form .lede { font-size: 17px; }
+.field { display: block; margin-top: 22px; }
+.try-card > * { min-width: 0; }
+.field > span:first-child { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.money { display: flex; align-items: center; height: 54px; border-radius: 16px; border: 1px solid var(--rule); background: var(--bg); padding: 0 16px; font-size: 19px; }
+.money:focus-within { border-color: var(--brand); }
+.money b { color: var(--muted); font-weight: 500; margin-right: 6px; }
+.money input { flex: 1; width: 100%; min-width: 0; border: 0; background: transparent; color: var(--text); font: inherit; font-variant-numeric: tabular-nums; }
+.money input:focus { outline: none; }
+.try-out { background: var(--hero-bg); color: var(--hero-text); padding: 44px; display: flex; flex-direction: column; justify-content: center; position: relative; isolation: isolate; }
+.try-out::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(360px 280px at 90% 0%, rgba(143,209,158,.3), transparent 70%); }
+.try-out small { color: var(--hero-muted); font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.try-out .big { font-family: "Fraunces", Georgia, serif; font-size: clamp(56px, 7vw, 84px); font-weight: 600; letter-spacing: -0.03em; line-height: 1; margin: 12px 0 6px; font-variant-numeric: tabular-nums; }
+.try-out .big span { font-size: .4em; color: var(--hero-muted); letter-spacing: 0; }
+.try-out p { color: var(--hero-muted); }
+.try-out .meter { height: 8px; border-radius: 4px; background: rgba(243,247,239,.16); margin: 26px 0 10px; overflow: hidden; }
+.try-out .meter i { display: block; height: 100%; width: 0; background: #8FD19E; border-radius: 4px; transition: width .4s ease, background .4s ease; }
+.try-out .btn { margin-top: 28px; align-self: flex-start; }
+
+/* How it works */
+section.steps { padding: 104px 0 24px; }
+.steps ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: s; }
+.steps li { background: var(--card); border-radius: 28px; padding: 30px; box-shadow: var(--shadow); counter-increment: s; position: relative; }
+.steps li::before { content: counter(s); display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--tint-soft); color: var(--brand); font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 19px; margin-bottom: 18px; }
+.steps h3 { margin-bottom: 8px; }
+.steps p { color: var(--muted); font-size: 16px; line-height: 1.5; }
+.steps .time { display: inline-block; margin-top: 14px; font-size: 13px; font-weight: 700; color: var(--leaf-ink); background: var(--tint-soft); padding: 5px 10px; border-radius: 999px; }
+
+/* Compare */
+section.compare { padding: 0 0 112px; }
+.table-wrap { max-width: 880px; margin: 0 auto; background: var(--card); border-radius: 28px; box-shadow: var(--shadow); overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 520px; }
+th, td { padding: 16px 18px; text-align: center; border-bottom: 1px solid var(--rule); }
+tr:last-child td { border-bottom: 0; }
+th { font-size: 14px; color: var(--muted); font-weight: 600; }
+th:first-child, td:first-child { text-align: left; color: var(--text); font-weight: 500; }
+th.us { color: var(--brand); font-family: "Fraunces", Georgia, serif; font-size: 18px; }
+td.us { background: var(--tint-soft); }
+.y, .n { display: inline-block; width: 22px; height: 22px; border-radius: 50%; vertical-align: middle; }
+.y { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='10' fill='%238FD19E'/%3E%3Cpath d='M6 10.2l2.7 2.7L14 7.6' fill='none' stroke='%231F5B3F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 22px 22px no-repeat; }
+.n { background: var(--bg-2); position: relative; }
+.n::after { content: ""; position: absolute; left: 6px; right: 6px; top: 10px; height: 2px; border-radius: 1px; background: var(--muted); opacity: .6; }
+
+/* Pricing additions */
+.billing-toggle { display: flex; justify-content: center; margin: -36px auto 40px; }
+.plan .btn { width: 100%; margin-top: 24px; }
+.plan.best .btn-brand { background: #F6C04E; color: #1B2420; }
+.plan.best .btn-brand:hover { background: #F8CC6A; }
+.plan .trial { display: inline-block; margin-top: 4px; font-size: 13px; font-weight: 700; color: var(--leaf-ink); }
+.plan.best .trial { color: #8FD19E; }
+.timeline { max-width: 760px; margin: 40px auto 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; position: relative; }
+.timeline::before { content: ""; position: absolute; top: 9px; left: 16.6%; right: 16.6%; height: 2px; background: var(--rule); }
+.timeline div { text-align: center; position: relative; padding: 0 10px; }
+.timeline div::before { content: ""; display: block; width: 20px; height: 20px; margin: 0 auto 12px; border-radius: 50%; background: var(--card); border: 3px solid var(--leaf); position: relative; }
+.timeline div:first-child::before { background: var(--brand); border-color: var(--brand); }
+.timeline b { display: block; font-size: 15px; }
+.timeline span { color: var(--muted); font-size: 14px; line-height: 1.45; display: block; margin-top: 2px; }
+
+/* FAQ */
+section.faq { padding: 0 0 112px; }
+.faq-list { max-width: 760px; margin: 0 auto; }
+.faq details { background: var(--card); border-radius: 22px; box-shadow: var(--shadow); margin-bottom: 12px; }
+.faq summary { list-style: none; cursor: pointer; padding: 20px 56px 20px 24px; font-weight: 600; font-size: 17px; position: relative; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: ""; position: absolute; right: 24px; top: 50%; width: 10px; height: 10px; margin-top: -7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .2s ease; }
+.faq details[open] summary::after { transform: rotate(-135deg); margin-top: -2px; }
+.faq details p { padding: 0 24px 22px; color: var(--muted); font-size: 16px; line-height: 1.6; }
+
+/* Final CTA additions */
+.cta-card .ctas { justify-content: center; }
+.cta-card .reassure { justify-content: center; color: var(--hero-muted); padding-left: 0; }
+.later { margin-top: 36px; padding-top: 28px; border-top: 1px solid rgba(243,247,239,.16); max-width: 520px; margin-left: auto; margin-right: auto; }
+.later p { color: var(--hero-muted); font-size: 15px; }
+.later .waitlist { margin-top: 14px; height: 52px; }
+.later .waitlist .btn { height: 40px; font-size: 14px; }
+
+/* Sticky trial bar on phones */
+.sticky { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 30; display: none; align-items: center; gap: 12px; padding: 10px 10px 10px 18px; border-radius: 999px; transform: translateY(140%); transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+.sticky.show { transform: none; }
+.sticky p { flex: 1; font-size: 14px; line-height: 1.3; color: var(--text); }
+.sticky p small { display: block; color: var(--muted); font-size: 12px; }
+.sticky .btn { height: 44px; padding: 0 18px; font-size: 15px; }
+
+@media (max-width: 960px) {
+  .tour-grid, .try-card { grid-template-columns: 1fr; gap: 40px; }
+  .tour-grid { gap: 32px; }
+  .tour .shot { order: 2; }
+  .hero .ctas, .hero .reassure { justify-content: center; }
+  .steps ol { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  html[data-signup="open"] .sticky { display: flex; }
+  section.tour, section.try, section.steps { padding-top: 72px; }
+  .tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-left: -16px; margin-right: -16px; border-radius: 0; padding: 5px 16px; background: transparent; border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs button { flex: none; background: var(--card); box-shadow: var(--shadow); }
+  .tour .phone { width: 240px; }
+  .try-form, .try-out { padding: 28px 22px; }
+  .try-card { border-radius: 28px; }
+  .ctas .btn { flex: 1 1 100%; }
+  .timeline { grid-template-columns: 1fr; gap: 18px; }
+  .timeline::before { display: none; }
+  .timeline div { display: grid; grid-template-columns: 20px 1fr; column-gap: 14px; text-align: left; padding: 0; }
+  .timeline div::before { margin: 2px 0 0; grid-row: span 2; }
+  section.compare, section.faq { padding-bottom: 80px; }
+  footer { padding-bottom: 96px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour-progress i.on::after { animation: none; }
+  .sticky { transition: none; }
+}
 </style>
 <script>document.documentElement.classList.add('js');
 // A sign-in that fails falls back to this page with the error in the URL; show the friendly error page instead.
@@ -302,6 +456,7 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
       </g>
     </symbol>
     <symbol id="sparkle" viewBox="0 0 24 24"><path fill="currentColor" d="M10 3l1.6 4.4L16 9l-4.4 1.6L10 15l-1.6-4.4L4 9l4.4-1.6zM18 13l.9 2.1L21 16l-2.1.9L18 19l-.9-2.1L15 16l2.1-.9z"/></symbol>
+    <symbol id="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   </defs>
 </svg>
 
@@ -309,10 +464,12 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
   <div class="bar glass">
     <a class="brand" href="/" aria-label="Settle Down home"><svg aria-hidden="true"><use href="#mark"/></svg>Settle Down</a>
     <nav aria-label="Main">
+      <a href="#tour">Tour</a>
       <a href="#features">Features</a>
-      <a href="#privacy">Privacy</a>
       <a href="#pricing">Pricing</a>
-      <a class="btn btn-brand" href="#join">Join the waitlist</a>
+      <a href="#faq">FAQ</a>
+      <a class="btn btn-brand when-open" href="https://app.settledownfinancial.com/start?plan=yearly">Start free trial</a>
+      <a class="btn btn-brand when-waitlist" href="#join">Join the waitlist</a>
     </nav>
   </div>
 </header>
@@ -321,15 +478,24 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
   <section class="hero">
     <div class="wrap">
       <div class="copy">
-        <div class="badge glass"><i></i>Coming soon to iPhone</div>
+        <div class="badge glass"><i></i><span class="when-open">14 days free, then $4.17 a month</span><span class="when-waitlist">Coming soon to iPhone</span></div>
         <h1>Know where you stand. <em>Then relax.</em></h1>
         <p class="lede">Settle Down links your family's accounts, sorts every purchase into buckets, and turns it all into one calm number: what you can spend today.</p>
-        <form class="waitlist" data-waitlist novalidate>
-          <label class="sr" for="email-top">Email address</label>
-          <input id="email-top" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
-          <button class="btn btn-brand" type="submit">Join the waitlist</button>
-        </form>
-        <p class="form-note" aria-live="polite">Be first in line for the beta. One email when it's ready, nothing else.</p>
+        <div class="when-open">
+          <div class="ctas">
+            <a class="btn btn-brand btn-lg" href="https://app.settledownfinancial.com/start?plan=yearly">Start your free trial<svg aria-hidden="true"><use href="#arrow"/></svg></a>
+            <a class="btn btn-ghost btn-lg" href="#tour">Take the tour</a>
+          </div>
+          <p class="reassure"><span>14 days free</span><span>Cancel in two taps</span><span>One plan, whole household</span></p>
+        </div>
+        <div class="when-waitlist">
+          <form class="waitlist" data-waitlist novalidate>
+            <label class="sr" for="email-top">Email address</label>
+            <input id="email-top" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+            <button class="btn btn-brand" type="submit">Join the waitlist</button>
+          </form>
+          <p class="form-note" aria-live="polite">Be first in line for the beta. One email when it's ready, nothing else.</p>
+        </div>
       </div>
       <div class="stage">
         <div class="phone">
@@ -358,6 +524,47 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
       </ul>
     </div>
   </div>
+
+  <section class="tour" id="tour" aria-labelledby="tour-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">Take the tour</p>
+        <h2 id="tour-title">See the whole app before you start</h2>
+        <p class="lede">These are the real screens, filled with a sample family's month. Tap through, or let it play.</p>
+      </div>
+      <div class="tour-grid reveal">
+        <div class="shot"><div class="phone"><img id="tour-img" src="assets/screens/home.webp" width="780" height="1688" alt=""></div></div>
+        <div>
+          <div class="tabs glass" role="tablist" aria-label="App screens"></div>
+          <div class="tour-copy" id="tour-panel" role="tabpanel" aria-live="polite"></div>
+          <div class="tour-progress" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="try" id="try" aria-labelledby="try-title">
+    <div class="wrap">
+      <div class="try-card reveal">
+        <form class="try-form" onsubmit="return false">
+          <p class="eyebrow">Try the one number</p>
+          <h2 id="try-title">What can you spend today?</h2>
+          <p class="lede">This is the number on Settle Down's home screen. Put in your own figures; nothing leaves this page.</p>
+          <label class="field"><span>Monthly spending budget</span><span class="money"><b>$</b><input id="try-budget" inputmode="decimal" value="3,500" aria-describedby="try-result"></span></label>
+          <label class="field"><span>Spent so far this month</span><span class="money"><b>$</b><input id="try-spent" inputmode="decimal" value="1,640" aria-describedby="try-result"></span></label>
+        </form>
+        <div class="try-out" id="try-result" aria-live="polite">
+          <small>Free to spend</small>
+          <p class="big" id="try-day">$0</p>
+          <p id="try-note">a day for the rest of the month</p>
+          <div class="meter"><i id="try-meter"></i></div>
+          <p id="try-pace" style="font-size:14px"></p>
+          <a class="btn btn-sun when-open" href="https://app.settledownfinancial.com/start?plan=yearly">Get yours from your real accounts</a>
+          <a class="btn btn-sun when-waitlist" href="#join">Get it when we launch</a>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section class="features" id="features">
     <div class="wrap">
@@ -474,6 +681,42 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
     </div>
   </section>
 
+  <section class="steps" aria-labelledby="steps-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">How it works</p>
+        <h2 id="steps-title">Set up in about five minutes</h2>
+      </div>
+      <ol class="reveal">
+        <li><h3>Start your free trial</h3><p>Sign in with Apple, Google or your email, and pick monthly or yearly. You won't be charged for 14 days.</p><span class="time">1 minute</span></li>
+        <li><h3>Link your banks</h3><p>Connect checking and cards through Plaid. We suggest buckets from how you really spend; tweak anything.</p><span class="time">About a minute per bank</span></li>
+        <li><h3>Get your daily number</h3><p>Every purchase lands in a bucket and your phone tells you where you stand. Invite your partner to share it.</p><span class="time">From day one</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="compare" aria-labelledby="compare-title">
+    <div class="wrap">
+      <div class="section-head reveal" style="margin-top:104px">
+        <p class="eyebrow">Why not just a spreadsheet?</p>
+        <h2 id="compare-title">The budget that does the work</h2>
+      </div>
+      <div class="table-wrap reveal">
+        <table>
+          <thead><tr><th scope="col"><span class="sr">Feature</span></th><th scope="col">A spreadsheet</th><th scope="col">Your bank's app</th><th scope="col" class="us">Settle Down</th></tr></thead>
+          <tbody>
+            <tr><td>Updates itself from every account</td><td><i class="n" aria-label="No"></i></td><td><i class="n" aria-label="Only that bank"></i></td><td class="us"><i class="y" aria-label="Yes"></i></td></tr>
+            <tr><td>Your whole household in one budget</td><td><i class="y" aria-label="Yes"></i></td><td><i class="n" aria-label="No"></i></td><td class="us"><i class="y" aria-label="Yes"></i></td></tr>
+            <tr><td>An alert with what's left after each purchase</td><td><i class="n" aria-label="No"></i></td><td><i class="n" aria-label="No"></i></td><td class="us"><i class="y" aria-label="Yes"></i></td></tr>
+            <tr><td>Where the month is likely to end</td><td><i class="n" aria-label="No"></i></td><td><i class="n" aria-label="No"></i></td><td class="us"><i class="y" aria-label="Yes"></i></td></tr>
+            <tr><td>Savings goals kept apart from spending</td><td><i class="y" aria-label="Yes"></i></td><td><i class="n" aria-label="Sometimes"></i></td><td class="us"><i class="y" aria-label="Yes"></i></td></tr>
+            <tr><td>Answers in plain English</td><td><i class="n" aria-label="No"></i></td><td><i class="n" aria-label="No"></i></td><td class="us"><i class="y" aria-label="Yes"></i></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <section class="trust" id="privacy">
     <div class="trust-card reveal">
     <div class="wrap">
@@ -504,18 +747,46 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
           <h3>Monthly</h3>
           <p class="price">$5.99<small> / month</small></p>
           <p class="sub">Cancel anytime.</p>
+          <span class="trial when-open">First 14 days free</span>
+          <a class="btn btn-brand when-open" href="https://app.settledownfinancial.com/start?plan=monthly">Start free trial</a>
         </div>
         <div class="plan best">
           <span class="tag">Save 30%</span>
           <h3>Yearly</h3>
           <p class="price">$49.99<small> / year</small></p>
           <p class="sub">About $4.17 a month.</p>
+          <span class="trial when-open">First 14 days free</span>
+          <a class="btn btn-brand when-open" href="https://app.settledownfinancial.com/start?plan=yearly">Start free trial</a>
         </div>
       </div>
       <div class="included">
-                <span>Household sharing</span>
+        <span>Household sharing</span>
         <span>Every feature included</span>
         <span>40 AI credits a month for Ask, receipt scans and the cancel assistant</span>
+      </div>
+      <div class="timeline when-open reveal" aria-label="How the free trial works">
+        <div><b>Today</b><span>Full access. $0 due.</span></div>
+        <div><b>Before day 14</b><span>We email you a reminder. Cancel in two taps if it's not for you.</span></div>
+        <div><b>Day 15</b><span>Your plan starts. Cancel anytime after that, too.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="faq" id="faq" aria-labelledby="faq-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">Questions</p>
+        <h2 id="faq-title">Good to know</h2>
+      </div>
+      <div class="faq-list reveal">
+        <details><summary>When will I be charged?</summary><p>Not today. Your card is charged when the 14-day trial ends, then every month or year depending on your plan. We email you before the trial ends, so it's never a surprise.</p></details>
+        <details><summary>How do I cancel?</summary><p>In the app, go to Settings, then Your plan, then Manage billing, and cancel. Cancel during the trial and you pay nothing; cancel later and you keep access until the end of the period you've paid for.</p></details>
+        <details><summary>Does one plan cover my partner?</summary><p>Yes. One plan covers everyone in your household. Invite them from Settings; they link their own cards and you both see the same buckets and goals.</p></details>
+        <details><summary>Is my bank data safe?</summary><p>You sign in to your bank inside Plaid, so we never see your bank password, and our access is read-only: nothing can move money. Data is encrypted, protected by two-step sign-in, and never sold or used for ads. Payments go through Stripe, so we never see your card number either. Read our <a href="/privacy">privacy policy</a>.</p></details>
+        <details><summary>Which banks work?</summary><p>Most US banks and credit cards, through Plaid. That includes the big national banks, credit unions and card issuers.</p></details>
+        <details><summary>Is there an iPhone app?</summary><p>Settle Down runs today as a web app you add to your iPhone's home screen, and it works on any computer too. The App Store app is on its way, and the same account and plan will carry over.</p></details>
+        <details><summary>What are AI credits?</summary><p>SettleDown, the built-in money assistant, answers questions about your spending, reads receipts to split purchases, and can walk through cancelling a subscription with you. Each plan includes 40 credits a month, which is plenty for most households. Daily insights and the weekly recap don't use credits.</p></details>
+        <details><summary>What if it's not for me?</summary><p>Cancel during the trial and you're never charged. You can also unlink your banks or delete your account from Settings at any time, and your data is deleted. Questions? Email <a href="mailto:admin@settledownfinancial.com">admin@settledownfinancial.com</a>.</p></details>
       </div>
     </div>
   </section>
@@ -524,22 +795,46 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
       <div class="cta-card reveal">
         <svg class="mark" aria-hidden="true" style="color:#F3F7EF"><use href="#mark"/></svg>
         <h2>Ready to settle down?</h2>
-        <p class="lede">We're putting the finishing touches on the iPhone app. Join the waitlist and we'll let you know the moment the beta opens.</p>
-        <form class="waitlist" data-waitlist novalidate>
-          <label class="sr" for="email-bottom">Email address</label>
-          <input id="email-bottom" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
-          <button class="btn btn-sun" type="submit">Join the waitlist</button>
-        </form>
-        <p class="form-note" aria-live="polite">One email when it's ready. Nothing else.</p>
+        <div class="when-open">
+          <p class="lede">Two weeks free. See your first daily number tonight.</p>
+          <div class="ctas">
+            <a class="btn btn-sun btn-lg" href="https://app.settledownfinancial.com/start?plan=yearly">Start your free trial<svg aria-hidden="true"><use href="#arrow"/></svg></a>
+          </div>
+          <p class="reassure"><span>No charge for 14 days</span><span>Cancel anytime</span></p>
+          <div class="later">
+            <p>Not ready yet? Get one email when the App Store app launches.</p>
+            <form class="waitlist" data-waitlist novalidate>
+              <label class="sr" for="email-later">Email address</label>
+              <input id="email-later" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+              <button class="btn btn-sun" type="submit">Notify me</button>
+            </form>
+            <p class="form-note" aria-live="polite"></p>
+          </div>
+        </div>
+        <div class="when-waitlist">
+          <p class="lede">We're putting the finishing touches on the iPhone app. Join the waitlist and we'll let you know the moment the beta opens.</p>
+          <form class="waitlist" data-waitlist novalidate>
+            <label class="sr" for="email-bottom">Email address</label>
+            <input id="email-bottom" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+            <button class="btn btn-sun" type="submit">Join the waitlist</button>
+          </form>
+          <p class="form-note" aria-live="polite">One email when it's ready. Nothing else.</p>
+        </div>
       </div>
   </section>
 </main>
+
+<div class="sticky glass" id="sticky" aria-hidden="true">
+  <p>Settle Down<small>14 days free, then $4.17/mo</small></p>
+  <a class="btn btn-brand" href="https://app.settledownfinancial.com/start?plan=yearly" tabindex="-1">Start free trial</a>
+</div>
 
 <footer>
   <div class="wrap">
     <a class="brand" href="/"><svg aria-hidden="true"><use href="#mark"/></svg>Settle Down</a>
     <span>© 2026 Settle Down Finance</span>
     <nav aria-label="Footer">
+      <a href="https://app.settledownfinancial.com/" class="when-open">Sign in</a>
       <a href="/privacy">Privacy Policy</a>
       <a href="mailto:admin@settledownfinancial.com">Contact</a>
     </nav>
@@ -553,6 +848,7 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
     var note = form.nextElementSibling;
     var input = form.querySelector('input');
     var button = form.querySelector('button');
+    var label = button.textContent;
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var email = input.value.trim();
@@ -572,17 +868,119 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
       }).then(function (r) {
         if (!r.ok) throw new Error('bad status');
         note.classList.add('ok');
-        note.textContent = "You're on the list. We'll email you when the beta opens.";
+        note.textContent = "You're on the list. We'll email you when it's ready.";
         input.value = '';
-        button.textContent = 'Joined';
+        button.textContent = 'Done';
       }).catch(function () {
         note.classList.add('err');
         note.innerHTML = 'Something went wrong. Email <a href="mailto:admin@settledownfinancial.com?subject=Waitlist">admin@settledownfinancial.com</a> and we\'ll add you.';
         button.disabled = false;
-        button.textContent = 'Join the waitlist';
+        button.textContent = label;
       });
     });
   });
+
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Tour: real screens with sample data. Tabs follow the ARIA tabs pattern (arrow keys move).
+  var STOPS = [
+    { tab: 'Today', img: 'home', title: 'One calm number', text: "Home turns every account into what you can spend today, and it adjusts as the month goes.", points: ['<strong>Free to spend</strong>, per day, through month-end', '<strong>This week</strong> at a glance, day by day', '<strong>The month ahead</strong>: bills still to come'], alt: 'The home screen: You’re on track, with $98 a day free to spend.' },
+    { tab: 'Buckets', img: 'bucket', title: 'Every purchase, sorted', text: 'Groceries, Dining Out, Gas: each bucket shows how much is left and whether you are ahead of pace for today.', points: ['<strong>Instant alerts</strong> with the bucket and what is left', '<strong>Pace markers</strong>, not just a month total', '<strong>Split shared bills</strong> so only your share counts'], alt: 'The Groceries bucket: $569 of $700 used, heading over.' },
+    { tab: 'Trends', img: 'trend', title: 'See the month before it happens', text: 'This month against last, then a projection of where you will land, with an honest range.', points: ['<strong>Month-end outlook</strong> from thousands of simulated months', '<strong>Bill forecasts</strong> for rent and utilities', '<strong>Tune-ups</strong> that suggest better limits'], alt: 'The spending trend chart with a projected month-end range.' },
+    { tab: 'Ask', img: 'ask', title: 'Ask your budget anything', text: 'Ask in plain English. SettleDown answers from your real purchases and shows the math.', points: ['<strong>"How can we cut back?"</strong> with dollar amounts', '<strong>"What did we spend at Target?"</strong> in seconds', '<strong>Weekly recap</strong> and insights included'], alt: 'An answer card listing the biggest ways to cut spending this month.' },
+    { tab: 'Savings', img: 'savings', title: 'Savings that stay put', text: 'Emergency fund, vacation, holidays: each goal has its own envelope, kept apart from everyday spending.', points: ['<strong>Monthly targets</strong> and a finish date', '<strong>Overspending made visible</strong> before it eats a goal'], alt: 'The Savings screen with goals on track.' },
+    { tab: 'Activity', img: 'activity', title: 'Find any purchase fast', text: 'Every purchase from every card, grouped by day and filterable by month, bucket or store.', points: ['<strong>Totals</strong> for exactly what you filter', '<strong>Scan a receipt</strong> to split a mixed purchase'], alt: 'The Activity screen with purchases grouped by day.' }
+  ];
+  var tablist = document.querySelector('.tour .tabs');
+  var panel = document.getElementById('tour-panel');
+  var img = document.getElementById('tour-img');
+  var bars = document.querySelector('.tour-progress');
+  var tour = document.querySelector('.tour');
+  var current = 0, timer = null, playing = !reduce, seen = false;
+  STOPS.forEach(function (s, i) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.setAttribute('role', 'tab'); b.id = 'tab-' + s.img; b.textContent = s.tab;
+    b.setAttribute('aria-controls', 'tour-panel');
+    b.addEventListener('click', function () { stop(); show(i, true); });
+    b.addEventListener('keydown', function (e) {
+      var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!d) return;
+      e.preventDefault(); stop(); show((current + d + STOPS.length) % STOPS.length, true);
+    });
+    tablist.appendChild(b);
+    bars.appendChild(document.createElement('i'));
+    new Image().src = 'assets/screens/' + s.img + '.webp';
+  });
+  function show(i, focus) {
+    current = i;
+    var s = STOPS[i];
+    tablist.querySelectorAll('button').forEach(function (b, j) {
+      b.setAttribute('aria-selected', j === i ? 'true' : 'false');
+      b.tabIndex = j === i ? 0 : -1;
+      if (j === i && focus) { b.focus(); b.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+    });
+    panel.setAttribute('aria-labelledby', 'tab-' + s.img);
+    panel.innerHTML = '<h3>' + s.title + '</h3><p class="lede">' + s.text + '</p><ul>' + s.points.map(function (p) { return '<li>' + p + '</li>'; }).join('') + '</ul>';
+    img.classList.add('swap');
+    setTimeout(function () { img.src = 'assets/screens/' + s.img + '.webp'; img.alt = s.alt; img.classList.remove('swap'); }, reduce ? 0 : 180);
+    bars.querySelectorAll('i').forEach(function (bar, j) {
+      bar.className = j < i ? 'done' : '';
+      if (j === i) { void bar.offsetWidth; bar.className = 'on'; }
+    });
+    clearTimeout(timer);
+    if (playing && seen) timer = setTimeout(function () { show((current + 1) % STOPS.length); }, 6000);
+  }
+  function stop() { playing = false; clearTimeout(timer); tour.classList.add('paused'); }
+  if (!playing) tour.classList.add('paused');
+  show(0);
+  // Only play while the tour is on screen.
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (en) {
+      seen = en[0].isIntersecting;
+      clearTimeout(timer);
+      if (seen && playing) show(current);
+    }, { threshold: 0.4 }).observe(tour);
+  }
+
+  // Try it: the free-to-spend number, worked out in the browser only.
+  var budget = document.getElementById('try-budget'), spent = document.getElementById('try-spent');
+  function num(el) { var v = parseFloat(String(el.value).replace(/[^0-9.]/g, '')); return isFinite(v) ? v : 0; }
+  function money(v) { return '$' + Math.round(v).toLocaleString('en-US'); }
+  function calc() {
+    var now = new Date();
+    var days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    var left = days - now.getDate() + 1;
+    var b = num(budget), s = num(spent), rest = b - s;
+    var perDay = rest > 0 ? rest / left : 0;
+    document.getElementById('try-day').innerHTML = money(perDay) + '<span> / day</span>';
+    document.getElementById('try-note').textContent = rest > 0
+      ? 'for the next ' + left + ' day' + (left === 1 ? '' : 's') + ', ' + money(rest) + ' in all'
+      : rest === 0 ? 'Right on budget. Nothing left to spend this month.' : money(-rest) + ' over budget. Settle Down would show which savings goal it comes out of.';
+    var used = b > 0 ? Math.min(1, s / b) : 0, pace = (now.getDate() - 0.5) / days;
+    var meter = document.getElementById('try-meter');
+    meter.style.width = Math.round(used * 100) + '%';
+    meter.style.background = used > pace + 0.05 ? '#F6C04E' : '#8FD19E';
+    document.getElementById('try-pace').textContent = b > 0
+      ? Math.round(used * 100) + '% of your budget used, ' + Math.round(pace * 100) + '% of the month gone. ' + (used > pace + 0.05 ? 'A little ahead of pace.' : 'On track.')
+      : '';
+  }
+  [budget, spent].forEach(function (el) { el.addEventListener('input', calc); });
+  calc();
+
+  // Phones: a glass "Start free trial" bar once the hero buttons scroll away, hidden at the end.
+  var sticky = document.getElementById('sticky');
+  var heroCtas = document.querySelector('.hero .ctas'), end = document.getElementById('pricing');
+  if ('IntersectionObserver' in window && heroCtas) {
+    var heroGone = false, nearEnd = false;
+    var update = function () {
+      var on = heroGone && !nearEnd;
+      sticky.classList.toggle('show', on);
+      sticky.setAttribute('aria-hidden', on ? 'false' : 'true');
+      sticky.querySelector('a').tabIndex = on ? 0 : -1;
+    };
+    new IntersectionObserver(function (en) { heroGone = !en[0].isIntersecting && en[0].boundingClientRect.top < 0; update(); }).observe(heroCtas);
+    new IntersectionObserver(function (en) { nearEnd = en[0].isIntersecting || en[0].boundingClientRect.top < 0; update(); }, { rootMargin: '0px 0px -30% 0px' }).observe(end);
+  }
 
   // Ease sections in as they scroll into view.
   var items = document.querySelectorAll('.reveal');

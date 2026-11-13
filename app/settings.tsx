@@ -7,7 +7,7 @@ import { Label, Pill, Row, Screen, Section } from '@/components/ui';
 import { useAuth } from '@/src/auth/AuthProvider';
 import { backend, callFunction, PRIVACY_POLICY_URL } from '@/src/lib/backend';
 import { useBudget } from '@/src/data/BudgetStore';
-import { creditsResetLabel, daysInMonth, transactionNotification } from '@/src/domain';
+import { billingSummary, creditsResetLabel, daysInMonth, transactionNotification } from '@/src/domain';
 import { TRANSACTION_CATEGORY } from '@/src/notifications';
 
 export default function SettingsScreen() {
@@ -146,7 +146,14 @@ export default function SettingsScreen() {
         </Pressable>
       </Section>
       <Section title="Plan" footer={`Ask and receipt scans use 1 credit each. Resets ${creditsResetLabel(month)}.`}>
-        <Row icon={{ ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' }} title="Settle Down" subtitle="Free during beta" />
+        {auth.billing ? (
+          <Pressable onPress={() => router.push('/plans')} accessibilityRole="button">
+            <Row icon={{ ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' }} title={billingSummary(auth.billing).title}
+              subtitle={billingSummary(auth.billing).detail} right={<Pill>{auth.billing.reason === 'subscribed' ? 'Manage' : 'View'}</Pill>} />
+          </Pressable>
+        ) : (
+          <Row icon={{ ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' }} title="Settle Down" subtitle="Free during beta" />
+        )}
         <Row icon={{ ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' }} title="AI credits"
           right={<Label secondary>{creditBalance.monthly} of {credits.allowance}{creditBalance.extra ? ` + ${creditBalance.extra}` : ''}</Label>} last />
       </Section>

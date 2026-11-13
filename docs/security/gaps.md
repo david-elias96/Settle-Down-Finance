@@ -18,6 +18,9 @@ Last reviewed: 2026-11-12.
 | Move the Supabase project to the Pro plan before production (daily backups, no pausing) | Backups, availability | 7 |
 | GitHub: protect `main` (require pull request and the CI checks, block force-push); turn on Dependabot alerts, secret scanning and push protection | Vulnerability scanning; change management | 5, 6 |
 | Web app: in Supabase Auth → URL Configuration add `https://app.settledownfinancial.com/**`; set the edge-function secret `PLAID_WEB_REDIRECT_URI=https://app.settledownfinancial.com/connect-bank` and add the same URL in Plaid Dashboard → Allowed redirect URIs; redeploy the functions (CORS for the web app) | Access controls; OAuth banks in Plaid Link | 4 |
+| Paid plans: create the Stripe account with MFA on; follow [docs/billing.md](../billing.md) (restricted API key and webhook signing secret only in Supabase edge-function secrets, never in the repo or app) | MFA for critical systems; secrets management | 4, 5 |
+| Before taking payments: publish Terms of Service (subscription, trial and cancellation terms) and link them from Checkout and the site footer | Consumer disclosures | 8 |
+| Before the App Store build: decide how the iPhone app handles subscriptions (web-only sign-in for existing subscribers, link-out, or in-app purchase); re-check App Store guideline 3.1 at that time | App Review | 8 |
 | On your Windows PC: confirm BitLocker, Microsoft Defender and automatic Windows Update are on; log it in [operations.md](operations.md) | Vulnerability scans on employee machines | 6, 9 |
 
 ## Code still to build

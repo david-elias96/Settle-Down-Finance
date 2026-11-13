@@ -1,4 +1,5 @@
 import { admin, HttpError } from './supabase.ts';
+import { requireHouseholdAccess } from './billing.ts';
 import { CREDIT_COST, type CreditReason } from './domain/index.ts';
 
 export interface CreditsLeft { monthly: number; extra: number; total: number }
@@ -9,6 +10,13 @@ export interface CreditsLeft { monthly: number; extra: number; total: number }
  */
 export async function chargeCredits(householdId: string, reason: CreditReason, ref?: string) {
   const cost = CREDIT_COST[reason];
+  // No plan, trial or comp access (once the paywall is on): 402 subscription_required.
+  const { comped } = await requireHouseholdAccess(householdId);
+  // Founder/family access: unlimited AI, nothing charged or refunded.
+  if (comped) {
+    const unlimited: CreditsLeft = { monthly: 999, extra: 0, total: 999 };
+    return { left: unlimited, refund: async () => unlimited };
+  }
   const { data, error } = await admin.rpc('spend_credit', { p_household: householdId, p_cost: cost, p_reason: reason, p_ref: ref ?? null });
   if (error) throw error;
   const row = (data as { ok: boolean; monthly_left: number; extra_left: number }[])[0];

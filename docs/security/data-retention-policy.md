@@ -1,6 +1,6 @@
 # Settle Down Finance Data Retention and Disposal Policy
 
-Version 1.1 · Effective 2026-11-10 · Owner: Security Owner (founder)
+Version 1.2 · Effective 2026-11-13 · Owner: Security Owner (founder)
 
 ## 1. Purpose and scope
 
@@ -31,6 +31,8 @@ This policy expands section 8 of the Settle Down Finance Information Security Po
 | Inactive accounts | Supabase | Up to 24 months without sign-in | The user is notified 30 days before the 24-month mark, then the account is deleted as above |
 | Receipt images | Sent to the backend for reading | Only while being read | Not stored after the scan |
 | Subscription-cancel assistant page text | Supabase Postgres | 30 days | Cleared by the daily retention job; the outcome (service, date, confirmation) stays as the user's record until the account is deleted |
+| Subscription status (Stripe customer and subscription ids, plan, status, dates) and free-access grants | Supabase Postgres | While the account is active | Deleted with the account (cascade from the login). Account deletion cancels any live subscription at Stripe first |
+| Payment records (invoices, card details) | Stripe only, never our systems | As long as Stripe and tax law require | Kept by Stripe under its terms; we can't delete records the law requires Stripe to keep |
 | Consent records (notice version and time) | Supabase Postgres | While the account is active | Deleted with the account |
 | Application and auth logs | Supabase and other providers | Provider default | Rolled off on the provider's schedule. Logs never contain tokens, secrets, account numbers or full request bodies |
 | Backups | Supabase | Provider default, no more than 30 days | Expire on the provider's schedule; deleted data is gone from backups once they expire |
@@ -66,6 +68,7 @@ When we delete data, the following happens at each vendor:
 - **Anthropic (Claude API):** receives only the fields a feature needs, never tokens, account numbers or passwords. It keeps API data under its commercial retention terms and does not use it to train models.
 - **Google:** when someone signs in with Google, Google shares their name and email address with us; we keep the email with the account and delete it with the account. Google keeps its own sign-in records under its terms.
 - **Expo and Apple:** receive only push tokens and notification text. Push tokens are deleted with the account.
+- **Stripe:** account deletion cancels the subscription at once so nobody is charged afterwards. Stripe keeps payment and invoice records for as long as financial and tax law requires, under its own privacy policy.
 - **Resend:** sends sign-in code emails, so it receives the email address and the one-time code. It keeps delivery logs under its own retention terms; we do not store emails there.
 
 A new vendor that would receive consumer data must first be reviewed, including how long it keeps that data, and added to the Information Security Policy.
@@ -92,5 +95,6 @@ This policy is reviewed at least every 12 months with the Information Security P
 
 | Version | Date | Change | Approved by |
 | --- | --- | --- | --- |
+| 1.2 | 2026-11-13 | Paid plans: subscription status and Stripe payment records added | David Elias, Security Owner |
 | 1.1 | 2026-11-10 | Resend added as the email provider | David Elias, Security Owner |
 | 1.0 | 2026-11-10 | First version | David Elias, Security Owner |

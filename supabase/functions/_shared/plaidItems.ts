@@ -1,6 +1,7 @@
 // Removing Plaid items and deleting a user's data (policy section 8).
 import { admin } from './supabase.ts';
 import { plaid } from './plaid.ts';
+import { cancelBillingForUser } from './billing.ts';
 
 type Item = { id: string; plaid_item_id: string; access_token_secret_id: string };
 
@@ -31,6 +32,8 @@ export async function removePlaidItem(item: Item) {
  * otherwise), and finally their login. Rows keyed to the user cascade from auth.users.
  */
 export async function deleteUserData(userId: string) {
+  // Stop billing first, so a failure here leaves the account intact to retry.
+  await cancelBillingForUser(userId);
   const { data: items } = await admin.from('plaid_items').select('id, plaid_item_id, access_token_secret_id').eq('linked_by', userId);
   for (const item of items ?? []) await removePlaidItem(item);
 

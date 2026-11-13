@@ -1,6 +1,6 @@
 # Settle Down Finance Information Security Policy
 
-Version 1.6 · Effective 2026-11-12 · Owner: Security Owner (founder)
+Version 1.7 · Effective 2026-11-13 · Owner: Security Owner (founder)
 
 > This is the repository copy of the policy submitted to Plaid. Engineering rules that follow from it are summarized in `CLAUDE.md`, and known gaps between this policy and the current code are tracked in [`gaps.md`](gaps.md). Change this file only through a reviewed pull request, and add a row to the revision history.
 
@@ -15,7 +15,7 @@ Settle Down Finance protects the consumer financial data it receives from Plaid 
 - The Settle Down Finance iOS app (Expo / React Native, built and signed with Expo EAS).
 - The production backend on Supabase: Postgres database, Supabase Auth, Supabase Vault, Supabase Storage and Deno edge functions.
 - All consumer data, including data received from Plaid (account names and masks, balances, transactions, Plaid access tokens and item ids).
-- Third-party services that process that data: Plaid, Supabase, Anthropic (Claude API), Expo (EAS builds and push), Apple (App Store, TestFlight, push notifications) and GitHub (source code).
+- Third-party services that process that data: Plaid, Supabase, Anthropic (Claude API), Expo (EAS builds and push), Apple (App Store, TestFlight, push notifications), Stripe (subscription payments) and GitHub (source code).
 - The people with access to any of the above, and the computers and phones they use to reach it.
 
 **Review.** The Security Owner reviews this policy at least once every 12 months, after any security incident, and before any material change to how consumer financial data is collected, stored or shared. Each review is recorded in the revision history at the end of this document.
@@ -44,7 +44,7 @@ All data is classified into one of three levels, and the strictest handling rule
 
 | Level | Examples | Where it may live | Rules |
 | --- | --- | --- | --- |
-| Secret | Plaid access tokens, Plaid client secret, Supabase service-role key, Anthropic API key, Expo and Apple signing credentials, cron secrets | Plaid access tokens: Supabase Vault only. Other secrets: Supabase edge-function secrets, EAS secrets, or a password manager | Never in source code, the app bundle, logs, tickets, chat or email. Never sent to the phone. Read only by backend code running with the service role |
+| Secret | Plaid access tokens, Plaid client secret, Supabase service-role key, Anthropic API key, Stripe secret key and webhook signing secret, Expo and Apple signing credentials, cron secrets | Plaid access tokens: Supabase Vault only. Other secrets: Supabase edge-function secrets, EAS secrets, or a password manager | Never in source code, the app bundle, logs, tickets, chat or email. Never sent to the phone. Read only by backend code running with the service role |
 | Confidential | Account names and masks, balances, transactions, receipts, budgets, household members, email addresses, push tokens | Supabase Postgres (row-level security on) and the user's own device | Only the user's own household can read it. Never copied to personal devices, spreadsheets, test fixtures or the source repository. Sent to a vendor only as listed in section 7 |
 | Internal | Source code, designs, aggregate usage metrics with no personal data | GitHub (private repository), company accounts | Shared only with people who have access under this policy |
 
@@ -93,7 +93,7 @@ Consumer data is encrypted in transit with TLS 1.2 or higher and at rest with AE
 
 **Secrets.**
 
-- Backend secrets (Plaid client id and secret, Supabase service-role key, Anthropic API key, Expo access token, cron secret) live only in Supabase edge-function secrets. Build credentials live only in EAS secrets. Nothing secret is placed in `EXPO_PUBLIC_` variables or anywhere else that ships in the app bundle.
+- Backend secrets (Plaid client id and secret, Supabase service-role key, Anthropic API key, Stripe restricted secret key and webhook signing secret, Expo access token, cron secret) live only in Supabase edge-function secrets. Build credentials live only in EAS secrets. Nothing secret is placed in `EXPO_PUBLIC_` variables or anywhere else that ships in the app bundle.
 - Secrets are never committed to source control. The repository ignores `.env` files and key files, and GitHub secret scanning with push protection is turned on.
 - Each environment (Plaid Sandbox and Plaid Production) has its own secrets. Production secrets are never used on a developer machine except to set them in Supabase.
 - Secrets are rotated at least once a year, immediately when someone with access leaves, and immediately if exposure is suspected.
@@ -139,6 +139,7 @@ Consumer data goes only to the vendors listed below and only for the purpose sho
 | Google | Sign in with Google (identity provider) | The user's name and email address from their Google account, only when they choose Google sign-in. No financial data |
 | Resend | Sending sign-in code emails from settledownfinancial.com | Email address and the one-time sign-in code. No financial data |
 | Cloudflare | Hosting for the website and the web app (static files), and the website's waitlist | Waitlist email addresses only. The web app's budget and bank data go directly between the user's device and Supabase, never through Cloudflare |
+| Stripe | Subscription payments on its hosted Checkout and billing portal pages | The subscriber's email address, our user id, and the card and billing details they type into Stripe's own pages (never seen or stored by us; PCI DSS scope SAQ A). We store only the Stripe customer and subscription ids, plan, status and dates. No bank or budget data |
 | GitHub | Source code hosting | No consumer data |
 
 A new vendor may receive consumer data only after the Security Owner reviews its security (a SOC 2 Type II or ISO 27001 report where available), confirms it will not sell or train on the data, records it in this table, and updates the privacy policy. Vendor reports are reviewed again each year.
@@ -201,6 +202,7 @@ People with access use secured devices, know this policy, and may depart from it
 
 | Version | Date | Change | Approved by |
 | --- | --- | --- | --- |
+| 1.7 | 2026-11-13 | Paid plans: Stripe added as a vendor (hosted Checkout and billing portal, signed webhooks, restricted API key in edge-function secrets); subscription status and comp access stored with RLS | David Elias, Security Owner |
 | 1.6 | 2026-11-12 | Installable web app (PWA) at app.settledownfinancial.com: session storage, CSP and CORS rules; Cloudflare listed as a vendor | David Elias, Security Owner |
 | 1.5 | 2026-11-12 | Sign in with Google added as a sign-in option; Google added as a vendor | David Elias, Security Owner |
 | 1.4 | 2026-11-10 | Resend added as the email provider for sign-in codes | David Elias, Security Owner |

@@ -45,3 +45,16 @@ import_map = "./functions/deno.json"
 # Called by Supabase Cron; checks CRON_SECRET itself.
 verify_jwt = false
 import_map = "./functions/deno.json"
+
+[functions.billing-checkout]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.billing-portal]
+verify_jwt = true
+import_map = "./functions/deno.json"
+
+[functions.stripe-webhook]
+# Called by Stripe; verifies the Stripe-Signature header itself.
+verify_jwt = false
+import_map = "./functions/deno.json"

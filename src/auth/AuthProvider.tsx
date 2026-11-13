@@ -1,12 +1,12 @@
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
-import { authRequest, backend, PASSKEY_ORIGINS, PASSKEY_RP_ID } from '@/src/lib/backend';
+import { authRequest, backend, callFunction, PASSKEY_ORIGINS, PASSKEY_RP_ID } from '@/src/lib/backend';
 import { createPasskey, getPasskey, passkeySupported } from '@/src/lib/passkey';
 import { handoffRedirect, oauthParams } from '@/src/lib/oauth';
 import { prefs } from '@/src/lib/prefs';
 import { registerPushToken, unregisterPushToken } from '@/src/notifications';
-import { CONSENT_NOTICE_VERSION, plaidLinkGate } from '@/src/domain';
+import { billingFromRow, CONSENT_NOTICE_VERSION, needsPlan, plaidLinkGate, type BillingState, type PlanId } from '@/src/domain';
 import { authStage, friendlyError, type Aal } from './flow';
 
 /** Whether the "Link your banks" welcome shows after sign-in. Decided once per account. */
@@ -24,8 +24,10 @@ type Account = {
   householdId: string | null;
   /** Banks linked to the household; null until known. */
   linkedBanks: number | null;
+  /** Paid plan and access (my_billing()); null until known or before the billing migration. */
+  billing: BillingState | null;
 };
-const SIGNED_OUT: Account = { currentLevel: null, nextLevel: null, hasPasskey: false, hasAuthenticatorApp: false, consents: [], householdId: null, linkedBanks: null };
+const SIGNED_OUT: Account = { currentLevel: null, nextLevel: null, hasPasskey: false, hasAuthenticatorApp: false, consents: [], householdId: null, linkedBanks: null, billing: null };
 
 function useAuthState() {
   const [session, setSession] = useState<Session | null>(null);
@@ -62,12 +64,13 @@ function useAuthState() {
     }
     const newUser = userRef.current !== s.user.id;
     userRef.current = s.user.id;
-    const [level, factors, consentRows, membership, welcomed] = await Promise.all([
+    const [level, factors, consentRows, membership, welcomed, billingRows] = await Promise.all([
       backend.auth.mfa.getAuthenticatorAssuranceLevel(),
       backend.auth.mfa.listFactors(),
       backend.from('plaid_consents').select('notice_version'),
       backend.from('household_members').select('household_id').eq('user_id', s.user.id).order('joined_at').limit(1).maybeSingle(),
       prefs.get(onboardingKey(s.user.id)),
+      backend.rpc('my_billing'),
     ]);
     const householdId = membership.error ? undefined : (membership.data?.household_id ?? null);
     const banks = householdId
@@ -90,6 +93,7 @@ function useAuthState() {
         consents: consentRows.error ? base.consents : (consentRows.data ?? []).map((r) => r.notice_version),
         householdId: householdId === undefined ? base.householdId : householdId,
         linkedBanks: linkedNow ?? base.linkedBanks,
+        billing: billingRows.error ? base.billing : billingFromRow((billingRows.data as Record<string, unknown>[] | null)?.[0]),
       };
     });
     setSession(s);
@@ -322,6 +326,23 @@ function useAuthState() {
     if (backend && userId) registerPushToken(backend, userId, false).catch(() => {});
   }, [userId]);
 
+    /**
+   * Web app: opens Stripe Checkout for a plan (free trial on a first subscription). The page
+   * leaves for Stripe and comes back to /plans?checkout=success.
+   */
+  const startCheckout = async (plan: PlanId) => {
+    const { url } = await callFunction<{ url: string }>('billing-checkout', { plan });
+    if (!/^https:\/\/checkout\.stripe\.com\//.test(url)) throw friendlyError('Couldn’t open checkout. Please try again.');
+    window.location.assign(url);
+  };
+
+  /** Web app: opens Stripe's billing portal (change plan, update card, invoices, cancel). */
+  const openBillingPortal = async () => {
+    const { url } = await callFunction<{ url: string }>('billing-portal', {});
+    if (!/^https:\/\/billing\.stripe\.com\//.test(url)) throw friendlyError('Couldn’t open billing. Please try again.');
+    window.location.assign(url);
+  };
+
     /** Signs out on this device only (other devices stay signed in). */
   const signOut = async () => {
     // This phone stops getting the account's alerts once it's signed out.
@@ -341,6 +362,9 @@ function useAuthState() {
     hasAuthenticatorApp: account.hasAuthenticatorApp, consents: account.consents, linkGate, passkeysAvailable,
     /** Signed in, and the welcome that asks them to link a bank should show. */
     needsOnboarding: stage === 'signed_in' && onboarding === 'needed',
+    /** Paid plans are switched on and this person has no plan, trial or free access. */
+    needsPlan: stage === 'signed_in' && needsPlan(account.billing),
+    billing: account.billing, startCheckout, openBillingPortal,
     appleAvailable, signInWithApple, signInWithGoogle, finishWebSignIn, sendEmailCode, verifyEmailCode,
     startAuthenticatorSetup, verifyAuthenticatorCode, addPasskey, verifyWithPasskey, acceptConsent,
     ensureHousehold, finishOnboarding, signOut, refresh,

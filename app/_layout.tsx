@@ -82,7 +82,8 @@ function RootLayoutNav() {
  * The one route guard. With the backend connected, nobody sees the app until they're signed in:
  * signed out, only the sign-in flow is open; signed in to an account with two-step verification,
  * that second step finishes signing in; a household with no banks yet gets the "Link your banks"
- * welcome first. Invite links and the sign-in return page stay open to everyone. Previews
+ * welcome first. Once paid plans are switched on, someone without a plan, trial or free access
+ * picks a plan first (app/plans.tsx). Invite links and the sign-in return page stay open to everyone. Previews
  * without backend settings run the whole app on sample data. Plaid Link keeps its own AAL2 and
  * consent gate (connect-bank.tsx and the backend).
  */
@@ -96,12 +97,14 @@ function AppStack() {
   }, [stage]);
   if (stage === 'loading') return null;
 
-  const inApp = stage === 'preview' || (stage === 'signed_in' && !auth.needsOnboarding);
+  const inApp = stage === 'preview' || (stage === 'signed_in' && !auth.needsPlan && !auth.needsOnboarding);
   // Typed as Href: the generated route list only picks up new screens on the next dev-server start.
   const home = (stage === 'signed_out' ? '/sign-in'
     : stage === 'step_up' ? '/two-step'
     // Signed in from an invite link: finish joining before anything else.
     : stage === 'signed_in' && auth.pendingInvite ? `/join/${auth.pendingInvite}`
+    // Paid plans on and no plan, trial or free access yet: pick a plan before linking banks.
+    : auth.needsPlan ? '/plans'
     : stage === 'signed_in' && auth.needsOnboarding ? '/link-banks'
     : '/') as Href;
 
@@ -133,7 +136,11 @@ function AppStack() {
       <Stack.Protected guard={stage === 'signed_out'} redirectTo={home}>
         <Stack.Screen name="sign-in" options={{ title: 'Settle Down' }} />
       </Stack.Protected>
-      <Stack.Protected guard={stage === 'signed_in' && auth.needsOnboarding} redirectTo={home}>
+      {/* Plans: the paywall when needed, and where anyone signed in manages their plan. */}
+      <Stack.Protected guard={stage === 'signed_in'} redirectTo={home}>
+        <Stack.Screen name="plans" options={{ title: 'Your plan', headerBackTitle: 'Back', headerBackVisible: !auth.needsPlan, gestureEnabled: !auth.needsPlan }} />
+      </Stack.Protected>
+      <Stack.Protected guard={stage === 'signed_in' && !auth.needsPlan && auth.needsOnboarding} redirectTo={home}>
         <Stack.Screen name="link-banks" options={{ title: 'Link your banks', headerBackVisible: false, gestureEnabled: false }} />
       </Stack.Protected>
       <Stack.Protected guard={stage === 'preview' || !!auth.session} redirectTo={home}>
@@ -142,6 +149,8 @@ function AppStack() {
       </Stack.Protected>
       {/* Open to everyone: invite links (they sign in from there) and where Google sign-in returns. */}
       <Stack.Screen name="join/[code]" options={{ title: 'Join' }} />
+      {/* The website's "Start free trial" lands here, remembers the plan, then signs in. */}
+      <Stack.Screen name="start" options={{ title: 'Settle Down', headerShown: false }} />
       <Stack.Screen name="auth-callback" options={{ title: 'Signing in', headerBackVisible: false }} />
     </Stack>
   );

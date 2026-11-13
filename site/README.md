@@ -2,7 +2,7 @@
 
 Static marketing site, hosted on Cloudflare Pages (project `settledownfinance`).
 
-- `index.html` – landing page (all CSS and JS inline, no build step)
+- `index.html` – landing page and signup funnel (all CSS and JS inline, no build step). `data-signup="open"` on `<html>` shows the free-trial buttons (to app.settledownfinancial.com/start); `"waitlist"` shows the waitlist form instead. See [docs/billing.md](../docs/billing.md)
 - `privacy/index.html` – privacy policy (linked from the app and Plaid)
 - `assets/` – app screenshots (sample data only, never real household data) and the self-hosted Fraunces font
 - `functions/api/waitlist.js` – Pages Function behind the waitlist form

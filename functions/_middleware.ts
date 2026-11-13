@@ -4,7 +4,7 @@
  */
 import { COOKIE, GATE_HEADERS, GATE_PATH, cookieHeader, gatePage, isOpenPath, makeToken, passwordMatches, readCookie, safeNext, tokenValid } from '../web-gate/gate';
 
-type Context = { request: Request; env: { SITE_PASSWORD?: string }; next: () => Promise<Response> };
+type Context = { request: Request; env: { SITE_PASSWORD?: string; EARLY_ACCESS?: string }; next: () => Promise<Response> };
 
 const html = (body: string, status = 200, extra: Record<string, string> = {}) =>
   new Response(body, { status, headers: { ...GATE_HEADERS, ...extra } });
@@ -14,6 +14,9 @@ export async function onRequest({ request, env, next }: Context): Promise<Respon
   const secret = env.SITE_PASSWORD;
 
   if (isOpenPath(url.pathname)) return next();
+  // Launch switch: set the Pages variable EARLY_ACCESS=off once paid plans are live (the app's own
+  // sign-in and plan picker take over). Anything else, including unset, keeps the password gate.
+  if (env.EARLY_ACCESS === 'off') return next();
   // Fail closed: without the secret nobody gets in.
   if (!secret) return html(gatePage('/', 'The app is closed right now. Please try again later.'), 503);
 

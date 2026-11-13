@@ -2,7 +2,7 @@
 // The backend is the real gate; the app uses the same rules to show the right next step.
 
 /** Version of the data-use notice shown before Plaid Link. Bump it when the notice text changes. */
-export const CONSENT_NOTICE_VERSION = '2026-11-12.1';
+export const CONSENT_NOTICE_VERSION = '2026-11-13.1';
 
 /** Days of history requested from Plaid when a bank is first linked (policy section 3). */
 export const PLAID_HISTORY_DAYS = 90;

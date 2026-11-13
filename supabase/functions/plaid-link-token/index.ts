@@ -3,12 +3,15 @@
 import { handle, json, requireMember } from '../_shared/supabase.ts';
 import { plaid } from '../_shared/plaid.ts';
 import { requirePlaidLinkAllowed } from '../_shared/security.ts';
+import { requireHouseholdAccess } from '../_shared/billing.ts';
 import { PLAID_HISTORY_DAYS } from '../_shared/domain/index.ts';
 
 Deno.serve(handle(async (req) => {
   const { householdId, web } = await req.json();
   const { userId } = await requireMember(req, householdId);
   await requirePlaidLinkAllowed(req, userId);
+  // Linking a bank costs us per account: only for a plan, trial or comp (once the paywall is on).
+  await requireHouseholdAccess(householdId);
   const data = await plaid('/link/token/create', {
     user: { client_user_id: userId },
     client_name: 'Settle Down Finance',
