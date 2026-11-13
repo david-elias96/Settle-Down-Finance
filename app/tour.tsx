@@ -3,7 +3,6 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { GroveTree } from '@/components/GroveTree';
 import { Button, Display, space, useTheme } from '@/components/ui';
 import { Fonts } from '@/constants/Colors';
 import { prefs } from '@/src/lib/prefs';
@@ -45,26 +44,19 @@ function MonthArt({ p }: { p: number }) {
   );
 }
 
-/** A bucket's tree: the crown empties as the money goes, turning amber near the limit. */
-function GroveArt({ p }: { p: number }) {
-  const left = 1 - p * 0.75;
-  return <GroveTree size={170} fill={left} tone={left < 0.4 ? 'warn' : 'good'} />;
-}
-
-/** Over the limit: the crown is bare and the leaves are on the ground. */
-function OverArt({ p }: { p: number }) {
+/** A bucket's bar fills as the money goes, turning amber once it runs ahead of the tick. */
+function BucketArt({ p, over }: { p: number; over?: boolean }) {
   const t = useTheme();
+  const used = over ? 0.7 + 0.45 * p : 0.85 * p;
+  const tone = used > 1 ? t.red : used > 0.55 ? t.orange : t.green;
+  const left = 250 * (1 - used);
   return (
-    <View>
-      <GroveTree size={170} fill={Math.max(0, 0.3 - p)} tone={p > 0.3 ? 'bad' : 'warn'} />
-      <Svg width={170} height={187} viewBox="0 0 100 110" style={StyleSheet.absoluteFill} pointerEvents="none">
-        {[[40, 40], [62, 50], [50, 30], [30, 58]].map(([x, y], i) => {
-          const fall = Math.min(1, Math.max(0, p * 1.4 - i * 0.12));
-          return fall > 0 && fall < 1
-            ? <Circle key={i} cx={x + Math.sin(fall * 6 + i) * 6} cy={y + fall * (102 - y)} r={3.5} fill={i % 2 ? t.orange : t.red} />
-            : null;
-        })}
-      </Svg>
+    <View style={{ width: 280, gap: space.m }}>
+      <Display size={48} color={used > 1 ? t.red : t.text}>{left < 0 ? `${money(-left)} over` : `${money(left)} left`}</Display>
+      <View style={{ height: 16, borderRadius: 8, backgroundColor: t.track, overflow: 'hidden' }}>
+        <View style={{ width: `${Math.min(1, used) * 100}%`, height: '100%', borderRadius: 8, backgroundColor: tone }} />
+      </View>
+      <View style={{ position: 'absolute', left: 280 * 0.55 - 1, bottom: -4, width: 2, height: 24, backgroundColor: t.text, opacity: 0.5 }} />
     </View>
   );
 }
@@ -85,25 +77,26 @@ function FreeArt({ p }: { p: number }) {
   );
 }
 
-/** A savings goal grows as money goes in. */
+/** A savings goal fills as money goes in. */
 function SavingsArt({ p }: { p: number }) {
   const t = useTheme();
   return (
-    <View style={{ alignItems: 'center' }}>
-      <View style={{ transform: [{ scale: 0.55 + 0.45 * p }] }}>
-        <GroveTree size={150} fill={0.15 + 0.85 * p} />
+    <View style={{ width: 280, gap: space.m, alignItems: 'center' }}>
+      <Display size={48} color={t.text}>{money(4200 * p)}</Display>
+      <View style={{ width: '100%', height: 16, borderRadius: 8, backgroundColor: t.track, overflow: 'hidden' }}>
+        <View style={{ width: `${70 * p}%`, height: '100%', borderRadius: 8, backgroundColor: t.tint }} />
       </View>
-      <Display size={30} color={t.text}>{money(4200 * p)}</Display>
+      <Text style={{ color: t.secondaryText, fontSize: 15 }}>of $6,000</Text>
     </View>
   );
 }
 
 const STEPS: { title: string; line: string; art: (p: number) => ReactNode }[] = [
   { title: 'Your month', line: 'This month against last. Projected shows where it lands.', art: (p) => <MonthArt p={p} /> },
-  { title: 'Your grove', line: 'Each bucket is a tree. Leaves fall as you spend.', art: (p) => <GroveArt p={p} /> },
-  { title: 'Over the limit', line: 'Bare branches mean that bucket is over.', art: (p) => <OverArt p={p} /> },
+  { title: 'Your buckets', line: 'The tick is even pace for today. Past it, the bar turns amber.', art: (p) => <BucketArt p={p} /> },
+  { title: 'Over the limit', line: 'Red means over. Savings or other buckets can cover it.', art: (p) => <BucketArt p={p} over /> },
   { title: 'Free to spend', line: 'What you can spend each day and still land on budget.', art: (p) => <FreeArt p={p} /> },
-  { title: 'Savings grow', line: 'Goals grow with every deposit.', art: (p) => <SavingsArt p={p} /> },
+  { title: 'Savings', line: 'Goals fill with every deposit.', art: (p) => <SavingsArt p={p} /> },
 ];
 
 /** A short animated walk through the home screen. Opens once on first launch; replay it from Settings. */

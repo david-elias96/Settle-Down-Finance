@@ -1,6 +1,5 @@
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import { GroveTree } from '@/components/GroveTree';
 import { Button, Display, HeroCard, IconChip, Label, ListRow, PaceBar, Screen, Section, SettingsButton, toneColor, useTheme } from '@/components/ui';
 import { useBudget } from '@/src/data/BudgetStore';
 import { formatCents, goalForecast } from '@/src/domain';
@@ -13,9 +12,9 @@ export default function SavingsScreen() {
   const $ = (c: number) => formatCents(c, { showCents: false });
   const over = impact.totalOverspend;
   const parts = [
-    { label: 'Other trees cover it', amount: impact.coveredByOtherBuckets, tone: 'good' as const, fill: 1 },
-    { label: 'Savings cover it', amount: impact.hitsSavings - impact.uncovered, tone: 'warn' as const, fill: 0.5 },
-    { label: 'Not covered yet', amount: impact.uncovered, tone: 'bad' as const, fill: 0 },
+    { label: 'Other buckets cover it', amount: impact.coveredByOtherBuckets, tone: 'good' as const },
+    { label: 'Savings cover it', amount: impact.hitsSavings - impact.uncovered, tone: 'warn' as const },
+    { label: 'Not covered yet', amount: impact.uncovered, tone: 'bad' as const },
   ].filter((p) => p.amount > 0);
   const totalSaved = impact.goals.reduce((s, g) => s + g.balanceAfter, 0);
 
@@ -46,7 +45,7 @@ export default function SavingsScreen() {
             </View>
             {parts.map((p) => (
               <View key={p.label} style={styles.legend} accessible accessibilityLabel={`${p.label}: ${formatCents(p.amount)}`}>
-                <GroveTree size={26} fill={p.fill} tone={p.tone} />
+                <View style={[styles.swatch, { backgroundColor: toneColor(t, p.tone) }]} />
                 <Label style={{ fontSize: 15, flex: 1 }}>{p.label}</Label>
                 <Label style={{ fontSize: 15, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{formatCents(p.amount)}</Label>
               </View>
@@ -66,10 +65,9 @@ export default function SavingsScreen() {
             : f.onTime === false ? { tone: 'warn' as const, text: 'Behind' }
             : { tone: 'good' as const, text: f.finishLabel === 'Reached' ? 'Reached' : 'On track' };
           return (
-            <ListRow key={goal.id} title={goal.name} figure={$(balanceAfter)}
-              note={`of ${$(goal.target)} · ${f.finishLabel === 'Reached' ? 'reached' : f.finishLabel}${drawn > 0 ? ` · −${$(drawn)} this month` : ''}`}
+            <ListRow key={goal.id} title={goal.name} figure={`${$(balanceAfter)} / ${$(goal.target)}`}
+              note={`+${$(goal.monthlyContribution)}/mo · ${f.finishLabel === 'Reached' ? 'reached' : f.finishLabel}${drawn > 0 ? ` · −${$(drawn)} this month` : ''}`}
               tag={tag} bar={<PaceBar ratio={balanceAfter / goal.target} tone={tag.tone} />} last={i === impact.goals.length - 1}
-              leading={<GroveTree size={40} fill={goal.target > 0 ? balanceAfter / goal.target : 0} tone={tag.tone === 'warn' ? 'warn' : 'good'} />}
               onPress={() => router.push({ pathname: '/goal', params: { id: goal.id } })} />
           );
         })}
@@ -91,4 +89,5 @@ export default function SavingsScreen() {
 const styles = StyleSheet.create({
   stack: { flexDirection: 'row', height: 12, borderRadius: 6, overflow: 'hidden', gap: 2 },
   legend: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  swatch: { width: 12, height: 12, borderRadius: 3 },
 });

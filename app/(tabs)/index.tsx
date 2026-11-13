@@ -1,10 +1,9 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { FreeCard, GroveCard, HeroCarousel, MonthCard } from '@/components/HomeCarousel';
-import { GroveTree } from '@/components/GroveTree';
+import { Pressable, StyleSheet } from 'react-native';
+import { FreeCard, HeroCarousel, MonthCard } from '@/components/HomeCarousel';
 import { WeeklyRecapCard } from '@/components/WeeklyRecap';
-import { AiMark, BucketChip, Button, IconChip, Label, ListRow, Notice, PaceBar, Screen, Section, SettingsButton, toneTextColor, useTheme } from '@/components/ui';
+import { AiMark, BucketChip, Button, IconChip, Label, ListRow, Notice, PaceBar, Screen, Section, SettingsButton, useTheme } from '@/components/ui';
 import { useAuth } from '@/src/auth/AuthProvider';
 import { useBudget } from '@/src/data/BudgetStore';
 import { prefs } from '@/src/lib/prefs';
@@ -14,10 +13,9 @@ import { bucketPace, byAttention, daysInMonth, formatCents, paceTag, weeklyAllow
 const $ = (c: number) => formatCents(c, { showCents: false });
 
 /**
- * Home. The headline says how the month is going; the carousel under it holds the ways to
- * look at it: the month (trend against last month, projected, and bills to come), the grove
- * (a tree per bucket whose crown empties as it's spent), and free to spend per day.
- * Below: only the buckets and stores worth a look.
+ * Home. The headline says how the month is going; the carousel under it holds the two ways to
+ * look at it: the month (trend against last month, projected, and bills to come) and free to
+ * spend per day. Below: what's worth a look, then every other bucket.
  */
 export default function BudgetScreen() {
   const { statuses, trend, forecast, month, today, insights, recap, tuneUps, trends, free, verdict, ahead, live, loading, syncError, transactions } = useBudget();
@@ -35,6 +33,8 @@ export default function BudgetScreen() {
   const sorted = byAttention(statuses, today, days);
   const tone = (s: BucketStatus) => paceTag(s, bucketPace(s, today, days)).tone;
   const flagged = sorted.filter((s) => tone(s) !== 'good');
+  const fine = sorted.filter((s) => tone(s) === 'good');
+  const [showAll, setShowAll] = useState(false);
   // Alerts that aren't about a bucket's limit: a store costing more than usual, a price rise.
   const alerts = insights.filter((i) => i.kind === 'unusual_vendor' || i.kind === 'subscription_change').slice(0, 2);
   const dateLabel = new Date(`${month}-${String(today).padStart(2, '0')}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' });
@@ -52,21 +52,6 @@ export default function BudgetScreen() {
         leading={<BucketChip icon={s.bucket.icon} tone={tag.tone} />}
         bar={<PaceBar ratio={s.ratio} tone={tag.tone} paceAt={pace.monthElapsed} />}
         onPress={() => router.push({ pathname: '/bucket/[id]', params: { id: s.bucket.id } })} />
-    );
-  };
-
-  const treeTile = (s: BucketStatus) => {
-    const tn = tone(s);
-    const over = s.overBy > 0;
-    const figure = over ? `${$(s.overBy)} over` : `${$(s.remaining)} left`;
-    return (
-      <Pressable key={s.bucket.id} onPress={() => router.push({ pathname: '/bucket/[id]', params: { id: s.bucket.id } })}
-        accessibilityRole="button" aria-label={`${s.bucket.name}, ${figure}`}
-        style={({ pressed }) => [styles.tile, pressed && { backgroundColor: t.track }]}>
-        <GroveTree fill={s.bucket.monthlyLimit > 0 ? s.remaining / s.bucket.monthlyLimit : 0} tone={tn} size={72} />
-        <Text numberOfLines={1} style={[styles.tileName, { color: t.text }]}>{s.bucket.name}</Text>
-        <Text numberOfLines={1} style={[styles.tileFigure, { color: tn === 'good' ? t.secondaryText : toneTextColor(t, tn) }]}>{figure}</Text>
-      </Pressable>
     );
   };
 
@@ -109,8 +94,8 @@ export default function BudgetScreen() {
           </>
         )}
         {sorted.length > 0 && (
-          <Section title="Your grove">
-            <View style={styles.grove}>{sorted.map(treeTile)}</View>
+          <Section title="Your buckets" footer="Tune limits once a few weeks of purchases are in.">
+            {sorted.map((st, i) => bucketRow(st, i === sorted.length - 1))}
           </Section>
         )}
         {!needsHousehold && (
@@ -121,7 +106,7 @@ export default function BudgetScreen() {
   }
 
   return (
-    <Screen swoop eyebrow={dateLabel} title={verdict.text} action={<SettingsButton />}>
+    <Screen eyebrow={dateLabel} title={verdict.text} action={<SettingsButton />}>
       {needsHousehold && (
         <>
           <Notice title="Start your budget" icon={{ ios: 'house.fill', android: 'home', web: 'home' }}>
@@ -133,7 +118,6 @@ export default function BudgetScreen() {
       {syncError && <Notice title={syncError} icon={{ ios: 'exclamationmark.triangle.fill', android: 'warning', web: 'warning' }} />}
       <HeroCarousel pages={[
         { key: 'month', label: 'Month', node: <MonthCard trend={trend} forecast={forecast} month={month} ahead={ahead} free={free} today={today} /> },
-        { key: 'grove', label: 'Grove', node: <GroveCard statuses={sorted} today={today} month={month} /> },
         { key: 'free', label: 'Free to spend', node: <FreeCard free={free} days={recap.days} month={month} /> },
       ]} />
 
@@ -146,6 +130,16 @@ export default function BudgetScreen() {
           <Label style={{ color: t.tint, fontSize: 15, fontWeight: '600' }}>Ways to cut back</Label>
         </Pressable>
       </Section>
+
+      {fine.length > 0 && (
+        <Section>
+          <ListRow title={`${fine.length} bucket${fine.length === 1 ? '' : 's'} on track`} last={!showAll}
+            note={showAll ? null : `${$(fine.reduce((sum, s) => sum + Math.max(0, s.remaining), 0))} left`}
+            leading={<IconChip icon={{ ios: 'checkmark', android: 'check', web: 'check' }} />}
+            figure={showAll ? 'Hide' : 'Show'} onPress={() => setShowAll((v) => !v)} chevron={false} />
+          {showAll && fine.map((s, i) => bucketRow(s, i === fine.length - 1))}
+        </Section>
+      )}
 
       <WeeklyRecapCard recap={recap} />
 
@@ -163,8 +157,4 @@ export default function BudgetScreen() {
 
 const styles = StyleSheet.create({
   askRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, minHeight: 50 },
-  grove: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 8, paddingHorizontal: 4 },
-  tile: { width: '33.333%', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 4, borderRadius: 16, gap: 2 },
-  tileName: { fontSize: 13, fontWeight: '600', marginTop: 2 },
-  tileFigure: { fontSize: 13, fontWeight: '600', fontVariant: ['tabular-nums'] },
 });

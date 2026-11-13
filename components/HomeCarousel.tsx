@@ -3,12 +3,11 @@ import { SymbolView } from 'expo-symbols';
 import { useRef, useState, type ComponentRef, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLayout } from '@/src/lib/layout';
-import { GroveTree } from '@/components/GroveTree';
 import { SpendingTrend, TrendSwitch, type TrendMode } from '@/components/SpendingTrend';
 import { Display, HeroCard, space, useTheme } from '@/components/ui';
 import {
-  billFigure, bucketPace, daysInMonth, formatCents, paceTag, shortDate,
-  type AheadStop, type BucketStatus, type FreeToSpend, type MonthComparison, type MonthForecast,
+  billFigure, daysInMonth, formatCents, shortDate,
+  type AheadStop, type FreeToSpend, type MonthComparison, type MonthForecast,
 } from '@/src/domain';
 
 const $ = (c: number) => formatCents(c, { showCents: false });
@@ -56,40 +55,6 @@ export function HeroCarousel({ pages }: { pages: { key: string; label: string; n
         })}
       </View>
     </View>
-  );
-}
-
-/**
- * The grove: one tree per bucket, its crown emptying as the bucket is spent. Amber is
- * heading over; bare with fallen leaves is over. Tap a tree for the bucket.
- */
-export function GroveCard({ statuses, today, month }: { statuses: BucketStatus[]; today: number; month: string }) {
-  const t = useTheme();
-  const days = daysInMonth(month);
-  const tones = statuses.map((s) => paceTag(s, bucketPace(s, today, days)).tone);
-  const onTrack = tones.filter((x) => x === 'good').length;
-  return (
-    <HeroCard style={{ flex: 1 }}>
-      <View style={styles.between}>
-        <Text style={[styles.heroLabel, { color: t.heroMuted }]}>Your grove</Text>
-        <Text style={{ fontSize: 13, fontWeight: '600', color: t.heroText }}>{onTrack} of {statuses.length} on track</Text>
-      </View>
-      <View style={styles.grove}>
-        {statuses.map((s, i) => {
-          const tone = tones[i];
-          const figure = s.overBy > 0 ? `${$(s.overBy)} over` : `${$(s.remaining)} left`;
-          return (
-            <Pressable key={s.bucket.id} onPress={() => router.push({ pathname: '/bucket/[id]', params: { id: s.bucket.id } })}
-              accessibilityRole="button" aria-label={`${s.bucket.name}, ${figure}`}
-              style={({ pressed }) => [styles.tree, pressed && { opacity: 0.7 }]}>
-              <GroveTree onHero size={52} tone={tone} fill={s.bucket.monthlyLimit > 0 ? s.remaining / s.bucket.monthlyLimit : 0} />
-              <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: '600', color: t.heroText }}>{s.bucket.name}</Text>
-              <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: '600', fontVariant: ['tabular-nums'], color: tone === 'bad' ? '#FF9C86' : tone === 'warn' ? t.sun : t.heroMuted }}>{figure}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </HeroCard>
   );
 }
 
@@ -261,6 +226,4 @@ const styles = StyleSheet.create({
   statDivider: { width: StyleSheet.hairlineWidth, backgroundColor: 'rgba(243,247,239,0.2)' },
   stat: { fontSize: 17, fontWeight: '600', fontVariant: ['tabular-nums'] },
   stop: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
-  grove: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 8, marginHorizontal: -6 },
-  tree: { width: '25%', alignItems: 'center', paddingHorizontal: 2 },
 });
