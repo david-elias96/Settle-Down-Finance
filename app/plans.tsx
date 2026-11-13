@@ -49,7 +49,7 @@ export default function PlansScreen() {
       router.replace('/' as Href);
       return;
     }
-    if (polls.current >= 20) { setWaiting(false); setError('Your payment went through, but your plan is taking a moment. Pull to refresh or reopen the app in a minute.'); return; }
+    if (polls.current >= 20) { setWaiting(false); setError('Your payment went through and your plan is still being set up. Tap Check my plan in a minute.'); return; }
     const id = setTimeout(() => { polls.current += 1; auth.refresh().catch(() => {}); }, 2000);
     return () => clearTimeout(id);
   }, [waiting, hasPlan, billing, auth]);
@@ -57,7 +57,13 @@ export default function PlansScreen() {
   const run = async (fn: () => Promise<void>) => {
     setBusy(true); setError(null);
     try { await fn(); } catch (e) {
-      setError(e instanceof Error && e.message === 'already_subscribed' ? 'You already have a plan. Pull to refresh.' : 'Couldn’t reach checkout. Check your connection and try again.');
+      if (e instanceof Error && e.message === 'already_subscribed') {
+        // The plan exists already (another tab or device): load it instead of showing an error.
+        await auth.refresh().catch(() => {});
+        setError('You already have a plan. Tap Check my plan if it doesn’t show.');
+      } else {
+        setError('Couldn’t reach checkout. Check your connection, then tap the button again.');
+      }
       setBusy(false);
     }
   };
@@ -101,7 +107,7 @@ export default function PlansScreen() {
       <Screen>
         <Intro title="Choose a plan on the web">{summary?.detail ?? 'Start your free trial at settledownfinancial.com, then come back and sign in with the same account.'}</Intro>
         <Button title="Open settledownfinancial.com" onPress={() => Linking.openURL(WEBSITE_PLANS)} />
-        <Button title="I’ve subscribed, check again" variant="secondary" onPress={() => auth.refresh()} />
+        <Button title="Check my plan" variant="secondary" onPress={() => auth.refresh()} />
         <Button title="Sign out" variant="plain" onPress={() => auth.signOut()} />
       </Screen>
     );
@@ -143,6 +149,7 @@ export default function PlansScreen() {
       <Button title={trial ? `Start my ${trialDays}-day free trial` : `Subscribe ${PLAN_PRICES[plan].label.toLowerCase()}`} loading={busy} onPress={() => run(() => auth.startCheckout(plan))} />
       {params.checkout === 'canceled' && !error && <Label secondary style={styles.fine}>Checkout was closed. Nothing was charged.</Label>}
       {error && <Label style={{ ...styles.fine, color: t.redText }}>{error}</Label>}
+      {error && <Button title="Check my plan" variant="secondary" onPress={() => { setError(null); auth.refresh(); }} />}
       <Label secondary style={styles.fine}>
         {trial
           ? `Card needed to start, charged ${PLAN_PRICES[plan].price} on day ${trialDays + 1} unless you cancel. Settings shows how many trial days are left. Payments are handled by Stripe; we never see your card.`

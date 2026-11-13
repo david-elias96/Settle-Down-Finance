@@ -74,7 +74,7 @@ p { margin: 0; }
 .glass { background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); }
 
 /* Buttons */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 999px; padding: 0 22px; height: 48px; font-family: inherit; font-size: 16px; font-weight: 600; line-height: 1; text-decoration: none; cursor: pointer; white-space: nowrap; transition: transform .15s ease, background .15s ease; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 999px; padding: 0 22px; height: 48px; font-family: inherit; font-size: 16px; font-weight: 600; line-height: 1; text-decoration: none; cursor: pointer; white-space: nowrap; transition: transform .15s ease; touch-action: manipulation; }
 .btn:active { transform: scale(.97); }
 .btn:disabled { opacity: .7; cursor: default; }
 .btn-brand { background: var(--brand); color: var(--brand-ink); }
@@ -287,6 +287,18 @@ footer .brand svg { width: 30px; height: 23px; }
 }
 
 /* ---- Funnel additions ---- */
+.skip { position: absolute; left: 16px; top: -64px; z-index: 50; background: var(--brand); color: var(--brand-ink); padding: 12px 18px; border-radius: 999px; font-weight: 600; text-decoration: none; }
+.skip:focus { top: 12px; }
+a, button, summary { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.price, .badge, .form-note { font-variant-numeric: tabular-nums; }
+.tabs button:hover { color: var(--text); }
+.tabs button { min-height: 44px; }
+header.top nav a:not(.btn) { padding: 10px 0; }
+.tour-controls { display: flex; align-items: center; gap: 14px; margin-top: 28px; }
+.tour-controls .tour-progress { margin-top: 0; flex: 1; }
+.tour-toggle { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--card); color: var(--text); box-shadow: var(--shadow); cursor: pointer; }
+.tour-toggle:hover { color: var(--brand); }
+.tour-toggle svg { width: 16px; height: 16px; }
 /* Signup mode: html[data-signup="open"] shows trial buttons; "waitlist" shows the waitlist form instead. */
 html[data-signup="open"] .when-waitlist, html[data-signup="waitlist"] .when-open { display: none !important; }
 .btn-lg { height: 56px; padding: 0 28px; font-size: 17px; }
@@ -369,6 +381,7 @@ section.faq { padding: 0 0 112px; }
 }
 @media (max-width: 640px) {
   html[data-signup="open"] .sticky { display: flex; }
+  html[data-signup="open"] { scroll-padding-bottom: 96px; }
   section.tour { padding-top: 72px; }
   .tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-left: -16px; margin-right: -16px; border-radius: 0; padding: 5px 16px; background: transparent; border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
   .tabs::-webkit-scrollbar { display: none; }
@@ -381,6 +394,10 @@ section.faq { padding: 0 0 112px; }
   .timeline div::before { margin: 2px 0 0; grid-row: span 2; }
   section.faq { padding-bottom: 80px; }
   footer { padding-bottom: 96px; }
+}
+@media (max-width: 400px) {
+  .later .waitlist { height: auto; }
+  .later .waitlist .btn { height: 44px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .tour-progress i.on::after { animation: none; }
@@ -407,9 +424,11 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
   </defs>
 </svg>
 
+<a class="skip" href="#main">Skip to content</a>
+
 <header class="top">
   <div class="bar glass">
-    <a class="brand" href="/" aria-label="Settle Down home"><svg aria-hidden="true"><use href="#mark"/></svg>Settle Down</a>
+    <a class="brand" href="/" aria-label="Settle Down home" translate="no"><svg aria-hidden="true"><use href="#mark"/></svg>Settle Down</a>
     <nav aria-label="Main">
       <a href="#tour">Tour</a>
       <a href="#features">Features</a>
@@ -421,7 +440,7 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
   </div>
 </header>
 
-<main>
+<main id="main">
   <section class="hero">
     <div class="wrap">
       <div class="copy">
@@ -435,7 +454,7 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
         <div class="when-waitlist">
           <form class="waitlist" data-waitlist novalidate>
             <label class="sr" for="email-top">Email address</label>
-            <input id="email-top" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+            <input id="email-top" type="email" name="email" placeholder="you@example.com" autocomplete="email" spellcheck="false" required>
             <button class="btn btn-brand" type="submit">Join the waitlist</button>
           </form>
           <p class="form-note" aria-live="polite">Be first in line for the beta. One email when it's ready, nothing else.</p>
@@ -443,7 +462,7 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
       </div>
       <div class="stage">
         <div class="phone">
-          <img src="assets/screens/home.webp" width="780" height="1688" alt="The Settle Down home screen: “You’re on track.” above a green card showing $98 a day free to spend through the end of the month, with this week's spending by day.">
+          <img src="assets/screens/home.webp" width="780" height="1688" fetchpriority="high" alt="The Settle Down home screen: “You’re on track.” above a green card showing $98 a day free to spend through the end of the month, with this week's spending by day.">
         </div>
         <div class="float notif glass" aria-hidden="true">
           <div class="row"><img src="apple-touch-icon.png" alt=""><span>SETTLE DOWN</span><span>now</span></div>
@@ -477,11 +496,11 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
         <p class="lede">Your budget, your buckets, your month ahead, and an assistant that knows your numbers.</p>
       </div>
       <div class="tour-grid reveal">
-        <div class="shot"><div class="phone"><img id="tour-img" src="assets/screens/bucket.webp" width="780" height="1688" alt=""></div></div>
+        <div class="shot"><div class="phone"><img id="tour-img" src="assets/screens/bucket.webp" width="780" height="1688" loading="lazy" alt=""></div></div>
         <div>
           <div class="tabs glass" role="tablist" aria-label="App screens"></div>
           <div class="tour-copy" id="tour-panel" role="tabpanel" aria-live="polite"></div>
-          <div class="tour-progress" aria-hidden="true"></div>
+          <div class="tour-controls"><button class="tour-toggle" type="button" aria-label="Pause the tour"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4 2h3v12H4zM9 2h3v12H9z"/></svg></button><div class="tour-progress" aria-hidden="true"></div></div>
         </div>
       </div>
     </div>
@@ -690,7 +709,7 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
             <p>Not ready yet? Get one email when the App Store app launches.</p>
             <form class="waitlist" data-waitlist novalidate>
               <label class="sr" for="email-later">Email address</label>
-              <input id="email-later" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+              <input id="email-later" type="email" name="email" placeholder="you@example.com" autocomplete="email" spellcheck="false" required>
               <button class="btn btn-sun" type="submit">Notify me</button>
             </form>
             <p class="form-note" aria-live="polite"></p>
@@ -700,7 +719,7 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
           <p class="lede">We're putting the finishing touches on the iPhone app. Join the waitlist and we'll let you know the moment the beta opens.</p>
           <form class="waitlist" data-waitlist novalidate>
             <label class="sr" for="email-bottom">Email address</label>
-            <input id="email-bottom" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+            <input id="email-bottom" type="email" name="email" placeholder="you@example.com" autocomplete="email" spellcheck="false" required>
             <button class="btn btn-sun" type="submit">Join the waitlist</button>
           </form>
           <p class="form-note" aria-live="polite">One email when it's ready. Nothing else.</p>
@@ -716,7 +735,7 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
 
 <footer>
   <div class="wrap">
-    <a class="brand" href="/"><svg aria-hidden="true"><use href="#mark"/></svg>Settle Down</a>
+    <a class="brand" href="/" translate="no"><svg aria-hidden="true"><use href="#mark"/></svg>Settle Down</a>
     <span>© 2026 Settle Down Finance</span>
     <nav aria-label="Footer">
       <a href="https://app.settledownfinancial.com/" class="when-open">Sign in</a>
@@ -771,7 +790,7 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
   var STOPS = [
     { tab: 'Buckets', img: 'bucket', title: 'Every purchase, sorted', text: 'Groceries, Dining Out, Gas: each bucket shows how much is left and whether you are ahead of pace for today.', points: ['<strong>Instant alerts</strong> with the bucket and what is left', '<strong>Pace markers</strong>, not just a month total', '<strong>Split shared bills</strong> so only your share counts'], alt: 'The Groceries bucket: $569 of $700 used, heading over.' },
     { tab: 'Trends', img: 'trend', title: 'See the month before it happens', text: 'This month against last, then a projection of where you will land, with an honest range.', points: ['<strong>Month-end outlook</strong> from thousands of simulated months', '<strong>Bill forecasts</strong> for rent and utilities', '<strong>Tune-ups</strong> that suggest better limits'], alt: 'The spending trend chart with a projected month-end range.' },
-    { tab: 'Ask', img: 'ask', title: 'Ask your budget anything', text: 'Ask in plain English. SettleDown answers from your real purchases and shows the math.', points: ['<strong>"How can we cut back?"</strong> with dollar amounts', '<strong>"What did we spend at Target?"</strong> in seconds', '<strong>Weekly recap</strong> and insights included'], alt: 'An answer card listing the biggest ways to cut spending this month.' },
+    { tab: 'Ask', img: 'ask', title: 'Ask your budget anything', text: 'Ask in plain English. SettleDown answers from your real purchases and shows the math.', points: ['<strong>“How can we cut back?”</strong> with dollar amounts', '<strong>“What did we spend at Target?”</strong> in seconds', '<strong>Weekly recap</strong> and insights included'], alt: 'An answer card listing the biggest ways to cut spending this month.' },
     { tab: 'Savings', img: 'savings', title: 'Savings that stay put', text: 'Emergency fund, vacation, holidays: each goal has its own envelope, kept apart from everyday spending.', points: ['<strong>Monthly targets</strong> and a finish date', '<strong>Overspending made visible</strong> before it eats a goal'], alt: 'The Savings screen with goals on track.' },
     { tab: 'Activity', img: 'activity', title: 'Find any purchase fast', text: 'Every purchase from every card, grouped by day and filterable by month, bucket or store.', points: ['<strong>Totals</strong> for exactly what you filter', '<strong>Scan a receipt</strong> to split a mixed purchase'], alt: 'The Activity screen with purchases grouped by day.' }
   ];
@@ -814,8 +833,17 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
     clearTimeout(timer);
     if (playing && seen) timer = setTimeout(function () { show((current + 1) % STOPS.length); }, 6000);
   }
-  function stop() { playing = false; clearTimeout(timer); tour.classList.add('paused'); }
+  var toggle = document.querySelector('.tour-toggle');
+  var PAUSE = '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4 2h3v12H4zM9 2h3v12H9z"/></svg>';
+  var PLAY = '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4 2l10 6-10 6z"/></svg>';
+  function syncToggle() { toggle.innerHTML = playing ? PAUSE : PLAY; toggle.setAttribute('aria-label', playing ? 'Pause the tour' : 'Play the tour'); }
+  function stop() { playing = false; clearTimeout(timer); tour.classList.add('paused'); syncToggle(); }
+  toggle.addEventListener('click', function () {
+    if (playing) { stop(); return; }
+    playing = true; tour.classList.remove('paused'); syncToggle(); show((current + 1) % STOPS.length);
+  });
   if (!playing) tour.classList.add('paused');
+  syncToggle();
   show(0);
   // Only play while the tour is on screen.
   if ('IntersectionObserver' in window) {
