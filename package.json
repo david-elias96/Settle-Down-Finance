@@ -35,6 +35,7 @@
     "react-native-worklets": "0.13.0"
   },
   "devDependencies": {
+    "@playwright/cli": "0.1.23",
     "@types/react": "~19.3.0",
     "typescript": "~6.0.3",
     "vitest": "^5.1.0"
