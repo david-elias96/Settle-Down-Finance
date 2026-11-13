@@ -56,25 +56,33 @@ export function Screen({ children, title, eyebrow, action, keyboardDone }: {
   }, [keyboard.height, keyboard.changes]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const keyboardRoom = keyboard.height != null ? keyboard.height + DONE_BAR_HEIGHT : 0;
+  const topPad = title ? insets.top + (wide ? space.xxl : space.l) : (wide ? space.xl : space.l);
+  const titleRow = title && (
+    <View style={styles.titleRow}>
+      <View style={{ flexShrink: 1 }}>
+        {eyebrow && <Text style={[styles.eyebrow, { color: t.secondaryText }]}>{eyebrow}</Text>}
+        <Text accessibilityRole="header" style={[styles.largeTitle, { color: t.text }]} numberOfLines={2}>{title}</Text>
+      </View>
+      {/* The action floats over the page (below), so it stays in reach while scrolling; keep its room here. */}
+      {action ? <View style={{ width: 44 }} /> : null}
+    </View>
+  );
   const scroll = (
     <ScrollView ref={scrollRef as never} style={{ backgroundColor: t.background }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"
       onScroll={(e) => { offset.current = e.nativeEvent.contentOffset.y; }} scrollEventThrottle={16}
       contentInsetAdjustmentBehavior={title ? 'never' : 'automatic'}
-      contentContainerStyle={[{ paddingHorizontal: space.l, paddingTop: title ? insets.top + (wide ? space.xxl : space.l) : (wide ? space.xl : space.l), paddingBottom: Math.max((tabBar ?? 0) + space.xl, keyboardRoom + space.xl), gap: space.xl }, columnStyle(wide)]}>
-      {title && (
-        <View style={styles.titleRow}>
-          <View style={{ flexShrink: 1 }}>
-            {eyebrow && <Text style={[styles.eyebrow, { color: t.secondaryText }]}>{eyebrow}</Text>}
-            <Text accessibilityRole="header" style={[styles.largeTitle, { color: t.text }]} numberOfLines={2}>{title}</Text>
-          </View>
-          {action}
-        </View>
-      )}
+      contentContainerStyle={[{ paddingHorizontal: space.l, paddingTop: topPad, paddingBottom: Math.max((tabBar ?? 0) + space.xl, keyboardRoom + space.xl), gap: space.xl }, columnStyle(wide)]}>
+      {titleRow}
       {children}
     </ScrollView>
   );
-  if (!keyboardDone) return scroll;
-  return <View style={{ flex: 1, backgroundColor: t.background }}>{scroll}<KeyboardDone height={keyboard.height} /></View>;
+  const floating = title && action ? (
+    <View pointerEvents="box-none" style={[styles.floatWrap, { top: insets.top + (wide ? space.xxl : space.l) }]}>
+      <View pointerEvents="box-none" style={[{ width: '100%', alignItems: 'flex-end', paddingHorizontal: space.l }, columnStyle(wide)]}>{action}</View>
+    </View>
+  ) : null;
+  if (!keyboardDone && !floating) return scroll;
+  return <View style={{ flex: 1, backgroundColor: t.background }}>{scroll}{floating}{keyboardDone && <KeyboardDone height={keyboard.height} />}</View>;
 }
 
 /** Serif display text for big numbers and headings. */
@@ -403,6 +411,7 @@ export function Segmented<T extends string>({ options, value, onChange, onHero }
 }
 
 const styles = StyleSheet.create({
+  floatWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
   titleRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: space.m, paddingHorizontal: space.xs, marginBottom: -space.s },
   eyebrow: { fontSize: 13, fontWeight: '500', marginBottom: 4 },
   largeTitle: { fontFamily: Fonts.display, fontSize: 32, lineHeight: 38, letterSpacing: -0.64 },

@@ -129,6 +129,7 @@ function AppStack() {
         <Stack.Screen name="month" options={{ title: 'The month ahead', headerBackTitle: 'Back' }} />
         <Stack.Screen name="patterns" options={{ title: 'Patterns & tune-ups', headerBackTitle: 'Back' }} />
         <Stack.Screen name="cancel" options={{ title: 'Cancel subscription', headerBackTitle: 'Back' }} />
+        <Stack.Screen name="tour" options={{ presentation: 'fullScreenModal', headerShown: false }} />
       </Stack.Protected>
       <Stack.Protected guard={stage === 'signed_out'} redirectTo={home}>
         <Stack.Screen name="sign-in" options={{ title: 'Settle Down' }} />

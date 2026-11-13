@@ -83,7 +83,7 @@ function budgetInsights({ month, today, daysInMonth, statuses }: InsightInput): 
         title: `${s.bucket.name} is on pace to go over`,
         body: `At this rate it ends the month near ${short(pace.projectedTotal)}, about ${short(over)} over. ${short(s.remaining)} left for ${daysInMonth - today} days.`,
         card: { label: s.bucket.name, tag: 'Heading over', figure: `${short(s.spent)} / ${short(s.bucket.monthlyLimit)}`,
-          note: `On pace for ${short(pace.projectedTotal)} · ${short(s.remaining)} left`, tone: 'warn' },
+          note: `Heading to ${short(pace.projectedTotal)} · ${short(s.remaining)} left`, tone: 'warn' },
       });
     }
   }
@@ -95,7 +95,7 @@ function budgetInsights({ month, today, daysInMonth, statuses }: InsightInput): 
       id: `${month}:under`, kind: 'under_budget', priority: 1, amount: left,
       title: `${short(left)} under budget`,
       body: `With ${daysInMonth - today} days left you're ${short(left)} under budget overall. Move some to a savings goal?`,
-      card: { label: 'Whole budget', tag: 'Under budget', figure: `${short(left)} left`, note: 'Move some to a savings goal?', tone: 'good' },
+      card: { label: 'Whole budget', tag: 'Under budget', figure: `${short(left)} left`, note: 'Move some to savings?', tone: 'good' },
     });
   }
   return out;
@@ -131,7 +131,7 @@ function unusualVendorInsights({ month, transactions }: InsightInput): Insight[]
         id: `${month}:vendor:${v}`, kind: 'unusual_vendor', priority: 2, vendor: label.get(v), amount: Math.round(now - avg),
         title: `More than usual at ${label.get(v)}`,
         body: `${short(now)} so far this month, compared with about ${short(avg)} in a typical month.`,
-        card: { label: label.get(v)!, tag: 'More than usual', figure: short(now), note: `Usually about ${short(avg)} a month`, tone: 'warn' },
+        card: { label: label.get(v)!, tag: 'More than usual', figure: short(now), note: now >= avg * 2 ? `${Math.round(now / avg)}× usual` : `Usually ${short(avg)}/mo`, tone: 'warn' },
       });
     }
   }

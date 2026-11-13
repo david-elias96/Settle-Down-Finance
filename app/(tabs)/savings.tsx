@@ -6,15 +6,15 @@ import { formatCents, goalForecast } from '@/src/domain';
 
 export default function SavingsScreen() {
   const { impact, month, statuses } = useBudget();
-  // Same count as the home headline ("On track overall, 1 bucket over").
+  // Same count as the home headline ("On track. 1 bucket over.").
   const bucketsOver = statuses.filter((st) => st.overBy > 0).length;
   const t = useTheme();
   const $ = (c: number) => formatCents(c, { showCents: false });
   const over = impact.totalOverspend;
   const parts = [
-    { label: 'Covered by other buckets', amount: impact.coveredByOtherBuckets, tone: 'good' as const },
-    { label: 'Taken from savings goals', amount: impact.hitsSavings - impact.uncovered, tone: 'warn' as const },
-    { label: 'Not covered', amount: impact.uncovered, tone: 'bad' as const },
+    { label: 'Other buckets cover it', amount: impact.coveredByOtherBuckets, tone: 'good' as const },
+    { label: 'Savings cover it', amount: impact.hitsSavings - impact.uncovered, tone: 'warn' as const },
+    { label: 'Not covered yet', amount: impact.uncovered, tone: 'bad' as const },
   ].filter((p) => p.amount > 0);
   const totalSaved = impact.goals.reduce((s, g) => s + g.balanceAfter, 0);
 
@@ -25,18 +25,18 @@ export default function SavingsScreen() {
           <Text style={{ fontSize: 14, fontWeight: '500', color: t.heroMuted }}>Saved across goals</Text>
           <Display size={48} color={t.heroText} style={{ lineHeight: 54, letterSpacing: -1.4 }}>{$(totalSaved)}</Display>
           <Text style={{ fontSize: 15, color: impact.hitsSavings > 0 ? t.sun : t.heroMuted }}>
-            {impact.hitsSavings > 0 ? `${formatCents(impact.hitsSavings)} of overspending is coming out this month` : 'Untouched by this month’s spending'}
+            {impact.hitsSavings > 0 ? `−${formatCents(impact.hitsSavings)} to cover overspending` : 'Safe this month'}
           </Text>
         </View>
       </HeroCard>
 
-      <Section title="Overspending this month">
+      <Section title="Overspending">
         {over === 0 ? (
-          <ListRow title="No overspending" note="Every bucket is within its limit." tag={{ tone: 'good', text: 'Savings safe' }} last
+          <ListRow title="None" note="Every bucket within its limit" tag={{ tone: 'good', text: 'Savings safe' }} last
             leading={<IconChip icon={{ ios: 'checkmark.shield.fill', android: 'verified_user', web: 'verified_user' }} />} />
         ) : (
           <View style={{ padding: 16, gap: 12 }}>
-            <Label style={{ fontSize: 17, fontWeight: '600' }}>{$(over)} over in {bucketsOver} bucket{bucketsOver === 1 ? '' : 's'}. Here's what covers it:</Label>
+            <Label style={{ fontSize: 17, fontWeight: '600' }}>{$(over)} over in {bucketsOver} bucket{bucketsOver === 1 ? '' : 's'}</Label>
             {/* One bar, split by what absorbs the overspending. */}
             <View style={[styles.stack, { backgroundColor: t.track }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
               {parts.map((p) => (
@@ -56,7 +56,7 @@ export default function SavingsScreen() {
 
       <Section title="Goals">
         {impact.goals.length === 0 && (
-          <ListRow title="No savings goals yet" note="Add one for a trip, a car, or a rainy day." last
+          <ListRow title="No savings goals yet" note="A trip, a car, a rainy day" last
             leading={<IconChip icon={{ ios: 'leaf.fill', android: 'savings', web: 'savings' }} />} />
         )}
         {impact.goals.map(({ goal, drawn, balanceAfter, monthsDelayed }, i) => {
@@ -66,7 +66,7 @@ export default function SavingsScreen() {
             : { tone: 'good' as const, text: f.finishLabel === 'Reached' ? 'Reached' : 'On track' };
           return (
             <ListRow key={goal.id} title={goal.name} figure={`${$(balanceAfter)} / ${$(goal.target)}`}
-              note={`+${$(goal.monthlyContribution)}/mo · ${f.finishLabel === 'Reached' ? 'goal reached' : `done ${f.finishLabel}`}${drawn > 0 ? ` · −${$(drawn)} this month` : ''}`}
+              note={`+${$(goal.monthlyContribution)}/mo · ${f.finishLabel === 'Reached' ? 'reached' : f.finishLabel}${drawn > 0 ? ` · −${$(drawn)} this month` : ''}`}
               tag={tag} bar={<PaceBar ratio={balanceAfter / goal.target} tone={tag.tone} />} last={i === impact.goals.length - 1}
               onPress={() => router.push({ pathname: '/goal', params: { id: goal.id } })} />
           );
@@ -75,7 +75,7 @@ export default function SavingsScreen() {
 
       {impact.goals.length > 1 && (
         <Section>
-          <ListRow title="Change goal order" note="Pick which goal is protected first" last
+          <ListRow title="Change goal order" note="Which is protected first" last
             leading={<IconChip icon={{ ios: 'arrow.up.arrow.down', android: 'swap_vert', web: 'swap_vert' }} />}
             onPress={() => router.push('/goal-order')} />
         </Section>

@@ -3,7 +3,7 @@ import { SymbolView } from 'expo-symbols';
 import { useRef, useState, type ComponentRef, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLayout } from '@/src/lib/layout';
-import { SpendingTrend } from '@/components/SpendingTrend';
+import { SpendingTrend, TrendSwitch, type TrendMode } from '@/components/SpendingTrend';
 import { Display, HeroCard, space, useTheme } from '@/components/ui';
 import {
   billFigure, daysInMonth, formatCents, shortDate,
@@ -16,7 +16,7 @@ const LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const weekday = (date: string) => new Date(`${date}T12:00:00Z`).getUTCDay();
 
 /**
- * The top of the home screen: three green cards to swipe between, with a labelled
+ * The top of the home screen: green cards to swipe between, with a labelled
  * switcher underneath. Pages are the full screen width so paging snaps cleanly; all
  * three cards stretch to the height of the tallest.
  */
@@ -138,65 +138,72 @@ export function FreeCard({ free, days, month }: { free: FreeToSpend; days: { dat
   );
 }
 
-/** Card 2: this month against last month, with the So far / Projected switch. */
-export function TrendCard({ trend, forecast, month }: { trend: MonthComparison; forecast?: MonthForecast; month: string }) {
+/**
+ * The month: spending against last month with the So far / Projected switch, and a third
+ * "Bills" view on the same card showing the bills still to come and where the month lands.
+ */
+export function MonthCard({ trend, forecast, month, ahead, free, today }: {
+  trend: MonthComparison; forecast?: MonthForecast; month: string; ahead: AheadStop[]; free: FreeToSpend; today: number;
+}) {
+  const [mode, setMode] = useState<TrendMode>('actual');
   return (
     <HeroCard style={{ flex: 1 }}>
-      <SpendingTrend trend={trend} forecast={forecast} month={month} onHero />
+      {mode === 'bills'
+        ? <BillsAhead ahead={ahead} free={free} forecast={forecast} today={today} onMode={setMode} />
+        : <SpendingTrend trend={trend} forecast={forecast} month={month} onHero mode={mode} onMode={setMode} withBills />}
     </HeroCard>
   );
 }
 
-/**
- * Card 3: the next bills as stops on a path, what's left after each, and where the month
- * is likely to finish. Tapping it opens the full month-ahead screen.
- */
-export function AheadCard({ ahead, free, forecast, today }: { ahead: AheadStop[]; free: FreeToSpend; forecast?: MonthForecast; today: number }) {
+/** The next bills as stops on a path, what's left after each, and the likely finish. */
+function BillsAhead({ ahead, free, forecast, today, onMode }: {
+  ahead: AheadStop[]; free: FreeToSpend; forecast?: MonthForecast; today: number; onMode: (m: TrendMode) => void;
+}) {
   const t = useTheme();
   const stops = ahead.slice(0, 4);
   const more = ahead.length - stops.length;
   const finish = forecast ? free.budget - forecast.end.mid : null;
   return (
-    <Pressable onPress={() => router.push('/month')} accessibilityRole="button" accessibilityLabel="The month ahead. Opens the full list of upcoming bills." style={{ flex: 1 }}>
-      <HeroCard style={{ flex: 1, gap: 0 }}>
-        <View style={styles.between}>
-          <Text style={[styles.heroLabel, { color: t.heroMuted }]}>Bills still to come</Text>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: t.heroText, fontVariant: ['tabular-nums'] }}>{$(free.billsToCome)}</Text>
-        </View>
+    <View style={{ flex: 1, gap: 4 }}>
+      <View style={[styles.between, { minHeight: 32 }]}>
+        <Text style={[styles.heroLabel, { color: t.heroMuted }]}>Bills to come</Text>
+        <TrendSwitch onHero value="bills" onChange={onMode} projected={!!forecast && forecast.points.length > 1} bills />
+      </View>
+      <Display size={44} color={t.heroText}>{$(free.billsToCome)}</Display>
 
-        <View style={{ marginTop: 6 }}>
-          {stops.length === 0 && <Text style={{ fontSize: 15, color: t.heroText, paddingVertical: 18 }}>Every bill for this month is paid.</Text>}
-          {stops.map((s, i) => (
-            <View key={s.date} style={[styles.stop, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(243,247,239,0.16)' }]}>
-              <View style={{ width: 38, alignItems: 'center' }}>
-                <Display size={22} color={t.heroText}>{String(s.day)}</Display>
-                <Text style={{ fontSize: 11, fontWeight: '500', color: s.day === today ? t.leaf : t.heroMuted }}>
-                  {s.day === today ? 'Today' : WEEKDAYS[weekday(s.date)]}
-                </Text>
-              </View>
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text numberOfLines={1} style={{ fontSize: 15, fontWeight: '600', color: t.heroText }}>{s.bills.map((b) => b.vendor).join(', ')}</Text>
-                <Text style={{ fontSize: 12, color: t.heroMuted, fontVariant: ['tabular-nums'] }}>{$(s.leftAfter)} left after</Text>
-              </View>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: t.heroText, fontVariant: ['tabular-nums'] }}>
-                {s.bills.length === 1 ? billFigure(s.bills[0]) : $(s.bills.reduce((sum, b) => sum + b.amount, 0))}
+      <View>
+        {stops.length === 0 && <Text style={{ fontSize: 15, color: t.heroText, paddingVertical: 18 }}>All paid.</Text>}
+        {stops.map((s, i) => (
+          <View key={s.date} style={[styles.stop, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: `${t.heroText}29` }]}>
+            <View style={{ width: 38, alignItems: 'center' }}>
+              <Display size={22} color={t.heroText}>{String(s.day)}</Display>
+              <Text style={{ fontSize: 11, fontWeight: '500', color: s.day === today ? t.leaf : t.heroMuted }}>
+                {s.day === today ? 'Today' : WEEKDAYS[weekday(s.date)]}
               </Text>
             </View>
-          ))}
-        </View>
-
-        <View style={[styles.heroFooter, { marginTop: 'auto', alignItems: 'center' }]}>
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text style={{ fontSize: 12, color: t.heroMuted }}>{finish === null ? 'This month' : 'Likely finish'}</Text>
-            <Text style={[styles.stat, { color: t.heroText }]}>
-              {finish === null ? `${$(free.spent)} of ${$(free.budget)}` : finish >= 0 ? `${$(finish)} under budget` : `${$(-finish)} over budget`}
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text numberOfLines={1} style={{ fontSize: 15, fontWeight: '600', color: t.heroText }}>{s.bills.map((b) => b.vendor).join(', ')}</Text>
+              <Text style={{ fontSize: 12, color: t.heroMuted, fontVariant: ['tabular-nums'] }}>{$(s.leftAfter)} left after</Text>
+            </View>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: t.heroText, fontVariant: ['tabular-nums'] }}>
+              {s.bills.length === 1 ? billFigure(s.bills[0]) : $(s.bills.reduce((sum, b) => sum + b.amount, 0))}
             </Text>
           </View>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: t.leaf }}>{more > 0 ? `${more} more` : 'See all'}</Text>
-          <SymbolView name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }} size={12} weight="semibold" tintColor={t.leaf} />
+        ))}
+      </View>
+
+      <Pressable onPress={() => router.push('/month')} accessibilityRole="button" accessibilityLabel="See every bill this month"
+        style={({ pressed }) => [styles.heroFooter, { marginTop: 'auto', alignItems: 'center', borderTopColor: `${t.heroText}33` }, pressed && { opacity: 0.7 }]}>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={{ fontSize: 12, color: t.heroMuted }}>{finish === null ? 'This month' : 'Likely finish'}</Text>
+          <Text style={[styles.stat, { color: t.heroText }]}>
+            {finish === null ? `${$(free.spent)} of ${$(free.budget)}` : finish >= 0 ? `${$(finish)} under` : `${$(-finish)} over`}
+          </Text>
         </View>
-      </HeroCard>
-    </Pressable>
+        <Text style={{ fontSize: 13, fontWeight: '600', color: t.leaf }}>{more > 0 ? `${more} more` : 'See all'}</Text>
+        <SymbolView name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }} size={12} weight="semibold" tintColor={t.leaf} />
+      </Pressable>
+    </View>
   );
 }
 

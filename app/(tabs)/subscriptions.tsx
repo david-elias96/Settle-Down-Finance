@@ -50,7 +50,7 @@ export default function SubscriptionsScreen() {
         </Section>
       )}
 
-      <Section title="All subscriptions" footer="Found from charges that repeat every month. AI cancels for you: you sign in yourself and approve the last step.">
+      <Section title="All subscriptions" footer="Charges that repeat monthly. AI cancels; you sign in and approve the last step.">
         {subs.length === 0 && <Row title="None found yet" subtitle="They show up after two months of charges." last />}
         {subs.map((s, i) => <SubscriptionRow key={s.vendor} s={s} last={i === subs.length - 1} />)}
       </Section>

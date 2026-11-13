@@ -33,7 +33,7 @@ export default function BucketScreen() {
           <Tag tone={tag.tone}>{tag.tag}</Tag>
           {tag.tone !== 'good' && status.overBy === 0 && <Label secondary style={{ fontSize: 14 }}>Heading for {$(pace.projectedTotal)}</Label>}
         </View>
-        <Label secondary style={{ fontSize: 12 }}>The tick marks an even pace for today</Label>
+        <Label secondary style={{ fontSize: 12 }}>Tick = even pace for today</Label>
       </View>
       </Card>
 

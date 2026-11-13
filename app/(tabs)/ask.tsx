@@ -89,7 +89,7 @@ export default function AskScreen() {
         {turns.length === 0 && noData && (
           <Card padded>
             <Label style={{ fontSize: 16, fontWeight: '600' }}>Ask works once purchases come in</Label>
-            <Label secondary style={{ fontSize: 14, lineHeight: 20, marginTop: 4 }}>Link a bank and Ask can answer from your own buckets and purchases. No credits are used until then.</Label>
+            <Label secondary style={{ fontSize: 14, lineHeight: 20, marginTop: 4 }}>Link a bank first. No credits used until then.</Label>
           </Card>
         )}
         {turns.length === 0 && !noData && (

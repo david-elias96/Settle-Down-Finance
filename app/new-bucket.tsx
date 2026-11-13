@@ -24,7 +24,7 @@ export default function NewBucket() {
 
   return (
     <Screen keyboardDone>
-      <Section footer="A bucket is a monthly limit for one kind of spending, from $1 to $100,000. You can change the limit later.">
+      <Section footer="A monthly limit for one kind of spending ($1 to $100,000). Change it anytime.">
         <Row title="Name" right={<TextInput accessibilityLabel="Bucket name" style={input} value={name} onChangeText={setName} placeholder="e.g. Pets"
           placeholderTextColor={t.secondaryText} maxLength={BUCKET_NAME_MAX} returnKeyType="next" />} />
         <Row title="Monthly limit" right={<TextInput accessibilityLabel="Monthly limit in dollars" style={input} value={limit} onChangeText={setLimit}
