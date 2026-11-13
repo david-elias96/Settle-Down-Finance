@@ -79,7 +79,7 @@ export function FreeCard({ free, days, month }: { free: FreeToSpend; days: { dat
         <View style={styles.between}>
           <Text style={[styles.heroLabel, { color: t.heroMuted }]}>{over ? 'Over budget by' : 'Free to spend'}</Text>
           {!over && free.spentToday > 0 && (
-            <View style={[styles.pill, { backgroundColor: free.leftToday < 0 ? `${t.sun}2E` : `${t.heroText}1F` }]}>
+            <View style={[styles.pill, { backgroundColor: free.leftToday < 0 ? 'rgba(246,192,78,0.18)' : 'rgba(243,247,239,0.12)' }]}>
               <Text style={{ fontSize: 12, fontWeight: '600', color: free.leftToday < 0 ? t.sun : t.heroText }}>
                 {free.leftToday < 0 ? `${$(-free.leftToday)} over today` : `${$(free.leftToday)} left today`}
               </Text>
@@ -111,7 +111,7 @@ export function FreeCard({ free, days, month }: { free: FreeToSpend; days: { dat
         </View>
         {free.perDay > 0 && (
           <>
-            <View style={[styles.dash, { bottom: `${line * 100}%`, borderColor: `${t.heroText}6B` }]} />
+            <View style={[styles.dash, { bottom: `${line * 100}%` }]} />
             <Text style={[styles.dashLabel, { bottom: `${line * 100}%`, color: t.heroMuted }]}>{$(free.perDay)}</Text>
           </>
         )}
@@ -123,12 +123,12 @@ export function FreeCard({ free, days, month }: { free: FreeToSpend; days: { dat
         })}
       </View>
 
-      <View style={[styles.heroFooter, { borderTopColor: `${t.heroText}33` }]}>
+      <View style={styles.heroFooter}>
         <View style={{ flex: 1, gap: 2 }} accessible aria-label={`${over ? 'Over' : 'Left'} this month: ${$(Math.abs(free.leftThisMonth))}`}>
           <Text style={{ fontSize: 12, color: t.heroMuted }}>{over ? 'Over this month' : 'Left this month'}</Text>
           <Text style={[styles.stat, { color: t.heroText }]}>{$(Math.abs(free.leftThisMonth))}</Text>
         </View>
-        <View style={[styles.statDivider, { backgroundColor: `${t.heroText}33` }]} />
+        <View style={styles.statDivider} />
         <View style={{ flex: 1, gap: 2 }} accessible aria-label={`Set aside for bills: ${$(free.billsToCome)}`}>
           <Text style={{ fontSize: 12, color: t.heroMuted }}>Set aside for bills</Text>
           <Text style={[styles.stat, { color: t.heroText }]}>{$(free.billsToCome)}</Text>
@@ -167,7 +167,7 @@ export function AheadCard({ ahead, free, forecast, today }: { ahead: AheadStop[]
         <View style={{ marginTop: 6 }}>
           {stops.length === 0 && <Text style={{ fontSize: 15, color: t.heroText, paddingVertical: 18 }}>Every bill for this month is paid.</Text>}
           {stops.map((s, i) => (
-            <View key={s.date} style={[styles.stop, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: `${t.heroText}29` }]}>
+            <View key={s.date} style={[styles.stop, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(243,247,239,0.16)' }]}>
               <View style={{ width: 38, alignItems: 'center' }}>
                 <Display size={22} color={t.heroText}>{String(s.day)}</Display>
                 <Text style={{ fontSize: 11, fontWeight: '500', color: s.day === today ? t.leaf : t.heroMuted }}>
@@ -185,7 +185,7 @@ export function AheadCard({ ahead, free, forecast, today }: { ahead: AheadStop[]
           ))}
         </View>
 
-        <View style={[styles.heroFooter, { marginTop: 'auto', alignItems: 'center', borderTopColor: `${t.heroText}33` }]}>
+        <View style={[styles.heroFooter, { marginTop: 'auto', alignItems: 'center' }]}>
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={{ fontSize: 12, color: t.heroMuted }}>{finish === null ? 'This month' : 'Likely finish'}</Text>
             <Text style={[styles.stat, { color: t.heroText }]}>
