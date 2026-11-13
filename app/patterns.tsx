@@ -22,7 +22,7 @@ export default function PatternsScreen() {
 
   return (
     <Screen>
-      <Section title="Budget tune-ups" footer="Based on your last few whole months, from the cards linked so far. One-off months like a trip are left out.">
+      <Section title="Budget tune-ups" footer="From your last few full months. One-offs like a trip are left out.">
         {rows.length === 0 && (
           <View style={styles.row}><Label secondary style={{ fontSize: 15, lineHeight: 21 }}>Your limits match how you spend. Nothing to change.</Label></View>
         )}
@@ -66,7 +66,7 @@ export default function PatternsScreen() {
       )}
 
       {small && (
-        <Section title="Small purchases add up" footer="Coffee, snacks and app charges each feel like nothing. Together they're a bucket of their own.">
+        <Section title="Small purchases add up" footer="Coffee, snacks, app charges. Together, a bucket of their own.">
           <View style={styles.small} accessible aria-label={`${$(small.total)} in small purchases. ${smallNote(small)}`}>
             <Display size={40}>{$(small.total)}</Display>
             <Label secondary style={{ fontSize: 14, lineHeight: 20 }}>{smallNote(small)}</Label>

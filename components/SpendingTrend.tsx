@@ -25,7 +25,13 @@ function niceMax(cents: number) {
  * Drag across the chart to compare any day. With `onHero` it draws on the deep green
  * hero card: leaf-green line, cream text.
  */
-export function SpendingTrend({ trend, forecast, month, onHero }: { trend: MonthComparison; forecast?: MonthForecast; month: string; onHero?: boolean }) {
+export type TrendMode = 'actual' | 'projected' | 'bills';
+
+export function SpendingTrend({ trend, forecast, month, onHero, mode: shown, onMode, withBills }: {
+  trend: MonthComparison; forecast?: MonthForecast; month: string; onHero?: boolean;
+  /** Controlled switch, for the home card that adds a third "Bills" view next to the chart. */
+  mode?: TrendMode; onMode?: (m: TrendMode) => void; withBills?: boolean;
+}) {
   const t = useTheme();
   const c: Ink = onHero
     ? { line: t.leaf, muted: t.heroMuted, grid: 'rgba(243,247,239,0.14)', surface: t.hero, text: t.heroText, up: t.sun, down: t.leaf }
@@ -33,7 +39,9 @@ export function SpendingTrend({ trend, forecast, month, onHero }: { trend: Month
   const [width, setWidth] = useState(0);
   const [activeDay, setActiveDay] = useState<number | null>(null);
   // "So far" shows actual spending only; "Projected" adds the month-end forecast.
-  const [mode, setMode] = useState<'actual' | 'projected'>('actual');
+  const [own, setOwn] = useState<TrendMode>('actual');
+  const mode = shown ?? own;
+  const setMode = (m: TrendMode) => { setOwn(m); onMode?.(m); };
   const projection = mode === 'projected' && forecast && forecast.points.length > 1 ? forecast : null;
 
   const days = daysInMonth(month);
@@ -84,12 +92,9 @@ export function SpendingTrend({ trend, forecast, month, onHero }: { trend: Month
       <View>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, minHeight: 32 }}>
           <Text style={{ fontSize: 14, fontWeight: '500', color: c.muted, flexShrink: 1 }} numberOfLines={1}>
-            {monthName(month, 'long')}{projection ? ', projected' : ' so far'}
+            {projection ? 'Month end' : monthName(month, 'long')}
           </Text>
-          {forecast && forecast.points.length > 1 && (
-            <Segmented onHero={onHero} value={mode} onChange={(m) => { setMode(m); setActiveDay(null); }}
-              options={[{ value: 'actual', label: 'So far' }, { value: 'projected', label: 'Projected' }]} />
-          )}
+          <TrendSwitch onHero={onHero} value={mode} onChange={(m) => { setMode(m); setActiveDay(null); }} projected={!!forecast && forecast.points.length > 1} bills={withBills} />
         </View>
         <Display size={44} color={c.text} numberOfLines={1} adjustsFontSizeToFit>
           {projection ? `~${formatCents(projection.end.mid, { showCents: false })}` : formatCents(trend.spentSoFar, { showCents: false })}
@@ -104,7 +109,7 @@ export function SpendingTrend({ trend, forecast, month, onHero }: { trend: Month
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
             <Text style={{ color: up ? c.up : c.down, fontSize: 11 }}>{up ? '▲' : '▼'}</Text>
             <Text style={{ fontSize: 13, color: c.muted }}>
-              {formatCents(Math.abs(trend.difference), { showCents: false })} {up ? 'more' : 'less'} than {monthName(prevMonth)} {Math.min(last?.day ?? 1, trend.previous.length || 1)}
+              {formatCents(Math.abs(trend.difference), { showCents: false })} vs {monthName(prevMonth)} {Math.min(last?.day ?? 1, trend.previous.length || 1)}
             </Text>
           </View>
         )}
@@ -218,3 +223,14 @@ function Legend({ color, label, dashed, dotted }: { color: string; label: string
 const styles = StyleSheet.create({
   swatch: { width: 16, height: 0, borderTopWidth: 2 },
 });
+
+/** The So far / Projected (/ Bills) switch, shared with the home card's bills view so it stays put. */
+export function TrendSwitch({ value, onChange, onHero, projected, bills }: {
+  value: TrendMode; onChange: (m: TrendMode) => void; onHero?: boolean; projected: boolean; bills?: boolean;
+}) {
+  const options: { value: TrendMode; label: string }[] = [{ value: 'actual', label: 'So far' }];
+  if (projected) options.push({ value: 'projected', label: 'Projected' });
+  if (bills) options.push({ value: 'bills', label: 'Bills' });
+  if (options.length < 2) return null;
+  return <Segmented onHero={onHero} value={value} onChange={onChange} options={options} />;
+}

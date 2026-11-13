@@ -82,6 +82,11 @@ export default function SettingsScreen() {
 
   return (
     <Screen>
+      <Section>
+        <Pressable onPress={() => router.push('/tour')} accessibilityRole="button">
+          <Row icon={{ ios: 'play.circle.fill', android: 'play_circle', web: 'play_circle' }} title="Take the tour" subtitle="How the home screen works" right={<Pill>Play</Pill>} last />
+        </Pressable>
+      </Section>
       <Section title="Household" footer="Everyone shares buckets, goals and alerts.">
         {members.map((m) => (
           <Row key={m.id} icon={{ ios: 'person.crop.circle.fill', android: 'account_circle', web: 'account_circle' }}
@@ -95,7 +100,7 @@ export default function SettingsScreen() {
           </Pressable>
         </Link>
       </Section>
-      <Section title="Linked accounts" footer="Each person links their own banks from their own phone.">
+      <Section title="Linked accounts" footer="Each person links their own banks.">
         {accounts.map((a) => {
           const owner = members.find((m) => m.id === a.ownerId);
           return (
@@ -152,18 +157,18 @@ export default function SettingsScreen() {
           right={<Label secondary>{creditBalance.monthly} of {credits.allowance}{creditBalance.extra ? ` + ${creditBalance.extra}` : ''}</Label>} last />
       </Section>
       {Platform.OS === 'web' ? (
-        <Section title="Notifications" footer="Purchase alerts on the home-screen web app come in a later update. Until then, new purchases show up in Activity.">
+        <Section title="Notifications" footer="Coming to the web app. New purchases show in Activity.">
           <Row icon={{ ios: 'bell.badge.fill', android: 'notifications', web: 'notifications' }} title="Transaction alerts" subtitle="Coming to the web app" last />
         </Section>
       ) : auth.connected ? (
-        <Section title="Notifications" footer="An alert for each new purchase, with how much is left in its bucket.">
+        <Section title="Notifications" footer="One per purchase, with what’s left in its bucket.">
           <Pressable onPress={turnOnAlerts} accessibilityRole="button">
             <Row icon={{ ios: 'bell.badge.fill', android: 'notifications', web: 'notifications' }} title="Purchase alerts"
               right={alerts === 'on' ? <Label secondary>On</Label> : <Pill>Turn on</Pill>} last />
           </Pressable>
         </Section>
       ) : (
-        <Section title="Notifications" footer="Lock your phone after tapping Send. The alert arrives in 3 seconds.">
+        <Section title="Notifications" footer="Tap Send, then lock your phone. It arrives in 3 seconds.">
           <Pressable onPress={sendPreview} accessibilityRole="button">
             <Row icon={{ ios: 'bell.badge.fill', android: 'notifications', web: 'notifications' }} title="Send a sample transaction alert" right={<Pill>Send</Pill>} last />
           </Pressable>

@@ -16,7 +16,7 @@ export default function ScanReceipt() {
   const tx = transactions.find((t) => t.id === transactionId);
   return (
     <Screen>
-      <Section footer="Snap a receipt to split a purchase across buckets. This arrives in an upcoming update; for now, move a purchase to another bucket from its page.">
+      <Section footer="Coming soon. For now, move a purchase from its page.">
         <ListRow title={tx ? tx.merchant.trim() : 'Receipt'} figure={tx ? formatCents(tx.amount) : undefined} note="Receipt scanning is coming in an update" last
           leading={<IconChip icon={{ ios: 'doc.text.viewfinder', android: 'document_scanner', web: 'document_scanner' }} />} />
       </Section>

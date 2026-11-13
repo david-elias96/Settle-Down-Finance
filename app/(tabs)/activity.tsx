@@ -125,7 +125,7 @@ export default function ActivityScreen() {
 
       {transactions.length === 0 ? (
         <>
-          <Section footer="Purchases from your linked banks and cards appear here as they post, usually within a day.">
+          <Section footer="New purchases appear within a day.">
             <Row title="No purchases yet" subtitle="Purchases show up here after you link a bank." last />
           </Section>
           <Button title="Link a bank" icon={{ ios: 'plus', android: 'add', web: 'add' }} onPress={() => router.push('/connect-bank')} />

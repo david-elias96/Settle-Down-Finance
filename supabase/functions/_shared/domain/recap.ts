@@ -120,16 +120,16 @@ export function weeklyRecap({ transactions, allocations, buckets, end }: RecapIn
   const changes = bucketRows.map((b) => ({ ...b, delta: b.spent - b.prevSpent }));
   const up = [...changes].sort((a, b) => b.delta - a.delta)[0];
   if (up && up.delta >= NOTABLE) {
-    points.push({ kind: 'bucket_up', label: up.name, figure: short(up.spent), note: `Up ${short(up.delta)} from the week before`, tone: 'warn', bucketId: up.bucketId });
+    points.push({ kind: 'bucket_up', label: up.name, figure: short(up.spent), note: `▲ ${short(up.delta)} vs last week`, tone: 'warn', bucketId: up.bucketId });
   }
   const down = [...changes].sort((a, b) => a.delta - b.delta)[0];
   if (down && -down.delta >= NOTABLE) {
-    points.push({ kind: 'bucket_down', label: down.name, figure: short(down.spent), note: `Down ${short(-down.delta)} from the week before`, tone: 'good', bucketId: down.bucketId });
+    points.push({ kind: 'bucket_down', label: down.name, figure: short(down.spent), note: `▼ ${short(-down.delta)} vs last week`, tone: 'good', bucketId: down.bucketId });
   }
 
   const biggest = [...everyday].sort((a, b) => b.amount - a.amount)[0];
   if (biggest && biggest.amount > 0) {
-    points.push({ kind: 'biggest', label: biggest.merchant, figure: short(biggest.amount), note: `Biggest purchase · ${shortDate(biggest.date)}`, tone: 'neutral', vendor: biggest.merchant, transactionId: biggest.id });
+    points.push({ kind: 'biggest', label: biggest.merchant, figure: short(biggest.amount), note: `Biggest · ${shortDate(biggest.date)}`, tone: 'neutral', vendor: biggest.merchant, transactionId: biggest.id });
   }
 
   // Most-visited store, when someone went more than once.
@@ -142,14 +142,14 @@ export function weeklyRecap({ transactions, allocations, buckets, end }: RecapIn
   }
   const top = [...visits.values()].sort((a, b) => b.visits - a.visits || b.total - a.total)[0];
   if (top && top.visits >= 2) {
-    points.push({ kind: 'top_store', label: top.label, figure: short(top.total), note: `${top.visits} visits this week`, tone: 'neutral', vendor: top.label });
+    points.push({ kind: 'top_store', label: top.label, figure: short(top.total), note: `${top.visits} visits`, tone: 'neutral', vendor: top.label });
   }
 
   // Stores never seen before this week.
   const seen = new Set(transactions.filter((t) => t.date < start).map((t) => vendorKey(t.merchant)));
   const fresh = [...visits.entries()].filter(([k]) => !seen.has(k)).sort((a, b) => b[1].total - a[1].total)[0];
   if (fresh) {
-    points.push({ kind: 'new_store', label: fresh[1].label, figure: short(fresh[1].total), note: 'First time shopping here', tone: 'neutral', vendor: fresh[1].label });
+    points.push({ kind: 'new_store', label: fresh[1].label, figure: short(fresh[1].total), note: 'New store', tone: 'neutral', vendor: fresh[1].label });
   }
 
   const billsTotal = sum(bills);
@@ -160,12 +160,12 @@ export function weeklyRecap({ transactions, allocations, buckets, end }: RecapIn
 
   const diff = spent - pace;
   const tone: Tone = diff <= 0 ? 'good' : diff <= pace * 0.15 ? 'warn' : 'bad';
-  const lead = up && up.delta >= NOTABLE && diff > 0 ? ` ${up.name} was the biggest jump.` : '';
+  const lead = up && up.delta >= NOTABLE && diff > 0 ? ` Mostly ${up.name}.` : '';
   const headline = pace <= 0
-    ? `You spent ${short(spent)} over ${count} purchase${count === 1 ? '' : 's'} this week.`
+    ? `${short(spent)} spent across ${count} purchase${count === 1 ? '' : 's'}.`
     : diff <= 0
-      ? `You spent ${short(spent)} this week, ${short(-diff)} under your weekly pace.`
-      : `You spent ${short(spent)} this week, ${short(diff)} over your weekly pace.${lead}`;
+      ? `${short(spent)} spent, ${short(-diff)} under pace.`
+      : `${short(spent)} spent, ${short(diff)} over pace.${lead}`;
 
   return { start, end, spent, count, prevSpent, typicalSpent, pace, billsTotal, days, buckets: bucketRows, points, headline, tone };
 }

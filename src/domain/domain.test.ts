@@ -502,13 +502,13 @@ describe('weeklyRecap', () => {
   it('paces against the everyday buckets only', () => {
     expect(r.pace).toBe(Math.round((90000 * 7) / 30));
     expect(r.tone).toBe('warn');
-    expect(r.headline).toBe('You spent $240 this week, $30 over your weekly pace. Dining Out was the biggest jump.');
+    expect(r.headline).toBe('$240 spent, $30 over pace. Mostly Dining Out.');
   });
 
   it('calls out the jump, the biggest purchase, repeat visits, new stores and bills', () => {
     expect(r.points.map((p) => p.kind)).toEqual(['bucket_up', 'biggest', 'top_store', 'new_store', 'bills']);
-    expect(r.points[0]).toMatchObject({ label: 'Dining Out', note: 'Up $70 from the week before' });
-    expect(r.points[2]).toMatchObject({ label: 'Kroger', note: '2 visits this week' });
+    expect(r.points[0]).toMatchObject({ label: 'Dining Out', note: '▲ $70 vs last week' });
+    expect(r.points[2]).toMatchObject({ label: 'Kroger', note: '2 visits' });
     expect(r.points[3]).toMatchObject({ label: 'Sushi Place' });
   });
 });

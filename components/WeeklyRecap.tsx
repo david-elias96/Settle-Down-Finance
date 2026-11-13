@@ -5,7 +5,6 @@ import { formatCents, shortDate, type RecapPoint, type WeeklyRecap } from '@/src
 
 const $ = (c: number) => formatCents(c, { showCents: false });
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-const TAG = { good: 'Under pace', warn: 'A bit over', bad: 'Over pace' } as const;
 
 const openPoint = (p: RecapPoint) =>
   p.bucketId ? router.push({ pathname: '/bucket/[id]', params: { id: p.bucketId } })
@@ -21,13 +20,14 @@ function rangeLabel(start: string, end: string) {
 
 /**
  * The last 7 days at a glance: everyday spending against the weekly pace, a bar per day,
- * a one-line summary (written by Claude once the backend is connected) and what stood out.
+ * and what stood out. The one-line summary is read out to screen readers.
  */
 export function WeeklyRecapCard({ recap }: { recap: WeeklyRecap }) {
   const t = useTheme();
   const max = Math.max(1, ...recap.days.map((d) => d.spent), recap.pace / 7);
   const paceLine = recap.pace > 0 ? recap.pace / 7 / max : null;
-  const compare = recap.typicalSpent !== null ? `typical week ${$(recap.typicalSpent)}` : `week before ${$(recap.prevSpent)}`;
+  const compare = recap.typicalSpent !== null ? `usually ${$(recap.typicalSpent)}` : `last week ${$(recap.prevSpent)}`;
+  const gap = recap.spent - recap.pace;
   const points = recap.points.slice(0, 4);
 
   return (
@@ -36,12 +36,12 @@ export function WeeklyRecapCard({ recap }: { recap: WeeklyRecap }) {
         <View style={styles.between}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
             <AiMark size={13} />
-            <Label secondary style={{ fontSize: 13 }}>Weekly recap · {rangeLabel(recap.start, recap.end)}</Label>
+            <Label secondary style={{ fontSize: 13 }}>{rangeLabel(recap.start, recap.end)}</Label>
           </View>
         </View>
         <View style={styles.between}>
           <Display size={30}>{$(recap.spent)}</Display>
-          {recap.pace > 0 && <Tag tone={recap.tone}>{TAG[recap.tone]}</Tag>}
+          {recap.pace > 0 && <Tag tone={recap.tone}>{gap <= 0 ? `${$(-gap)} under` : `${$(gap)} over`}</Tag>}
         </View>
         <Label secondary style={{ fontSize: 13 }}>
           {recap.count} purchase{recap.count === 1 ? '' : 's'} · {compare}
@@ -72,11 +72,10 @@ export function WeeklyRecapCard({ recap }: { recap: WeeklyRecap }) {
         {paceLine !== null && (
           <View style={styles.legend}>
             <View style={[styles.legendDash, { borderColor: t.secondaryText }]} />
-            <Label secondary style={{ fontSize: 12 }}>Weekly pace {$(recap.pace)} ({$(recap.pace / 7)} a day)</Label>
+            <Label secondary style={{ fontSize: 12 }}>Pace {$(recap.pace / 7)}/day</Label>
           </View>
         )}
 
-        <Label style={{ fontSize: 15, lineHeight: 20, marginTop: 8 }}>{recap.headline}</Label>
       </View>
 
       {points.map((p) => {

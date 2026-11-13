@@ -91,7 +91,7 @@ function MoveBucket({ current, merchant, split, buckets, onMove }: {
           <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10 }, sep]}>
             <View style={{ flex: 1 }}>
               <Label style={{ fontSize: 15 }}>Always put {merchant} here</Label>
-              <Label secondary style={{ fontSize: 13 }}>Moves its other purchases too, and teaches auto sorting</Label>
+              <Label secondary style={{ fontSize: 13 }}>Moves past ones too, and future ones sort here</Label>
             </View>
             <Switch value={always} onValueChange={setAlways} trackColor={{ true: t.green }} thumbColor="#FFFFFF" accessibilityLabel={`Always put ${merchant} here`} />
           </View>
