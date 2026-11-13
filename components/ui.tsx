@@ -68,7 +68,8 @@ export function Screen({ children, title, eyebrow, action, keyboardDone, swoop }
         {eyebrow && <Text style={[styles.eyebrow, { color: green ? t.heroMuted : t.secondaryText }]}>{eyebrow}</Text>}
         <Text accessibilityRole="header" style={[styles.largeTitle, { color: green ? t.heroText : t.text }]} numberOfLines={2}>{title}</Text>
       </View>
-      {action}
+      {/* The action floats over the page (below), so it stays in reach while scrolling; keep its room here. */}
+      {action ? <View style={{ width: 44 }} /> : null}
     </View>
   );
   const scroll = (
@@ -90,8 +91,13 @@ export function Screen({ children, title, eyebrow, action, keyboardDone, swoop }
       {children}
     </ScrollView>
   );
-  if (!keyboardDone) return scroll;
-  return <View style={{ flex: 1, backgroundColor: t.background }}>{scroll}<KeyboardDone height={keyboard.height} /></View>;
+  const floating = title && action ? (
+    <View pointerEvents="box-none" style={[styles.floatWrap, { top: insets.top + (wide ? space.xxl : space.l) }]}>
+      <View pointerEvents="box-none" style={[{ width: '100%', alignItems: 'flex-end', paddingHorizontal: space.l }, columnStyle(wide)]}>{action}</View>
+    </View>
+  ) : null;
+  if (!keyboardDone && !floating) return scroll;
+  return <View style={{ flex: 1, backgroundColor: t.background }}>{scroll}{floating}{keyboardDone && <KeyboardDone height={keyboard.height} />}</View>;
 }
 
 /** Serif display text for big numbers and headings. */
@@ -420,6 +426,7 @@ export function Segmented<T extends string>({ options, value, onChange, onHero }
 }
 
 const styles = StyleSheet.create({
+  floatWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
   titleRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: space.m, paddingHorizontal: space.xs, marginBottom: -space.s },
   eyebrow: { fontSize: 13, fontWeight: '500', marginBottom: 4 },
   largeTitle: { fontFamily: Fonts.display, fontSize: 32, lineHeight: 38, letterSpacing: -0.64 },
