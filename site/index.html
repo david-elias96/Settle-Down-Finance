@@ -403,6 +403,61 @@ section.faq { padding: 0 0 112px; }
   .tour-progress i.on::after { animation: none; }
   .sticky { transition: none; }
 }
+/* ---- Taste layer: one ground, one ink, one accent (green), no gradients, no resting shadows,
+   tone steps instead of lines, left-aligned sections, larger gaps, staggered entrances. ---- */
+:root { --glow-leaf: transparent; --glow-sun: transparent; }
+.hero::before, .feature .shot::before, .tour .shot::before, .trust-card::before, .cta-card::before { display: none; }
+.lede { color: var(--text); }
+.section-head { text-align: left; margin-left: 0; max-width: 760px; }
+.section-head .lede { margin-left: 0; }
+section.features, section.tour { padding-top: 160px; }
+section.more { padding: 64px 0 160px; }
+section.pricing { padding: 160px 0 120px; }
+section.faq { padding-bottom: 160px; }
+.phone { box-shadow: inset 0 0 0 1.5px #2F3A35; }
+.feature .shot, .tour .shot { background: var(--bg-2); }
+.strip ul { background: transparent; box-shadow: none; padding: 0; gap: 40px; }
+.strip li { display: block; color: var(--text); font-size: 16px; }
+.strip li strong { font-size: 17px; margin-bottom: 4px; }
+.more-split { display: grid; grid-template-columns: .8fr 1.2fr; gap: 64px; align-items: start; }
+.more-split .section-head { position: sticky; top: 120px; margin-bottom: 0; }
+.more-split .grid { grid-template-columns: 1fr 1fr; gap: 40px 48px; }
+.more-split .tile { background: transparent; box-shadow: none; padding: 0; border-radius: 0; }
+.more-split .tile .ico { display: none; }
+.more-split .tile p { color: var(--text); opacity: .82; }
+.plan { box-shadow: none; }
+.plan.best { box-shadow: none; }
+.plan.best .btn-brand { background: #F3F7EF; color: #1F5B3F; }
+.plan.best .btn-brand:hover { background: #FFFFFF; }
+.faq details { box-shadow: none; }
+.faq summary:hover { color: var(--brand); }
+.faq-list { margin-left: 0; }
+.promises > div { background: rgba(243,247,239,.09); border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.tabs { background: var(--bg-2); border-radius: 999px; }
+.tour-toggle { box-shadow: none; background: var(--bg-2); }
+.btn-cream { background: #F3F7EF; color: #1F5B3F; }
+.btn-cream:hover { background: #FFFFFF; }
+.later { border-top: 0; margin-top: 48px; padding-top: 0; }
+.cta-card .waitlist { box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.cta-card .waitlist:focus-within { border-color: #F3F7EF; }
+.included { justify-content: flex-start; margin-left: 0; }
+.plans { margin-left: 0; }
+.timeline { margin-left: 0; }
+.sign-off { display: block; text-decoration: none; font-family: "Fraunces", Georgia, serif; font-weight: 600; letter-spacing: -0.04em; line-height: .9; font-size: clamp(48px, 15.5vw, 196px); color: var(--brand); margin: 0 0 40px; white-space: nowrap; }
+/* Entrances: heading, then text, then picture, 80ms apart, rising 24px. */
+.js .reveal { transform: translateY(24px); }
+@media (max-width: 960px) {
+  .more-split { grid-template-columns: 1fr; gap: 40px; }
+  .more-split .section-head { position: static; }
+}
+@media (max-width: 640px) {
+  section.features, section.tour { padding-top: 96px; }
+  section.more { padding-bottom: 96px; }
+  section.pricing { padding: 96px 0 72px; }
+  section.faq { padding-bottom: 96px; }
+  .more-split .grid { grid-template-columns: 1fr; gap: 28px; }
+  .strip ul { gap: 20px; }
+}
 </style>
 <script>document.documentElement.classList.add('js');
 // A sign-in that fails falls back to this page with the error in the URL; show the friendly error page instead.
@@ -444,7 +499,6 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
   <section class="hero">
     <div class="wrap">
       <div class="copy">
-        <div class="badge glass"><i></i><span class="when-open">Try it free for 7 days</span><span class="when-waitlist">Coming soon to iPhone</span></div>
         <h1>Know where you stand. <em>Then relax.</em></h1>
         <p class="lede">Settle Down links your family's accounts, sorts every purchase into buckets, and turns it all into one calm number: what you can spend today.</p>
         <div class="when-open">
@@ -481,9 +535,9 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
   <div class="strip reveal">
     <div class="wrap">
       <ul>
-        <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><span><strong>Bank connections through Plaid</strong>Your bank login never touches our servers.</span></li>
-        <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg></span><span><strong>Built for households</strong>Everyone links their own cards. One shared picture.</span></li>
-        <li><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span><span><strong>No ads. Never sold.</strong>You pay for the app, so your data isn't the product.</span></li>
+        <li><span><strong>Bank connections through Plaid</strong>Your bank login never touches our servers.</span></li>
+        <li><span><strong>Built for households</strong>Everyone links their own cards. One shared picture.</span></li>
+        <li><span><strong>No ads. Never sold.</strong>You pay for the app, so your data isn't the product.</span></li>
       </ul>
     </div>
   </div>
@@ -491,14 +545,13 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
   <section class="tour" id="tour" aria-labelledby="tour-title">
     <div class="wrap">
       <div class="section-head reveal">
-        <p class="eyebrow">Inside the app</p>
         <h2 id="tour-title">Take a look around</h2>
         <p class="lede">Your budget, your buckets, your month ahead, and an assistant that knows your numbers.</p>
       </div>
       <div class="tour-grid reveal">
         <div class="shot"><div class="phone"><img id="tour-img" src="assets/screens/bucket.webp" width="780" height="1688" loading="lazy" alt=""></div></div>
         <div>
-          <div class="tabs glass" role="tablist" aria-label="App screens"></div>
+          <div class="tabs" role="tablist" aria-label="App screens"></div>
           <div class="tour-copy" id="tour-panel" role="tabpanel" aria-live="polite"></div>
           <div class="tour-controls"><button class="tour-toggle" type="button" aria-label="Pause the tour"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4 2h3v12H4zM9 2h3v12H9z"/></svg></button><div class="tour-progress" aria-hidden="true"></div></div>
         </div>
@@ -509,7 +562,6 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
   <section class="features" id="features">
     <div class="wrap">
       <div class="section-head reveal">
-        <p class="eyebrow">What it does</p>
         <h2>A budget that keeps up with you</h2>
         <p class="lede">Most budgeting apps tell you what went wrong last month. Settle Down tells you while there's still time to do something about it.</p>
       </div>
@@ -520,7 +572,6 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
           <div class="phone"><img src="assets/screens/bucket.webp" width="780" height="1688" loading="lazy" alt="The Groceries bucket: 81% used, $569 of $700, heading over, with this month's grocery purchases."></div>
         </div>
         <div class="text">
-          <p class="eyebrow">Buckets and alerts</p>
           <h2>Know where you stand after every purchase</h2>
           <p class="lede">Every card swipe lands in a bucket like Groceries, Dining Out or Gas, and your phone tells you right away how much of that bucket is left.</p>
           <ul>
@@ -535,7 +586,6 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
       <div class="feature reveal">
         <div class="shot"><div class="phone"><img src="assets/screens/trend.webp" width="780" height="1688" loading="lazy" alt="The spending trend card: this month's spending against last month, with the Projected view showing a likely month-end total and its range."></div></div>
         <div class="text">
-          <p class="eyebrow">Trends and projections</p>
           <h2>See the month before it happens</h2>
           <p class="lede">Settle Down compares this month to last, then runs your spending forward to show where you're likely to land, with an honest range instead of a single guess.</p>
           <ul>
@@ -549,7 +599,6 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
       <div class="feature reveal">
         <div class="shot"><div class="phone"><img src="assets/screens/ask.webp" width="780" height="1688" loading="lazy" alt="Asking 'How can I cut my spending this month?' and getting a card listing the biggest savings opportunities by bucket."></div></div>
         <div class="text">
-          <p class="eyebrow ai"><svg aria-hidden="true"><use href="#sparkle"/></svg>SettleDown, your money assistant</p>
           <h2>Ask your budget anything</h2>
           <p class="lede">Ask in plain English. SettleDown answers from your real buckets and purchases, and shows the math behind every number.</p>
           <div class="asks" aria-label="Example questions">
@@ -568,7 +617,6 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
       <div class="feature reveal">
         <div class="shot"><div class="phone"><img src="assets/screens/savings.webp" width="780" height="1688" loading="lazy" alt="The Savings screen: $4,200 saved across goals, untouched by this month's spending, with the Emergency Fund on track."></div></div>
         <div class="text">
-          <p class="eyebrow">Savings goals</p>
           <h2>Savings that stay put</h2>
           <p class="lede">Set aside money for the emergency fund, the vacation or the holidays in their own envelopes, separate from everyday spending. If a bucket runs over, you'll see exactly which goal it's coming out of.</p>
           <ul>
@@ -581,39 +629,39 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
   </section>
 
   <section class="more">
-    <div class="wrap">
+    <div class="wrap more-split">
       <div class="section-head reveal">
-        <p class="eyebrow">And a few things you'll love</p>
         <h2>The busywork, handled</h2>
+        <p class="lede">The small chores that make budgets fall apart, done for you.</p>
       </div>
       <div class="grid reveal">
         <div class="tile">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></span>
+          
           <h3>Scan a receipt, split the purchase</h3>
           <p>A Target run is groceries, household and a birthday gift. Snap the receipt and each line goes to the right bucket.</p>
         </div>
         <div class="tile">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.9.4 5 2.8 5 5.8"/></svg></span>
+          
           <h3>One budget for the household</h3>
           <p>Invite your partner. Each of you links your own banks, and you both see the same buckets and goals.</p>
         </div>
         <div class="tile">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/><path d="M9 12l2 2 4-4"/></svg></span>
+          
           <h3>Cancel subscriptions for you</h3>
           <p>Settle Down finds what renews each month. Tap Cancel and SettleDown works through the cancel page while you sign in and approve the final click.</p>
         </div>
         <div class="tile">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>
+          
           <h3>Bills on the calendar</h3>
           <p>Recurring bills are spotted automatically and forecast ahead, so you know what's still coming this month.</p>
         </div>
         <div class="tile">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
+          
           <h3>Spending patterns</h3>
           <p>See which days, stores and habits drive your spending, with lumpy one-off months kept out of the averages.</p>
         </div>
         <div class="tile">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18" cy="16" r="3"/><path d="M20.2 18.2L22 20"/></svg></span>
+          
           <h3>Find any purchase fast</h3>
           <p>Filter activity by month, bucket or store and see the total for exactly what you're looking at.</p>
         </div>
@@ -625,7 +673,6 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
     <div class="trust-card reveal">
     <div class="wrap">
       <div>
-        <p class="eyebrow">Privacy and security</p>
         <h2>Your money is personal. We keep it that way.</h2>
         <p class="lede">We built Settle Down for our own family first, so we hold it to the standard we'd want. Read the details in our <a href="/privacy">privacy policy</a>.</p>
       </div>
@@ -642,7 +689,6 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
   <section class="pricing" id="pricing">
     <div class="wrap">
       <div class="section-head reveal">
-        <p class="eyebrow">Our mission</p>
         <h2>A budget app should fit in everyone's budget.</h2>
         <p class="lede"><strong class="hl">Settle Down does that.</strong> One plan covers your whole household with every feature included. No tiers, no upsells.</p>
       </div>
@@ -655,10 +701,9 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
           <a class="btn btn-brand when-open" href="https://app.settledownfinancial.com/start?plan=monthly">Start free trial</a>
         </div>
         <div class="plan">
-          <span class="tag">Save 30%</span>
           <h3>Yearly</h3>
           <p class="price">$49.99<small> / year</small></p>
-          <p class="sub">About $4.17 a month.</p>
+          <p class="sub">About $4.17 a month. Save 30%.</p>
           <span class="trial when-open">First 7 days free</span>
           <a class="btn btn-brand when-open" href="https://app.settledownfinancial.com/start?plan=yearly">Start free trial</a>
         </div>
@@ -679,7 +724,6 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
   <section class="faq" id="faq" aria-labelledby="faq-title">
     <div class="wrap">
       <div class="section-head reveal">
-        <p class="eyebrow">Questions</p>
         <h2 id="faq-title">Good to know</h2>
       </div>
       <div class="faq-list reveal">
@@ -702,7 +746,7 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
         <div class="when-open">
           <p class="lede">A week free. See your first daily number tonight.</p>
           <div class="ctas">
-            <a class="btn btn-sun btn-lg" href="https://app.settledownfinancial.com/start?plan=monthly">Start your free trial<svg aria-hidden="true"><use href="#arrow"/></svg></a>
+            <a class="btn btn-cream btn-lg" href="https://app.settledownfinancial.com/start?plan=monthly">Start your free trial<svg aria-hidden="true"><use href="#arrow"/></svg></a>
           </div>
           <p class="reassure"><span>No charge for 7 days</span><span>Cancel anytime</span></p>
           <div class="later">
@@ -710,7 +754,7 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
             <form class="waitlist" data-waitlist novalidate>
               <label class="sr" for="email-later">Email address</label>
               <input id="email-later" type="email" name="email" placeholder="you@example.com" autocomplete="email" spellcheck="false" required>
-              <button class="btn btn-sun" type="submit">Notify me</button>
+              <button class="btn btn-cream" type="submit">Notify me</button>
             </form>
             <p class="form-note" aria-live="polite"></p>
           </div>
@@ -720,7 +764,7 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
           <form class="waitlist" data-waitlist novalidate>
             <label class="sr" for="email-bottom">Email address</label>
             <input id="email-bottom" type="email" name="email" placeholder="you@example.com" autocomplete="email" spellcheck="false" required>
-            <button class="btn btn-sun" type="submit">Join the waitlist</button>
+            <button class="btn btn-cream" type="submit">Join the waitlist</button>
           </form>
           <p class="form-note" aria-live="polite">One email when it's ready. Nothing else.</p>
         </div>
@@ -735,7 +779,9 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
 
 <footer>
   <div class="wrap">
-    <a class="brand" href="/" translate="no"><svg aria-hidden="true"><use href="#mark"/></svg>Settle Down</a>
+    <a class="sign-off" href="/" translate="no">Settle Down</a>
+  </div>
+  <div class="wrap">
     <span>© 2026 Settle Down Finance</span>
     <nav aria-label="Footer">
       <a href="https://app.settledownfinancial.com/" class="when-open">Sign in</a>
@@ -875,6 +921,10 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
   var io = new IntersectionObserver(function (entries) {
     entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
   }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+  // Within a section: heading, then text, then picture, 80ms apart.
+  document.querySelectorAll('section, .strip').forEach(function (sec) {
+    sec.querySelectorAll('.reveal').forEach(function (el, i) { el.style.transitionDelay = (i * 80) + 'ms'; });
+  });
   items.forEach(function (el) { io.observe(el); });
 })();
 </script>
