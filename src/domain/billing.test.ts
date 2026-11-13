@@ -3,16 +3,16 @@ import { billingFromRow, billingSummary, daysUntil, needsPlan, parsePlan } from 
 
 const row = (over: Record<string, unknown> = {}) => ({
   access: false, reason: 'none', enforced: true, status: 'none', plan: null, trial_end: null,
-  current_period_end: null, cancel_at_period_end: false, trial_days: 14, can_trial: true, ...over,
+  current_period_end: null, cancel_at_period_end: false, trial_days: 7, can_trial: true, ...over,
 });
 const now = new Date('2026-11-12T12:00:00Z');
 
 describe('parsePlan', () => {
-  it('reads monthly and defaults everything else to yearly', () => {
+  it('reads yearly and defaults everything else to monthly', () => {
     expect(parsePlan('monthly')).toBe('monthly');
     expect(parsePlan('yearly')).toBe('yearly');
-    expect(parsePlan('free')).toBe('yearly');
-    expect(parsePlan(undefined)).toBe('yearly');
+    expect(parsePlan('free')).toBe('monthly');
+    expect(parsePlan(undefined)).toBe('monthly');
   });
 });
 
@@ -42,8 +42,8 @@ describe('billingSummary', () => {
     expect(billingSummary(billingFromRow(row({ access: true, reason: 'comp' }))!, now).title).toBe('Founder access');
   });
   it('counts trial days and names the first charge', () => {
-    const s = billingSummary(billingFromRow(row({ access: true, reason: 'subscribed', status: 'trialing', plan: 'yearly', trial_end: '2026-11-26T12:00:00Z' }))!, now);
-    expect(s.title).toBe('Free trial · 14 days left');
+    const s = billingSummary(billingFromRow(row({ access: true, reason: 'subscribed', status: 'trialing', plan: 'yearly', trial_end: '2026-11-19T12:00:00Z' }))!, now);
+    expect(s.title).toBe('Free trial · 7 days left');
     expect(s.detail).toContain('$49.99/year');
   });
   it('says a cancelled trial won’t be charged', () => {
@@ -59,7 +59,7 @@ describe('billingSummary', () => {
     expect(billingSummary(billingFromRow(row({ access: true, reason: 'subscribed', status: 'past_due' }))!, now).title).toBe('Payment didn’t go through');
   });
   it('offers the trial only once', () => {
-    expect(billingSummary(billingFromRow(row())!, now).detail).toContain('14-day free trial');
+    expect(billingSummary(billingFromRow(row())!, now).detail).toContain('7-day free trial');
     expect(billingSummary(billingFromRow(row({ can_trial: false }))!, now).detail).toBe('Pick a plan to keep using Settle Down.');
   });
 });

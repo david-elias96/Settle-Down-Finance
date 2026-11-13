@@ -4,7 +4,7 @@ import { CHOSEN_PLAN, parsePlan } from '@/src/domain';
 import { prefs } from '@/src/lib/prefs';
 
 /**
- * Where the website's "Start free trial" buttons land (/start?plan=yearly). Remembers the plan,
+ * Where the website's "Start free trial" buttons land (/start?plan=monthly). Remembers the plan,
  * then hands over to the route guard: sign in first, then the plan picker if one is needed.
  */
 export default function StartScreen() {

@@ -12,7 +12,7 @@
 create table billing_settings (
   id boolean primary key default true check (id),
   enforced boolean not null default false,
-  trial_days int not null default 14 check (trial_days between 0 and 60),
+  trial_days int not null default 7 check (trial_days between 0 and 60),
   updated_at timestamptz not null default now()
 );
 insert into billing_settings default values;

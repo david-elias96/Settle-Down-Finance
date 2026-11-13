@@ -75,8 +75,8 @@ export default function PlansScreen() {
 
   const summary = billing ? billingSummary(billing) : null;
   const managed = !!billing && ['trialing', 'active', 'past_due'].includes(billing.status) && billing.reason === 'subscribed';
-  const trial = billing?.canTrial !== false && (billing?.trialDays ?? 14) > 0;
-  const trialDays = billing?.trialDays ?? 14;
+  const trial = billing?.canTrial !== false && (billing?.trialDays ?? 7) > 0;
+  const trialDays = billing?.trialDays ?? 7;
 
   if (managed || billing?.reason === 'comp' || billing?.reason === 'household') {
     return (
@@ -116,7 +116,7 @@ export default function PlansScreen() {
       </Intro>
 
       <View style={{ gap: space.m }} accessibilityRole="radiogroup">
-        {(['yearly', 'monthly'] as PlanId[]).map((id) => {
+        {(['monthly', 'yearly'] as PlanId[]).map((id) => {
           const p = PLAN_PRICES[id];
           const on = plan === id;
           return (
@@ -145,7 +145,7 @@ export default function PlansScreen() {
       {error && <Label style={{ ...styles.fine, color: t.redText }}>{error}</Label>}
       <Label secondary style={styles.fine}>
         {trial
-          ? `Card needed to start, charged ${PLAN_PRICES[plan].price} on day ${trialDays + 1} unless you cancel. We’ll email you before your trial ends. Payments are handled by Stripe; we never see your card.`
+          ? `Card needed to start, charged ${PLAN_PRICES[plan].price} on day ${trialDays + 1} unless you cancel. Settings shows how many trial days are left. Payments are handled by Stripe; we never see your card.`
           : 'Payments are handled by Stripe; we never see your card.'}
       </Label>
 

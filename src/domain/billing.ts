@@ -29,9 +29,9 @@ export interface BillingState {
   canTrial: boolean;
 }
 
-/** Plan from a website link like /plans?plan=monthly. Anything else picks the yearly plan. */
+/** Plan from a website link like /plans?plan=yearly. Anything else picks the monthly plan (the default). */
 export function parsePlan(value: unknown): PlanId {
-  return value === 'monthly' ? 'monthly' : 'yearly';
+  return value === 'yearly' ? 'yearly' : 'monthly';
 }
 
 /** Turns a my_billing() row into app state. Missing or odd values fail closed (no access). */

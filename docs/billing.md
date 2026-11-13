@@ -1,8 +1,8 @@
 # Paid plans (Stripe)
 
 People subscribe on the web: the website's "Start free trial" buttons go to
-`app.settledownfinancial.com/start?plan=…`, they sign in, pick monthly ($5.99) or yearly ($49.99)
-in the app's plan picker (`app/plans.tsx`), and pay on Stripe's hosted Checkout page with a 14-day
+`app.settledownfinancial.com/start?plan=…`, they sign in, pick monthly ($5.99, the default) or yearly ($49.99)
+in the app's plan picker (`app/plans.tsx`), and pay on Stripe's hosted Checkout page with a 7-day
 free trial (card collected up front). Stripe's webhook (`stripe-webhook`) writes the subscription to
 `subscriptions`; `my_billing()` and `household_access()` decide access. One plan covers the whole
 household. Card details never reach our systems.
