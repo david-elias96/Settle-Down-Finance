@@ -1,7 +1,7 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { BottomTabBarHeightCallbackContext, type BottomTabBarProps } from 'expo-router/tabs';
 import { useContext, useEffect } from 'react';
-import { Fonts } from '@/constants/Colors';
+import { Fonts, Shape } from '@/constants/Colors';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { COLUMN_WIDTH, SIDEBAR_WIDTH, useLayout } from '@/src/lib/layout';
 import { Glass, useTheme } from './ui';
@@ -39,7 +39,7 @@ function PillTabs({ state, descriptors, emitter, navigateToTab, insets, icons }:
         {state.routes.map((route, index) => {
           const focused = index === state.index;
           const label = descriptors[route.key].options.title ?? route.name;
-          const color = focused ? t.tabIconSelected : t.tabIconDefault;
+          const color = focused ? (Shape.tab === 'solid' ? t.onTint : t.tabIconSelected) : t.tabIconDefault;
           const onPress = () => {
             const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
             if (!focused && !event.defaultPrevented) navigateToTab(route.key);
@@ -47,7 +47,7 @@ function PillTabs({ state, descriptors, emitter, navigateToTab, insets, icons }:
           return (
             <Pressable key={route.key} onPress={onPress} onLongPress={() => emitter.emit({ type: 'tabLongPress', target: route.key })}
               role="tab" aria-selected={focused} accessibilityLabel={`${label}, tab, ${index + 1} of ${state.routes.length}`}
-              style={({ pressed }) => [styles.item, focused && { backgroundColor: `${t.tint}1F` }, pressed && { opacity: 0.6 }]}>
+              style={({ pressed }) => [styles.item, focused && { backgroundColor: Shape.tab === 'solid' ? t.tint : `${t.tabIconSelected}1F` }, pressed && { opacity: 0.6 }]}>
               <SymbolView name={icons[route.name]} size={22} tintColor={color} weight={focused ? 'semibold' : 'regular'} />
               <Text numberOfLines={1} allowFontScaling={false} style={[styles.label, { color, fontWeight: focused ? '600' : '500' }]}>{label}</Text>
             </Pressable>

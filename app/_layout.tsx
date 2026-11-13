@@ -1,4 +1,7 @@
 import { Fraunces_500Medium, Fraunces_600SemiBold, useFonts } from '@expo-google-fonts/fraunces';
+import { BricolageGrotesque_600SemiBold, BricolageGrotesque_700Bold } from '@expo-google-fonts/bricolage-grotesque';
+import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif';
+import { DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display';
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, type ErrorBoundaryProps, type Href } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -41,7 +44,7 @@ registerServiceWorker();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    Fraunces_500Medium, Fraunces_600SemiBold,
+    Fraunces_500Medium, Fraunces_600SemiBold, BricolageGrotesque_600SemiBold, BricolageGrotesque_700Bold, InstrumentSerif_400Regular, DMSerifDisplay_400Regular,
   });
 
   // A font that fails to load isn't worth a broken app: carry on with the system serif. (A web

@@ -28,7 +28,7 @@ function niceMax(cents: number) {
 export function SpendingTrend({ trend, forecast, month, onHero }: { trend: MonthComparison; forecast?: MonthForecast; month: string; onHero?: boolean }) {
   const t = useTheme();
   const c: Ink = onHero
-    ? { line: t.leaf, muted: t.heroMuted, grid: 'rgba(243,247,239,0.14)', surface: t.hero, text: t.heroText, up: t.sun, down: t.leaf }
+    ? { line: t.leaf, muted: t.heroMuted, grid: `${t.heroText}24`, surface: t.hero, text: t.heroText, up: t.sun, down: t.leaf }
     : { line: t.tint, muted: t.secondaryText, grid: t.separator, surface: t.card, text: t.text, up: t.red, down: t.green };
   const [width, setWidth] = useState(0);
   const [activeDay, setActiveDay] = useState<number | null>(null);

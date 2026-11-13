@@ -5,9 +5,10 @@ import { BottomTabBarHeightContext } from 'expo-router/tabs';
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Dimensions, Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { scrollShift } from '@/src/lib/keyboard';
 import { columnStyle, useLayout } from '@/src/lib/layout';
-import Colors, { Fonts } from '@/constants/Colors';
+import Colors, { Fonts, Shape } from '@/constants/Colors';
 import { useColorScheme } from './useColorScheme';
 
 export const useTheme = () => Colors[useColorScheme()];
@@ -15,7 +16,7 @@ export type Theme = ReturnType<typeof useTheme>;
 
 /** Spacing scale. Screens use a 16pt gutter; cards pad 16; sections sit 24 apart. */
 export const space = { xs: 4, s: 8, m: 12, l: 16, xl: 24, xxl: 32 } as const;
-export const radius = { card: 22, control: 14, pill: 999 } as const;
+export const radius = { card: Shape.card, control: 14, pill: 999 } as const;
 
 /**
  * A scrolling screen on the cream background. Tab screens pass `title` to draw their own
@@ -92,7 +93,7 @@ export function Card({ children, style, padded }: { children: ReactNode; style?:
   const t = useTheme();
   const dark = useColorScheme() === 'dark';
   return (
-    <View style={[styles.cardShadow, { backgroundColor: t.card, boxShadow: dark ? undefined : `0 1px 2px ${t.shadow}, 0 8px 24px ${t.shadow}` }, dark && { borderWidth: StyleSheet.hairlineWidth, borderColor: t.separator }, style]}>
+    <View style={[styles.cardShadow, { backgroundColor: t.card, boxShadow: dark || Shape.edge !== 'shadow' ? undefined : `0 1px 2px ${t.shadow}, 0 8px 24px ${t.shadow}` }, (dark || Shape.edge === 'border') && { borderWidth: Shape.edge === 'border' ? 1 : StyleSheet.hairlineWidth, borderColor: t.separator }, style]}>
       <View style={[styles.cardClip, padded && { padding: space.l }]}>{children}</View>
     </View>
   );
@@ -135,7 +136,7 @@ export function Section({ title, footer, action, quiet, children }: { title?: st
     <View>
       {title && (
         <View style={styles.sectionHead}>
-          <Text accessibilityRole="header" style={quiet ? [styles.quietTitle, { color: t.secondaryText }] : [styles.sectionTitle, { color: t.text }]}>{title}</Text>
+          <Text accessibilityRole="header" style={quiet ? [styles.quietTitle, { color: t.secondaryText }] : Shape.section === 'label' ? [styles.labelTitle, { color: t.secondaryText }] : [styles.sectionTitle, { color: t.text }]}>{Shape.section === 'label' && !quiet ? title.toUpperCase() : title}</Text>
           {action}
         </View>
       )}
@@ -149,7 +150,17 @@ export function Section({ title, footer, action, quiet, children }: { title?: st
 export function HeroCard({ children, style }: { children: ReactNode; style?: ViewStyle }) {
   const t = useTheme();
   return (
-    <View style={[styles.hero, { backgroundColor: t.hero, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.14), 0 12px 32px ${t.hero}47` }, style]}>{children}</View>
+    <View style={[styles.hero, { backgroundColor: t.hero, boxShadow: Shape.edge === 'shadow' ? `inset 0 1px 0 rgba(255,255,255,0.14), 0 12px 32px ${(Shape.gradient?.[1] ?? t.hero)}47` : undefined }, Shape.gradient && { overflow: 'hidden' }, style]}>
+      {Shape.gradient && (
+        <Svg style={StyleSheet.absoluteFill} preserveAspectRatio="none" viewBox="0 0 100 100" pointerEvents="none">
+          <Defs><LinearGradient id="heroGrad" x1="0" y1="0" x2="0.35" y2="1">
+            {Shape.gradient.map((c, i) => <Stop key={c} offset={i / (Shape.gradient!.length - 1)} stopColor={c} />)}
+          </LinearGradient></Defs>
+          <Rect x="0" y="0" width="100" height="100" fill="url(#heroGrad)" />
+        </Svg>
+      )}
+      {children}
+    </View>
   );
 }
 
@@ -186,7 +197,7 @@ export function IconButton({ icon, label, onPress }: { icon: SymbolViewProps['na
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
       <Glass interactive lift={false} style={styles.iconButton}>
-        <SymbolView name={icon} size={20} tintColor={t.tint} />
+        <SymbolView name={icon} size={20} tintColor={Shape.tab === 'solid' ? t.tint : t.tabIconSelected} />
       </Glass>
     </Pressable>
   );
@@ -216,7 +227,7 @@ export function IconChip({ icon, tone, size = 40 }: { icon: SymbolViewProps['nam
   const t = useTheme();
   const c = tone && tone !== 'neutral' ? toneColor(t, tone) : t.tint;
   return (
-    <View style={{ width: size, height: size, borderRadius: size * 0.32, backgroundColor: tone && tone !== 'neutral' ? `${c}1F` : t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ width: size, height: size, borderRadius: Shape.chip === 'soft' ? size * 0.32 : size / 2, backgroundColor: Shape.chip === 'outline' ? 'transparent' : tone && tone !== 'neutral' ? `${c}${Shape.chip === 'circle' ? '2E' : '1F'}` : t.tintSoft, borderWidth: Shape.chip === 'outline' ? 1 : 0, borderColor: tone && tone !== 'neutral' ? `${c}66` : t.separator, alignItems: 'center', justifyContent: 'center' }}>
       <SymbolView name={icon} size={size * 0.5} tintColor={tone && tone !== 'neutral' ? toneTextColor(t, tone) : t.tint} />
     </View>
   );
@@ -364,7 +375,7 @@ export function RangeBar({ low, mid, high, marker, markerLabel, tone, format, on
   return (
     <View style={{ gap: 6 }} accessible aria-label={`Likely between ${format(low)} and ${format(high)}${marker != null ? `. ${markerLabel ?? 'Reference'}: ${format(marker)}` : ''}`}>
       <View style={{ height: 14, justifyContent: 'center' }}>
-        <View style={{ height: 4, borderRadius: 2, backgroundColor: onHero ? 'rgba(243,247,239,0.16)' : t.track }} />
+        <View style={{ height: 4, borderRadius: 2, backgroundColor: onHero ? `${t.heroText}29` : t.track }} />
         <View style={{ position: 'absolute', left: at(low), width: `${((high - low) / (max - min + 2 * pad)) * 100}%`, height: 8, borderRadius: 4, backgroundColor: `${c}55` }} />
         {marker != null && <View style={{ position: 'absolute', left: at(marker), marginLeft: -1, width: 2, height: 14, borderRadius: 1, backgroundColor: muted }} />}
         <View style={{ position: 'absolute', left: at(mid), marginLeft: -6, width: 12, height: 12, borderRadius: 6, backgroundColor: c, borderWidth: 2, borderColor: onHero ? t.hero : t.card }} />
@@ -388,7 +399,7 @@ export function Segmented<T extends string>({ options, value, onChange, onHero }
 }) {
   const t = useTheme();
   return (
-    <View style={[styles.segment, { backgroundColor: onHero ? 'rgba(243,247,239,0.12)' : t.track }, onHero && { boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.16)' }]} accessibilityRole="tablist">
+    <View style={[styles.segment, { backgroundColor: onHero ? `${t.heroText}1F` : t.track }]} accessibilityRole="tablist">
       {options.map((o) => {
         const on = o.value === value;
         return (
@@ -412,11 +423,12 @@ const styles = StyleSheet.create({
   tile: { padding: space.m + 2, gap: 2 },
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginHorizontal: space.xs, marginBottom: space.s + 2 },
   sectionTitle: { fontFamily: Fonts.display, fontSize: 21, lineHeight: 26, letterSpacing: -0.3 },
+  labelTitle: { fontSize: 12, fontWeight: '600', letterSpacing: 1.4 },
   quietTitle: { fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
   footer: { fontSize: 13, lineHeight: 18, marginHorizontal: space.xs, marginTop: space.s },
   cardShadow: { borderRadius: radius.card },
   cardClip: { borderRadius: radius.card, overflow: 'hidden' },
-  hero: { borderRadius: 28, padding: 20, gap: 12 },
+  hero: { borderRadius: Shape.hero, padding: 20, gap: 12 },
   row: { paddingVertical: 13, paddingHorizontal: space.l, gap: space.s },
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: space.m },
   track: { height: 6, borderRadius: 3, overflow: 'hidden' },
