@@ -290,8 +290,7 @@ footer .brand svg { width: 30px; height: 23px; }
 /* Signup mode: html[data-signup="open"] shows trial buttons; "waitlist" shows the waitlist form instead. */
 html[data-signup="open"] .when-waitlist, html[data-signup="waitlist"] .when-open { display: none !important; }
 .btn-lg { height: 56px; padding: 0 28px; font-size: 17px; }
-.btn-ghost { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1.5px var(--rule); }
-.btn-ghost:hover { box-shadow: inset 0 0 0 1.5px var(--muted); }
+.hero .when-open .form-note { padding-left: 4px; }
 .btn svg { width: 18px; height: 18px; }
 .ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 36px; }
 .reassure { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 18px; padding-left: 4px; font-size: 14px; color: var(--muted); }
@@ -323,56 +322,7 @@ section.tour { padding: 104px 0 24px; }
 .tour.paused .tour-progress i.on::after { animation: none; transform: none; }
 @keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
-/* Try it: the free-to-spend number */
-section.try { padding: 96px 0 24px; }
-.try-card { display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: var(--card); border-radius: 36px; box-shadow: var(--shadow); overflow: hidden; }
-.try-form { padding: 44px; }
-.try-form h2 { font-size: clamp(28px, 3.4vw, 38px); margin-bottom: 12px; }
-.try-form .lede { font-size: 17px; }
-.field { display: block; margin-top: 22px; }
-.try-card > * { min-width: 0; }
-.field > span:first-child { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
-.money { display: flex; align-items: center; height: 54px; border-radius: 16px; border: 1px solid var(--rule); background: var(--bg); padding: 0 16px; font-size: 19px; }
-.money:focus-within { border-color: var(--brand); }
-.money b { color: var(--muted); font-weight: 500; margin-right: 6px; }
-.money input { flex: 1; width: 100%; min-width: 0; border: 0; background: transparent; color: var(--text); font: inherit; font-variant-numeric: tabular-nums; }
-.money input:focus { outline: none; }
-.try-out { background: var(--hero-bg); color: var(--hero-text); padding: 44px; display: flex; flex-direction: column; justify-content: center; position: relative; isolation: isolate; }
-.try-out::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(360px 280px at 90% 0%, rgba(143,209,158,.3), transparent 70%); }
-.try-out small { color: var(--hero-muted); font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
-.try-out .big { font-family: "Fraunces", Georgia, serif; font-size: clamp(56px, 7vw, 84px); font-weight: 600; letter-spacing: -0.03em; line-height: 1; margin: 12px 0 6px; font-variant-numeric: tabular-nums; }
-.try-out .big span { font-size: .4em; color: var(--hero-muted); letter-spacing: 0; }
-.try-out p { color: var(--hero-muted); }
-.try-out .meter { height: 8px; border-radius: 4px; background: rgba(243,247,239,.16); margin: 26px 0 10px; overflow: hidden; }
-.try-out .meter i { display: block; height: 100%; width: 0; background: #8FD19E; border-radius: 4px; transition: width .4s ease, background .4s ease; }
-.try-out .btn { margin-top: 28px; align-self: flex-start; }
-
-/* How it works */
-section.steps { padding: 104px 0 24px; }
-.steps ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: s; }
-.steps li { background: var(--card); border-radius: 28px; padding: 30px; box-shadow: var(--shadow); counter-increment: s; position: relative; }
-.steps li::before { content: counter(s); display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--tint-soft); color: var(--brand); font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 19px; margin-bottom: 18px; }
-.steps h3 { margin-bottom: 8px; }
-.steps p { color: var(--muted); font-size: 16px; line-height: 1.5; }
-.steps .time { display: inline-block; margin-top: 14px; font-size: 13px; font-weight: 700; color: var(--leaf-ink); background: var(--tint-soft); padding: 5px 10px; border-radius: 999px; }
-
-/* Compare */
-section.compare { padding: 0 0 112px; }
-.table-wrap { max-width: 880px; margin: 0 auto; background: var(--card); border-radius: 28px; box-shadow: var(--shadow); overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 520px; }
-th, td { padding: 16px 18px; text-align: center; border-bottom: 1px solid var(--rule); }
-tr:last-child td { border-bottom: 0; }
-th { font-size: 14px; color: var(--muted); font-weight: 600; }
-th:first-child, td:first-child { text-align: left; color: var(--text); font-weight: 500; }
-th.us { color: var(--brand); font-family: "Fraunces", Georgia, serif; font-size: 18px; }
-td.us { background: var(--tint-soft); }
-.y, .n { display: inline-block; width: 22px; height: 22px; border-radius: 50%; vertical-align: middle; }
-.y { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='10' fill='%238FD19E'/%3E%3Cpath d='M6 10.2l2.7 2.7L14 7.6' fill='none' stroke='%231F5B3F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 22px 22px no-repeat; }
-.n { background: var(--bg-2); position: relative; }
-.n::after { content: ""; position: absolute; left: 6px; right: 6px; top: 10px; height: 2px; border-radius: 1px; background: var(--muted); opacity: .6; }
-
 /* Pricing additions */
-.billing-toggle { display: flex; justify-content: center; margin: -36px auto 40px; }
 .plan .btn { width: 100%; margin-top: 24px; }
 .plan.best .btn-brand { background: #F6C04E; color: #1B2420; }
 .plan.best .btn-brand:hover { background: #F8CC6A; }
@@ -412,27 +362,24 @@ section.faq { padding: 0 0 112px; }
 .sticky .btn { height: 44px; padding: 0 18px; font-size: 15px; }
 
 @media (max-width: 960px) {
-  .tour-grid, .try-card { grid-template-columns: 1fr; gap: 40px; }
+  .tour-grid { grid-template-columns: 1fr; gap: 40px; }
   .tour-grid { gap: 32px; }
   .tour .shot { order: 2; }
   .hero .ctas, .hero .reassure { justify-content: center; }
-  .steps ol { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
   html[data-signup="open"] .sticky { display: flex; }
-  section.tour, section.try, section.steps { padding-top: 72px; }
+  section.tour { padding-top: 72px; }
   .tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-left: -16px; margin-right: -16px; border-radius: 0; padding: 5px 16px; background: transparent; border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
   .tabs::-webkit-scrollbar { display: none; }
   .tabs button { flex: none; background: var(--card); box-shadow: var(--shadow); }
   .tour .phone { width: 240px; }
-  .try-form, .try-out { padding: 28px 22px; }
-  .try-card { border-radius: 28px; }
   .ctas .btn { flex: 1 1 100%; }
   .timeline { grid-template-columns: 1fr; gap: 18px; }
   .timeline::before { display: none; }
   .timeline div { display: grid; grid-template-columns: 20px 1fr; column-gap: 14px; text-align: left; padding: 0; }
   .timeline div::before { margin: 2px 0 0; grid-row: span 2; }
-  section.compare, section.faq { padding-bottom: 80px; }
+  section.faq { padding-bottom: 80px; }
   footer { padding-bottom: 96px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -478,15 +425,12 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
   <section class="hero">
     <div class="wrap">
       <div class="copy">
-        <div class="badge glass"><i></i><span class="when-open">14 days free, then $4.17 a month</span><span class="when-waitlist">Coming soon to iPhone</span></div>
+        <div class="badge glass"><i></i><span class="when-open">Try it free for 14 days</span><span class="when-waitlist">Coming soon to iPhone</span></div>
         <h1>Know where you stand. <em>Then relax.</em></h1>
         <p class="lede">Settle Down links your family's accounts, sorts every purchase into buckets, and turns it all into one calm number: what you can spend today.</p>
         <div class="when-open">
-          <div class="ctas">
-            <a class="btn btn-brand btn-lg" href="https://app.settledownfinancial.com/start?plan=yearly">Start your free trial<svg aria-hidden="true"><use href="#arrow"/></svg></a>
-            <a class="btn btn-ghost btn-lg" href="#tour">Take the tour</a>
-          </div>
-          <p class="reassure"><span>14 days free</span><span>Cancel in two taps</span><span>One plan, whole household</span></p>
+          <div class="ctas"><a class="btn btn-brand btn-lg" href="https://app.settledownfinancial.com/start?plan=yearly">Start your free trial</a></div>
+          <p class="form-note">14 days free, then $49.99 a year or $5.99 a month. Cancel anytime.</p>
         </div>
         <div class="when-waitlist">
           <form class="waitlist" data-waitlist novalidate>
@@ -528,39 +472,16 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
   <section class="tour" id="tour" aria-labelledby="tour-title">
     <div class="wrap">
       <div class="section-head reveal">
-        <p class="eyebrow">Take the tour</p>
-        <h2 id="tour-title">See the whole app before you start</h2>
-        <p class="lede">These are the real screens, filled with a sample family's month. Tap through, or let it play.</p>
+        <p class="eyebrow">Inside the app</p>
+        <h2 id="tour-title">Take a look around</h2>
+        <p class="lede">Your budget, your buckets, your month ahead, and an assistant that knows your numbers.</p>
       </div>
       <div class="tour-grid reveal">
-        <div class="shot"><div class="phone"><img id="tour-img" src="assets/screens/home.webp" width="780" height="1688" alt=""></div></div>
+        <div class="shot"><div class="phone"><img id="tour-img" src="assets/screens/bucket.webp" width="780" height="1688" alt=""></div></div>
         <div>
           <div class="tabs glass" role="tablist" aria-label="App screens"></div>
           <div class="tour-copy" id="tour-panel" role="tabpanel" aria-live="polite"></div>
           <div class="tour-progress" aria-hidden="true"></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="try" id="try" aria-labelledby="try-title">
-    <div class="wrap">
-      <div class="try-card reveal">
-        <form class="try-form" onsubmit="return false">
-          <p class="eyebrow">Try the one number</p>
-          <h2 id="try-title">What can you spend today?</h2>
-          <p class="lede">This is the number on Settle Down's home screen. Put in your own figures; nothing leaves this page.</p>
-          <label class="field"><span>Monthly spending budget</span><span class="money"><b>$</b><input id="try-budget" inputmode="decimal" value="3,500" aria-describedby="try-result"></span></label>
-          <label class="field"><span>Spent so far this month</span><span class="money"><b>$</b><input id="try-spent" inputmode="decimal" value="1,640" aria-describedby="try-result"></span></label>
-        </form>
-        <div class="try-out" id="try-result" aria-live="polite">
-          <small>Free to spend</small>
-          <p class="big" id="try-day">$0</p>
-          <p id="try-note">a day for the rest of the month</p>
-          <div class="meter"><i id="try-meter"></i></div>
-          <p id="try-pace" style="font-size:14px"></p>
-          <a class="btn btn-sun when-open" href="https://app.settledownfinancial.com/start?plan=yearly">Get yours from your real accounts</a>
-          <a class="btn btn-sun when-waitlist" href="#join">Get it when we launch</a>
         </div>
       </div>
     </div>
@@ -677,42 +598,6 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
           <h3>Find any purchase fast</h3>
           <p>Filter activity by month, bucket or store and see the total for exactly what you're looking at.</p>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="steps" aria-labelledby="steps-title">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <p class="eyebrow">How it works</p>
-        <h2 id="steps-title">Set up in about five minutes</h2>
-      </div>
-      <ol class="reveal">
-        <li><h3>Start your free trial</h3><p>Sign in with Apple, Google or your email, and pick monthly or yearly. You won't be charged for 14 days.</p><span class="time">1 minute</span></li>
-        <li><h3>Link your banks</h3><p>Connect checking and cards through Plaid. We suggest buckets from how you really spend; tweak anything.</p><span class="time">About a minute per bank</span></li>
-        <li><h3>Get your daily number</h3><p>Every purchase lands in a bucket and your phone tells you where you stand. Invite your partner to share it.</p><span class="time">From day one</span></li>
-      </ol>
-    </div>
-  </section>
-
-  <section class="compare" aria-labelledby="compare-title">
-    <div class="wrap">
-      <div class="section-head reveal" style="margin-top:104px">
-        <p class="eyebrow">Why not just a spreadsheet?</p>
-        <h2 id="compare-title">The budget that does the work</h2>
-      </div>
-      <div class="table-wrap reveal">
-        <table>
-          <thead><tr><th scope="col"><span class="sr">Feature</span></th><th scope="col">A spreadsheet</th><th scope="col">Your bank's app</th><th scope="col" class="us">Settle Down</th></tr></thead>
-          <tbody>
-            <tr><td>Updates itself from every account</td><td><i class="n" aria-label="No"></i></td><td><i class="n" aria-label="Only that bank"></i></td><td class="us"><i class="y" aria-label="Yes"></i></td></tr>
-            <tr><td>Your whole household in one budget</td><td><i class="y" aria-label="Yes"></i></td><td><i class="n" aria-label="No"></i></td><td class="us"><i class="y" aria-label="Yes"></i></td></tr>
-            <tr><td>An alert with what's left after each purchase</td><td><i class="n" aria-label="No"></i></td><td><i class="n" aria-label="No"></i></td><td class="us"><i class="y" aria-label="Yes"></i></td></tr>
-            <tr><td>Where the month is likely to end</td><td><i class="n" aria-label="No"></i></td><td><i class="n" aria-label="No"></i></td><td class="us"><i class="y" aria-label="Yes"></i></td></tr>
-            <tr><td>Savings goals kept apart from spending</td><td><i class="y" aria-label="Yes"></i></td><td><i class="n" aria-label="Sometimes"></i></td><td class="us"><i class="y" aria-label="Yes"></i></td></tr>
-            <tr><td>Answers in plain English</td><td><i class="n" aria-label="No"></i></td><td><i class="n" aria-label="No"></i></td><td class="us"><i class="y" aria-label="Yes"></i></td></tr>
-          </tbody>
-        </table>
       </div>
     </div>
   </section>
@@ -884,7 +769,6 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
 
   // Tour: real screens with sample data. Tabs follow the ARIA tabs pattern (arrow keys move).
   var STOPS = [
-    { tab: 'Today', img: 'home', title: 'One calm number', text: "Home turns every account into what you can spend today, and it adjusts as the month goes.", points: ['<strong>Free to spend</strong>, per day, through month-end', '<strong>This week</strong> at a glance, day by day', '<strong>The month ahead</strong>: bills still to come'], alt: 'The home screen: You’re on track, with $98 a day free to spend.' },
     { tab: 'Buckets', img: 'bucket', title: 'Every purchase, sorted', text: 'Groceries, Dining Out, Gas: each bucket shows how much is left and whether you are ahead of pace for today.', points: ['<strong>Instant alerts</strong> with the bucket and what is left', '<strong>Pace markers</strong>, not just a month total', '<strong>Split shared bills</strong> so only your share counts'], alt: 'The Groceries bucket: $569 of $700 used, heading over.' },
     { tab: 'Trends', img: 'trend', title: 'See the month before it happens', text: 'This month against last, then a projection of where you will land, with an honest range.', points: ['<strong>Month-end outlook</strong> from thousands of simulated months', '<strong>Bill forecasts</strong> for rent and utilities', '<strong>Tune-ups</strong> that suggest better limits'], alt: 'The spending trend chart with a projected month-end range.' },
     { tab: 'Ask', img: 'ask', title: 'Ask your budget anything', text: 'Ask in plain English. SettleDown answers from your real purchases and shows the math.', points: ['<strong>"How can we cut back?"</strong> with dollar amounts', '<strong>"What did we spend at Target?"</strong> in seconds', '<strong>Weekly recap</strong> and insights included'], alt: 'An answer card listing the biggest ways to cut spending this month.' },
@@ -941,31 +825,6 @@ if (/[#?&]error(_code|_description)?=/.test(location.hash + location.search)) lo
       if (seen && playing) show(current);
     }, { threshold: 0.4 }).observe(tour);
   }
-
-  // Try it: the free-to-spend number, worked out in the browser only.
-  var budget = document.getElementById('try-budget'), spent = document.getElementById('try-spent');
-  function num(el) { var v = parseFloat(String(el.value).replace(/[^0-9.]/g, '')); return isFinite(v) ? v : 0; }
-  function money(v) { return '$' + Math.round(v).toLocaleString('en-US'); }
-  function calc() {
-    var now = new Date();
-    var days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    var left = days - now.getDate() + 1;
-    var b = num(budget), s = num(spent), rest = b - s;
-    var perDay = rest > 0 ? rest / left : 0;
-    document.getElementById('try-day').innerHTML = money(perDay) + '<span> / day</span>';
-    document.getElementById('try-note').textContent = rest > 0
-      ? 'for the next ' + left + ' day' + (left === 1 ? '' : 's') + ', ' + money(rest) + ' in all'
-      : rest === 0 ? 'Right on budget. Nothing left to spend this month.' : money(-rest) + ' over budget. Settle Down would show which savings goal it comes out of.';
-    var used = b > 0 ? Math.min(1, s / b) : 0, pace = (now.getDate() - 0.5) / days;
-    var meter = document.getElementById('try-meter');
-    meter.style.width = Math.round(used * 100) + '%';
-    meter.style.background = used > pace + 0.05 ? '#F6C04E' : '#8FD19E';
-    document.getElementById('try-pace').textContent = b > 0
-      ? Math.round(used * 100) + '% of your budget used, ' + Math.round(pace * 100) + '% of the month gone. ' + (used > pace + 0.05 ? 'A little ahead of pace.' : 'On track.')
-      : '';
-  }
-  [budget, spent].forEach(function (el) { el.addEventListener('input', calc); });
-  calc();
 
   // Phones: a glass "Start free trial" bar once the hero buttons scroll away, hidden at the end.
   var sticky = document.getElementById('sticky');
