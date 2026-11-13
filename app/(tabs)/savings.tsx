@@ -13,9 +13,9 @@ export default function SavingsScreen() {
   const $ = (c: number) => formatCents(c, { showCents: false });
   const over = impact.totalOverspend;
   const parts = [
-    { label: 'Covered by other buckets', amount: impact.coveredByOtherBuckets, tone: 'good' as const },
-    { label: 'Taken from savings goals', amount: impact.hitsSavings - impact.uncovered, tone: 'warn' as const },
-    { label: 'Not covered', amount: impact.uncovered, tone: 'bad' as const },
+    { label: 'Other trees cover it', amount: impact.coveredByOtherBuckets, tone: 'good' as const, fill: 1 },
+    { label: 'Savings cover it', amount: impact.hitsSavings - impact.uncovered, tone: 'warn' as const, fill: 0.5 },
+    { label: 'Not covered yet', amount: impact.uncovered, tone: 'bad' as const, fill: 0 },
   ].filter((p) => p.amount > 0);
   const totalSaved = impact.goals.reduce((s, g) => s + g.balanceAfter, 0);
 
@@ -46,7 +46,7 @@ export default function SavingsScreen() {
             </View>
             {parts.map((p) => (
               <View key={p.label} style={styles.legend} accessible accessibilityLabel={`${p.label}: ${formatCents(p.amount)}`}>
-                <View style={[styles.swatch, { backgroundColor: toneColor(t, p.tone) }]} />
+                <GroveTree size={26} fill={p.fill} tone={p.tone} />
                 <Label style={{ fontSize: 15, flex: 1 }}>{p.label}</Label>
                 <Label style={{ fontSize: 15, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{formatCents(p.amount)}</Label>
               </View>
@@ -91,5 +91,4 @@ export default function SavingsScreen() {
 const styles = StyleSheet.create({
   stack: { flexDirection: 'row', height: 12, borderRadius: 6, overflow: 'hidden', gap: 2 },
   legend: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  swatch: { width: 12, height: 12, borderRadius: 3 },
 });

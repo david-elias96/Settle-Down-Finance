@@ -121,7 +121,7 @@ export default function BudgetScreen() {
   }
 
   return (
-    <Screen eyebrow={dateLabel} title={verdict.text} action={<SettingsButton />}>
+    <Screen swoop eyebrow={dateLabel} title={verdict.text} action={<SettingsButton />}>
       {needsHousehold && (
         <>
           <Notice title="Start your budget" icon={{ ios: 'house.fill', android: 'home', web: 'home' }}>

@@ -5,6 +5,7 @@ import { BottomTabBarHeightContext } from 'expo-router/tabs';
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Dimensions, Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextProps, type TextStyle, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 import { scrollShift } from '@/src/lib/keyboard';
 import { columnStyle, useLayout } from '@/src/lib/layout';
 import Colors, { Fonts } from '@/constants/Colors';
@@ -22,8 +23,10 @@ export const radius = { card: 22, control: 14, pill: 999 } as const;
  * large serif title (with an optional `action` such as the Settings gear) instead of a
  * navigation bar; pushed screens keep the native header and leave `title` out.
  */
-export function Screen({ children, title, eyebrow, action, keyboardDone }: {
+export function Screen({ children, title, eyebrow, action, keyboardDone, swoop }: {
   children: ReactNode; title?: string; eyebrow?: string; action?: ReactNode;
+  /** Home's header: the title on deep green, ending in a hillside that swoops into the page. */
+  swoop?: boolean;
   /**
    * For screens with text fields: show a Done bar on top of the keyboard (iOS number pads have
    * no Return key) and scroll so the field being typed in sits just above it.
@@ -56,20 +59,34 @@ export function Screen({ children, title, eyebrow, action, keyboardDone }: {
   }, [keyboard.height, keyboard.changes]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const keyboardRoom = keyboard.height != null ? keyboard.height + DONE_BAR_HEIGHT : 0;
+  const topPad = title ? insets.top + (wide ? space.xxl : space.l) : (wide ? space.xl : space.l);
+  // The swoop is a phone header; in the wide web layout the plain title fits the column better.
+  const green = !!swoop && !!title && !wide;
+  const titleRow = title && (
+    <View style={styles.titleRow}>
+      <View style={{ flexShrink: 1 }}>
+        {eyebrow && <Text style={[styles.eyebrow, { color: green ? t.heroMuted : t.secondaryText }]}>{eyebrow}</Text>}
+        <Text accessibilityRole="header" style={[styles.largeTitle, { color: green ? t.heroText : t.text }]} numberOfLines={2}>{title}</Text>
+      </View>
+      {action}
+    </View>
+  );
   const scroll = (
     <ScrollView ref={scrollRef as never} style={{ backgroundColor: t.background }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"
       onScroll={(e) => { offset.current = e.nativeEvent.contentOffset.y; }} scrollEventThrottle={16}
       contentInsetAdjustmentBehavior={title ? 'never' : 'automatic'}
-      contentContainerStyle={[{ paddingHorizontal: space.l, paddingTop: title ? insets.top + (wide ? space.xxl : space.l) : (wide ? space.xl : space.l), paddingBottom: Math.max((tabBar ?? 0) + space.xl, keyboardRoom + space.xl), gap: space.xl }, columnStyle(wide)]}>
-      {title && (
-        <View style={styles.titleRow}>
-          <View style={{ flexShrink: 1 }}>
-            {eyebrow && <Text style={[styles.eyebrow, { color: t.secondaryText }]}>{eyebrow}</Text>}
-            <Text accessibilityRole="header" style={[styles.largeTitle, { color: t.text }]} numberOfLines={2}>{title}</Text>
-          </View>
-          {action}
+      contentContainerStyle={[{ paddingHorizontal: space.l, paddingTop: topPad, paddingBottom: Math.max((tabBar ?? 0) + space.xl, keyboardRoom + space.xl), gap: space.xl }, columnStyle(wide)]}>
+      {green ? (
+        <View style={{ marginHorizontal: -space.l, marginTop: -topPad, paddingTop: topPad, backgroundColor: t.hero, marginBottom: -space.s }}>
+          {/* Green above the top too, so pulling down past the top doesn't show a cream gap. */}
+          <View style={{ position: 'absolute', left: 0, right: 0, top: -1000, height: 1000, backgroundColor: t.hero }} />
+          <View style={{ paddingHorizontal: space.l, paddingBottom: space.s }}>{titleRow}</View>
+          <Svg width="100%" height={64} viewBox="0 0 400 64" preserveAspectRatio="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Path d="M0 30 Q 110 0 220 24 T 400 14 V64 H0Z" fill={t.leaf} opacity={0.2} />
+            <Path d="M0 50 Q 130 22 260 42 T 400 34 V64 H0Z" fill={t.background} />
+          </Svg>
         </View>
-      )}
+      ) : titleRow}
       {children}
     </ScrollView>
   );
