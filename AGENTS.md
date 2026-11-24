@@ -39,3 +39,23 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Design
+
+Read [DESIGN.md](DESIGN.md) before building or changing any screen, component or page on the site. It describes the "Grove" design system; tokens live in `constants/Colors.ts` and shared components in `components/ui.tsx`. Reuse them instead of adding new colors, fonts or card styles. If you change the design system, update DESIGN.md in the same PR.
+
+To review UI against general web interface rules (accessibility, focus, forms, motion), use the `web-design-guidelines` skill in `.claude/skills/`. DESIGN.md wins where they disagree.
+
+## Checking the UI in a browser
+
+`@playwright/cli` is a dev dependency, and its skill is in `.claude/skills/playwright-cli`. Use it to look at the web build after a UI change:
+
+```bash
+npm run web                                         # starts the dev server; the web app is on http://localhost:8081
+npx playwright-cli open http://localhost:8081 --device="iPhone 15"
+npx playwright-cli snapshot                         # element refs for click/fill
+npx playwright-cli screenshot
+npx playwright-cli close-all
+```
+
+Output goes to `.playwright-cli/` (git-ignored). Use sample data only in screenshots (see CLAUDE.md), and never sign in with a real account or link a real bank from the CLI.
